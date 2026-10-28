@@ -1,0 +1,8 @@
+/test-results/
+/playwright-report/
+/coverage/
+.superpowers/
+.claude/settings.local.json
+.DS_Store
+.idea/
+.metrics/

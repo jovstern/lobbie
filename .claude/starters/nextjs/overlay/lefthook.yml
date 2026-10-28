@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: '*.{ts,tsx,js,mjs,mts,json,css,md,yml,yaml}'
+      run: npx prettier --check --ignore-unknown {staged_files}
+    lint:
+      glob: '*.{ts,tsx,js,mjs,mts}'
+      run: npx eslint --max-warnings 0 --no-warn-ignored {staged_files}
+    typecheck:
+      glob: '*.{ts,tsx,mts}'
+      run: npm run typecheck

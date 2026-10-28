@@ -1,0 +1,8 @@
+.claude/settings.local.json
+.superpowers/
+.metrics/
+.DS_Store
+.idea/
+.env*
+!.env.example
+node_modules/
