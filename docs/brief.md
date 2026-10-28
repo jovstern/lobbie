@@ -139,8 +139,8 @@ nav on desktop. The admin panel is a separate section, shown only to committee a
 - Radix primitives for dialogs, menus and tabs.
 - Auth with magic-link email (Auth.js or a hosted provider).
 - File uploads (receipts) to object storage (Vercel Blob or S3-compatible).
-- Hosted on Vercel; domain **lobbie.co.il** (register at an ISOC-IL accredited registrar,
-  for example LiveDNS).
+- Hosted on Vercel; domain **lobbie.co.il** (registered by the user on 2026-10-28;
+  point its DNS at the host in M1).
 
 **Alternative:** Vite + React SPA with a Node/Express API and the same Postgres. More moving
 parts and no benefit for this app.
