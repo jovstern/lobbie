@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, currentMonthIn, todayIn } from './dates'
+import { addMonths, currentMonthIn, formatMonth, todayIn } from './dates'
 
 describe('todayIn', () => {
   it.each([
@@ -48,5 +48,18 @@ describe('addMonths', () => {
     ['2024-02', 25, '2026-03'],
   ])('%s %+i is %s', (month, delta, expected) => {
     expect(addMonths(month, delta)).toBe(expected)
+  })
+})
+
+describe('formatMonth', () => {
+  it.each([
+    ['2026-11', 'en', 'November 2026'],
+    ['2026-11', 'he', 'נובמבר 2026'],
+    ['2027-01', 'en', 'January 2027'],
+    // The first of the month at midnight UTC would be the last day of the previous month
+    // west of UTC; the month is formatted in UTC, so it never slips.
+    ['2026-12', 'en', 'December 2026'],
+  ] as const)('%s in %s is %s', (month, locale, expected) => {
+    expect(formatMonth(month, locale)).toBe(expected)
   })
 })

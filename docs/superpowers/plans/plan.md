@@ -415,6 +415,9 @@ Requirements: R34–R40.
    - `scripts/create-building.ts` (a name and the first admin's email).
    - The sign-in rate limit per IP takes the platform's trusted address (`ipAddress()` from
      `@vercel/functions`, or `x-real-ip`) instead of the first `x-forwarded-for` entry.
+   - A test-only `RATE_LIMIT_PER_IP_MAX`, honoured only when `MAIL_TRANSPORT=outbox` and
+     refused when `VERCEL_ENV` is set, replaces the e2e helper's random `x-forwarded-for`
+     (which stops working once the per-IP limit uses the platform address).
    - Tests: driver unit tests with the SDKs mocked; the script on PGlite.
 2. **Demo sign-in** (medium). `actions/demo.signInAsDemo(role)` creates a session for the
    seeded demo user (a Better Auth server session) only when the building is `isDemo`. A

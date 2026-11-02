@@ -2,7 +2,7 @@ import 'server-only'
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/app/lib/db'
-import type { ApartmentSummary } from '@/app/lib/definitions'
+import type { ApartmentStatus } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
 import { apartments, buildings, feeRates, payments } from '@/app/lib/schema'
 import { currentMonthIn } from '@/app/lib/utils/dates'
@@ -22,7 +22,11 @@ function loadBilling(buildingId: string, apartmentIds: string[]) {
       .from(buildings)
       .where(eq(buildings.id, buildingId)),
     db
-      .select({ id: apartments.id, billingStartMonth: apartments.billingStartMonth })
+      .select({
+        id: apartments.id,
+        number: apartments.number,
+        billingStartMonth: apartments.billingStartMonth,
+      })
       .from(apartments)
       .where(and(eq(apartments.buildingId, buildingId), inArray(apartments.id, apartmentIds))),
     db
@@ -57,14 +61,15 @@ function loadBilling(buildingId: string, apartmentIds: string[]) {
 }
 
 /**
- * What each apartment owes, keyed by apartment id. Ids that are not apartments of this
- * building are left out. Four queries, one per table, run together.
+ * What each apartment owes, with its number, keyed by apartment id in the order asked. Ids
+ * that are not apartments of this building are left out. Four queries, one per table, run
+ * together.
  */
 export async function statusForApartments(
   buildingId: string,
   apartmentIds: string[],
   now: Date = new Date(),
-): Promise<Map<string, ApartmentSummary>> {
+): Promise<Map<string, ApartmentStatus>> {
   if (apartmentIds.length === 0) return new Map()
   try {
     const [[building], apartmentRows, rates, paymentRows] = await loadBilling(
@@ -78,17 +83,21 @@ export async function statusForApartments(
     )
     const currentMonth = currentMonthIn(building.timezone, now)
 
+    const rowsById = new Map(apartmentRows.map((apartment) => [apartment.id, apartment]))
+
     return new Map(
-      apartmentRows.map((apartment) => [
-        apartment.id,
-        apartmentSummary({
+      apartmentIds.flatMap((id) => {
+        const apartment = rowsById.get(id)
+        if (!apartment) return []
+        const summary = apartmentSummary({
           apartment,
           buildingBillingStartMonth: building.billingStartMonth,
           rates,
           payments: paymentsByApartment.get(apartment.id) ?? [],
           currentMonth,
-        }),
-      ]),
+        })
+        return [[id, { number: apartment.number, ...summary }]]
+      }),
     )
   } catch (err) {
     logger.error('Failed to load payment statuses', { area: 'data/payments', buildingId, err })

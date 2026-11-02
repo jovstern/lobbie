@@ -22,19 +22,28 @@ test.describe('signed out', () => {
 })
 
 test.describe('the sign-in page', () => {
-  test('in Hebrew, has the labelled email field and the send button', async ({ page }) => {
+  test('in Hebrew, has the labelled email field and the send button', async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto('/sign-in')
     await expect(page.getByLabel('אימייל')).toHaveAttribute('type', 'email')
     await expect(page.getByLabel('אימייל')).toHaveAttribute('autocomplete', 'email')
     await expect(page.getByRole('button', { name: 'שלחו לי קישור' })).toBeVisible()
-    await expect(page.getByText('כולם תחת קורת גג אחת')).toBeVisible()
+    // The tagline panel is for wide screens; phones show the wordmark instead.
+    const tagline = page.getByText('כולם תחת קורת גג אחת')
+    await (isMobile ? expect(tagline).toBeHidden() : expect(tagline).toBeVisible())
   })
 
-  test('in English, has the labelled email field and the send button', async ({ page }) => {
+  test('in English, has the labelled email field and the send button', async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto('/en/sign-in')
     await expect(page.getByLabel('Email')).toHaveAttribute('type', 'email')
     await expect(page.getByRole('button', { name: 'Send me a link' })).toBeVisible()
-    await expect(page.getByText('Everyone under one roof')).toBeVisible()
+    const tagline = page.getByText('Everyone under one roof')
+    await (isMobile ? expect(tagline).toBeHidden() : expect(tagline).toBeVisible())
   })
 
   test('explains an expired link', async ({ page }) => {

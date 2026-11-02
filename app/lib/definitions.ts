@@ -30,6 +30,17 @@ export type ApartmentSummary = {
   totalOwedAgorot: number
 }
 
+/** An apartment's summary, with the number people know it by. */
+export type ApartmentStatus = ApartmentSummary & { number: string }
+
+/** How an apartment stands overall, as Home shows it (see `apartmentStanding`). */
+export type ApartmentStanding =
+  | { kind: 'not-billed' }
+  | { kind: 'no-fee' }
+  | { kind: 'paid' }
+  | { kind: 'due'; remainingAgorot: number; partial: boolean }
+  | { kind: 'overdue'; monthsBehind: number; totalOwedAgorot: number }
+
 export type BuildingBalance = {
   openingBalanceAgorot: number
   adjustmentsAgorot: number

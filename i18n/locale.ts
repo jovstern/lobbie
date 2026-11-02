@@ -1,5 +1,8 @@
 import { routing, type Locale } from '@/i18n/routing'
 
+/** The Intl locale for each app locale: Israeli conventions (dates, ₪) in both languages. */
+export const intlLocales = { he: 'he-IL', en: 'en-IL' } as const satisfies Record<Locale, string>
+
 const rightToLeft: ReadonlySet<Locale> = new Set(['he'])
 
 export function dirFor(locale: Locale): 'rtl' | 'ltr' {

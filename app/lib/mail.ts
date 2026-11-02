@@ -1,5 +1,5 @@
 import 'server-only'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createTranslator } from 'next-intl'
 import { logger } from '@/app/lib/logger'
@@ -56,11 +56,11 @@ async function writeToOutbox(message: Message, { outboxDir, now = new Date() }: 
   const dir = outboxDir ?? path.join(process.cwd(), '.data', 'outbox')
   // The recipient becomes part of a file name, so nothing in it may leave the directory.
   const recipient = message.to.replace(/[^A-Za-z0-9@._+-]/g, '_')
+  const file = path.join(dir, `${now.getTime()}-${recipient}.json`)
   await mkdir(dir, { recursive: true })
-  await writeFile(
-    path.join(dir, `${now.getTime()}-${recipient}.json`),
-    JSON.stringify({ ...message, sentAt: now.toISOString() }, null, 2),
-  )
+  // Written aside, then renamed (atomic): a reader polling for `*.json` never sees half a file.
+  await writeFile(`${file}.tmp`, JSON.stringify({ ...message, sentAt: now.toISOString() }, null, 2))
+  await rename(`${file}.tmp`, file)
   // The link signs someone in, so it never reaches the logs.
   logger.info('magic link written to outbox', { to: message.to })
 }

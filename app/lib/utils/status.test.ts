@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FeeRate, MonthPayment } from '@/app/lib/definitions'
 import { currentMonthIn } from './dates'
-import { apartmentSummary, monthStatus, type ApartmentBilling } from './status'
+import { apartmentStanding, apartmentSummary, monthStatus, type ApartmentBilling } from './status'
 
 const apartmentId = 'apt-1'
 const fee = 35_000
@@ -244,5 +244,55 @@ describe('apartmentSummary', () => {
       monthsBehind: expected.monthsBehind,
       totalOwedAgorot: expected.total,
     })
+  })
+})
+
+describe('apartmentStanding', () => {
+  const due = { kind: 'due', dueAgorot: fee, paidAgorot: 0, remainingAgorot: fee } as const
+  const paidMonth = { kind: 'paid', dueAgorot: fee, paidAgorot: fee } as const
+
+  it.each([
+    ['paid up', { current: paidMonth, monthsBehind: 0, totalOwedAgorot: 0 }, { kind: 'paid' }],
+    [
+      'the current month due',
+      { current: due, monthsBehind: 0, totalOwedAgorot: fee },
+      { kind: 'due', remainingAgorot: fee, partial: false },
+    ],
+    [
+      'the current month partly paid',
+      {
+        current: { ...due, paidAgorot: 10_000, remainingAgorot: 25_000 },
+        monthsBehind: 0,
+        totalOwedAgorot: 25_000,
+      },
+      { kind: 'due', remainingAgorot: 25_000, partial: true },
+    ],
+    [
+      'behind, with the current month due',
+      { current: due, monthsBehind: 2, totalOwedAgorot: 3 * fee },
+      { kind: 'overdue', monthsBehind: 2, totalOwedAgorot: 3 * fee },
+    ],
+    [
+      'behind, though the current month is paid',
+      { current: paidMonth, monthsBehind: 1, totalOwedAgorot: fee },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee },
+    ],
+    [
+      'behind, in a month with no fee',
+      { current: { kind: 'no-fee' }, monthsBehind: 1, totalOwedAgorot: fee },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee },
+    ],
+    [
+      'no fee this month',
+      { current: { kind: 'no-fee' }, monthsBehind: 0, totalOwedAgorot: 0 },
+      { kind: 'no-fee' },
+    ],
+    [
+      'not billed yet',
+      { current: { kind: 'not-billed' }, monthsBehind: 0, totalOwedAgorot: 0 },
+      { kind: 'not-billed' },
+    ],
+  ] as const)('%s', (_name, summary, expected) => {
+    expect(apartmentStanding(summary)).toEqual(expected)
   })
 })

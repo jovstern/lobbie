@@ -34,8 +34,9 @@ export async function memberForUser(userId: string): Promise<Member | null> {
         isDemo: buildings.isDemo,
         timeZone: buildings.timezone,
         buildingName: buildings.name,
+        // Natural order (2 before 10): shorter numbers first, then by text.
         apartmentIds: sql`coalesce(
-          array_agg(${apartments.id} order by ${apartments.number}) filter (where ${apartments.id} is not null),
+          array_agg(${apartments.id} order by length(${apartments.number}), ${apartments.number}) filter (where ${apartments.id} is not null),
           '{}'
         )`,
       })

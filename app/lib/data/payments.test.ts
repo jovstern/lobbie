@@ -44,12 +44,14 @@ describe('statusForApartments', () => {
 
     // Apartment 4 has not paid its last 2 months: October is overdue, November is due.
     expect(statuses.get(idOf('4'))).toEqual({
+      number: '4',
       current: { kind: 'due', dueAgorot: fee, paidAgorot: 0, remainingAgorot: fee },
       monthsBehind: 1,
       totalOwedAgorot: 2 * fee,
     })
     // Apartment 9 has not paid its last 3 months.
     expect(statuses.get(idOf('9'))).toEqual({
+      number: '9',
       current: { kind: 'due', dueAgorot: fee, paidAgorot: 0, remainingAgorot: fee },
       monthsBehind: 2,
       totalOwedAgorot: 3 * fee,
@@ -60,11 +62,13 @@ describe('statusForApartments', () => {
     const statuses = await statusForApartments(buildingId, [idOf('1'), idOf('10')], now)
 
     expect(statuses.get(idOf('1'))).toEqual({
+      number: '1',
       current: { kind: 'paid', dueAgorot: fee, paidAgorot: fee },
       monthsBehind: 0,
       totalOwedAgorot: 0,
     })
     expect(statuses.get(idOf('10'))).toEqual({
+      number: '10',
       current: { kind: 'paid', dueAgorot: penthouseFee, paidAgorot: penthouseFee },
       monthsBehind: 0,
       totalOwedAgorot: 0,
@@ -75,6 +79,7 @@ describe('statusForApartments', () => {
     const statuses = await statusForApartments(buildingId, [idOf('e2e-1')], now)
 
     expect(statuses.get(idOf('e2e-1'))).toEqual({
+      number: 'e2e-1',
       current: { kind: 'due', dueAgorot: fee, paidAgorot: 0, remainingAgorot: fee },
       monthsBehind: 0,
       totalOwedAgorot: fee,
@@ -127,6 +132,11 @@ describe('statusForApartments', () => {
 
     const asked = await statusForApartments(other.id, [idOf('1'), idOf('4')], now)
     expect(asked.size).toBe(0)
+  })
+
+  it('keeps the apartments in the order asked', async () => {
+    const statuses = await statusForApartments(buildingId, [idOf('10'), idOf('2')], now)
+    expect([...statuses.values()].map((status) => status.number)).toEqual(['10', '2'])
   })
 
   it('returns an empty map for no apartments', async () => {

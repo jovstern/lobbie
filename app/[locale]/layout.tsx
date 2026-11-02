@@ -4,7 +4,6 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { dirFor } from '@/i18n/locale'
 import { routing } from '@/i18n/routing'
 import { rubik } from '@/app/ui/fonts'
-import WebVitals from '@/app/ui/web-vitals'
 import '@/app/globals.css'
 
 export function generateStaticParams() {
@@ -23,16 +22,21 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
   // Validated in i18n/request.ts: an unknown locale is a 404.
   const locale = await getLocale()
   const messages = await getMessages()
+  // Imported only in development: the condition is fixed at build time, so production
+  // bundles never reference the module (next/web-vitals is CommonJS and would not shake out).
+  const WebVitals =
+    process.env.NODE_ENV === 'development' ? (await import('@/app/ui/web-vitals')).default : null
 
   return (
     <html lang={locale} dir={dirFor(locale)} className={rubik.variable}>
       <body className="min-h-dvh font-sans antialiased">
-        {process.env.NODE_ENV === 'development' && <WebVitals />}
+        {WebVitals ? <WebVitals /> : null}
         {/* Only the namespaces client components read; each new one is added here. */}
         <NextIntlClientProvider
           messages={{
             Common: messages.Common,
             ErrorPage: messages.ErrorPage,
+            LanguageSwitch: messages.LanguageSwitch,
             SignInForm: messages.SignInForm,
           }}
         >

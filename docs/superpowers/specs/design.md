@@ -265,7 +265,7 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 | `/building/parking` | Who parks where | — | my spots first, guest spots, none yet | `data/parking.list` | grouped list; desktop grid |
 | `/building/cameras` | Live views | refresh a snapshot | none visible → 404, one failing → inline error with retry | `data/cameras.listVisible` (embed URLs only for allowed roles; snapshot URLs never selected) | 1 column phone, 2 columns desktop, 16:9 |
 | `/meeting` | Vote and see the result | mark each slot | no poll, open, closed, confirmed (+ calendar, minutes), two apartments (`?apartment=`) | `data/meeting.current`, `ranking`; `actions/meeting.vote` (save on change, `useOptimistic`) | slot cards; desktop table with tallies |
-| `/more` | Phone menu | — | admin link for committee | session role | list (desktop redirects to `/profile`) |
+| `/more` | Phone menu: profile, language, sign out | — | admin link for committee | session role | list; on desktop the same list, reached from the side nav (no redirect: it would need client code and break shared links) |
 | `/profile` | Me and settings | "Save" | saved, validation errors, demo (read-only) | `data/users.me`; `actions/users.*` | 1-column form |
 
 ### Admin section (`/admin`, committee and admin; ★ admin only)

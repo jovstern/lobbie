@@ -1,10 +1,11 @@
-const intlLocales = { he: 'he-IL', en: 'en-IL' } as const
+import { intlLocales } from '@/i18n/locale'
+import type { Locale } from '@/i18n/routing'
 
 const agorotPerShekel = 100
 const maxAgorot = 10_000_000 * agorotPerShekel
 
 /** Formats agorot as shekels: whole amounts with no decimals (₪350), others with two (₪350.50). */
-export function formatAgorot(agorot: number, locale: 'he' | 'en'): string {
+export function formatAgorot(agorot: number, locale: Locale): string {
   const fractionDigits = agorot % agorotPerShekel === 0 ? 0 : 2
   return new Intl.NumberFormat(intlLocales[locale], {
     style: 'currency',

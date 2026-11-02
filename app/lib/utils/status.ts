@@ -1,4 +1,10 @@
-import type { ApartmentSummary, FeeRate, MonthPayment, MonthStatus } from '@/app/lib/definitions'
+import type {
+  ApartmentStanding,
+  ApartmentSummary,
+  FeeRate,
+  MonthPayment,
+  MonthStatus,
+} from '@/app/lib/definitions'
 import { addMonths } from './dates'
 import { feeFor } from './fees'
 
@@ -63,4 +69,28 @@ export function apartmentSummary(billing: ApartmentBilling): ApartmentSummary {
       totalOwedAgorot += status.remainingAgorot
   }
   return { current: monthStatus(billing, billing.currentMonth), monthsBehind, totalOwedAgorot }
+}
+
+/**
+ * What Home says about an apartment. Being behind outweighs the current month: an apartment
+ * that owes earlier months is overdue even when this month is paid or has no fee.
+ */
+export function apartmentStanding(summary: ApartmentSummary): ApartmentStanding {
+  const { current, monthsBehind, totalOwedAgorot } = summary
+  if (monthsBehind > 0) return { kind: 'overdue', monthsBehind, totalOwedAgorot }
+  switch (current.kind) {
+    case 'not-billed':
+    case 'no-fee':
+    case 'paid':
+      return { kind: current.kind }
+    // The current month is never upcoming; were it so, it would read as due.
+    case 'due':
+    case 'overdue':
+    case 'upcoming':
+      return {
+        kind: 'due',
+        remainingAgorot: current.remainingAgorot,
+        partial: current.paidAgorot > 0,
+      }
+  }
 }
