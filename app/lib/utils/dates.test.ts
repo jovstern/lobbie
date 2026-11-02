@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, todayIn } from './dates'
+import { addMonths, currentMonthIn, todayIn } from './dates'
 
 describe('todayIn', () => {
   it.each([
@@ -23,6 +23,19 @@ describe('todayIn', () => {
     ['2026-10-25T22:30:00Z', '2026-10-26'],
   ])('%s is %s in Jerusalem', (instant, expected) => {
     expect(todayIn('Asia/Jerusalem', new Date(instant))).toBe(expected)
+  })
+})
+
+describe('currentMonthIn', () => {
+  it.each([
+    ['2026-11-02T10:00:00Z', '2026-11'],
+    // 31 October at 23:30 in Israel is still October; 00:30 on 1 November (still 31 October
+    // in UTC) is November.
+    ['2026-10-31T21:30:00Z', '2026-10'],
+    ['2026-10-31T22:30:00Z', '2026-11'],
+    ['2026-12-31T22:30:00Z', '2027-01'],
+  ])('%s is %s in Jerusalem', (instant, expected) => {
+    expect(currentMonthIn('Asia/Jerusalem', new Date(instant))).toBe(expected)
   })
 })
 

@@ -1,0 +1,88 @@
+import { describe, expect, it } from 'vitest'
+import { formatAgorot, parseShekelsToAgorot } from './money'
+
+// The Hebrew format carries a right-to-left mark and a non-breaking space, so expectations
+// come from Intl itself rather than from hard-coded invisible characters.
+const ils = (locale: string, fractionDigits: number) =>
+  new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'ILS',
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
+
+describe('formatAgorot', () => {
+  it.each([
+    ['he', 'he-IL', 35_000, 350, 0],
+    ['he', 'he-IL', 35_050, 350.5, 2],
+    ['he', 'he-IL', 123_456_789, 1_234_567.89, 2],
+    ['he', 'he-IL', 0, 0, 0],
+    ['he', 'he-IL', -50_000, -500, 0],
+    ['en', 'en-IL', 35_000, 350, 0],
+    ['en', 'en-IL', 35_050, 350.5, 2],
+    ['en', 'en-IL', 5, 0.05, 2],
+    ['en', 'en-IL', 123_456_700, 1_234_567, 0],
+    ['en', 'en-IL', -1_299, -12.99, 2],
+  ] as const)('%s: %i agorot', (locale, intlLocale, agorot, shekels, fractionDigits) => {
+    expect(formatAgorot(agorot, locale)).toBe(ils(intlLocale, fractionDigits).format(shekels))
+  })
+
+  it('shows whole shekels without decimals and the rest with two', () => {
+    expect(formatAgorot(35_000, 'en')).toBe('₪350')
+    expect(formatAgorot(35_050, 'en')).toBe('₪350.50')
+    expect(formatAgorot(123_456, 'en')).toBe('₪1,234.56')
+  })
+
+  it('puts the shekel sign after the number in Hebrew', () => {
+    const formatted = formatAgorot(35_050, 'he').replace(/[\p{Cf}\s]/gu, '')
+    expect(formatted).toBe('350.50₪')
+  })
+})
+
+describe('parseShekelsToAgorot', () => {
+  it.each([
+    ['350', 35_000],
+    ['350.5', 35_050],
+    ['350.50', 35_050],
+    ['350.05', 35_005],
+    ['1,234.56', 123_456],
+    ['1,234,567', 123_456_700],
+    ['  350  ', 35_000],
+    ['0', 0],
+    ['0.01', 1],
+    ['0.29', 29],
+    ['19.99', 1_999],
+    ['10000000', 1_000_000_000],
+    ['10,000,000.00', 1_000_000_000],
+    // Floating point would give 1_005.9999… for 10.06 × 100; the parser never multiplies floats.
+    ['10.06', 1_006],
+    ['4.35', 435],
+  ])('%j is %i agorot', (input, expected) => {
+    const parsed = parseShekelsToAgorot(input)
+    expect(parsed).toBe(expected)
+    expect(Number.isInteger(parsed)).toBe(true)
+  })
+
+  it.each([
+    [''],
+    ['   '],
+    ['-350'],
+    ['-0.5'],
+    ['350.505'],
+    ['1.005'],
+    ['350.'],
+    ['.5'],
+    ['abc'],
+    ['NaN'],
+    ['Infinity'],
+    ['1e3'],
+    ['350 ₪'],
+    ['12,34'],
+    ['1,2345'],
+    [',350'],
+    ['10000000.01'],
+    ['99999999999'],
+  ])('rejects %j', (input) => {
+    expect(parseShekelsToAgorot(input)).toBeNull()
+  })
+})

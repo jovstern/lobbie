@@ -157,7 +157,8 @@ app/
     logger.ts  rate-limit.ts  safe-fetch.ts
     data/<area>.ts                one async function per query, building-scoped
     actions/<area>.ts             'use server'; Zod schemas and State types next to each action
-    utils/money.ts fees.ts recurrence.ts meeting.ts ics.ts dates.ts redirect.ts
+    utils/money.ts fees.ts status.ts ledger.ts recurrence.ts meeting.ts ics.ts
+          dates.ts redirect.ts
     test/db.ts                    PGlite + migrations, per test file
   ui/<area>/*.tsx  ui/skeletons.tsx  ui/web-vitals.tsx
 i18n/ routing.ts request.ts navigation.ts      messages/he.json  en.json
