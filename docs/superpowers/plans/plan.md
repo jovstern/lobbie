@@ -53,9 +53,9 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | Addition | Where | Why |
 |---|---|---|
 | `drizzle-orm`, `drizzle-kit` | `app/lib/db.ts`, `schema.ts`, `drizzle/` | 20 tables, migrations and typed queries (`sql.md`) |
-| `postgres` | `app/lib/db.ts` | The course's driver; TCP supports interactive transactions on Neon |
+| `postgres` (`^3.4.9`) | `app/lib/db.ts` | The course's driver; TCP supports interactive transactions on Neon. Stays on 3.4: 4.0.0 was four days old at M1 |
 | `@electric-sql/pglite` (dev) | `app/lib/test/db.ts` | Real Postgres in-process for data tests: isolated, fast, no network, runs in CI |
-| `better-auth`, `@better-auth/cli` (dev) | `app/lib/auth.ts`, `/api/auth/[...all]` | Stable magic-link auth with a Drizzle adapter (ADR 0001); the CLI generates its tables |
+| `better-auth`, `auth` (dev) | `app/lib/auth.ts`, `/api/auth/[...all]` | Stable magic-link auth with a Drizzle adapter (ADR 0001); `auth` is Better Auth's CLI, which generates its tables (`@better-auth/cli` is deprecated at 1.4.21) |
 | `next-intl` | `i18n/`, `proxy.ts`, `app/[locale]/layout.tsx` | he/en routing, RTL, ICU messages; its `NextIntlClientProvider` is the only context, given only the messages client components need |
 | `tsx` (dev) | `scripts/*.ts` | Runs TypeScript scripts with the `@/` alias, outside Next.js |
 | `@axe-core/playwright` (dev) | `e2e/a11y.spec.ts` | The `metrics` accessibility gate |

@@ -126,7 +126,7 @@ Per ADR 0001. Stack-conventions files that apply: **`SKILL.md`, `nextjs.md`, `sq
 | Framework | Next.js 16.4 App Router, TypeScript strict, React Compiler, Cache Components, partial prefetching |
 | Data | Postgres on Neon (`dev`, `test` branches; `main` at launch); Drizzle ORM 0.45 on `postgres` 3.4; `drizzle-kit` SQL migrations |
 | Tests | Vitest + PGlite (data layer); Testing Library; Playwright + `@axe-core/playwright` against the Neon `test` branch |
-| Auth | Better Auth 1.7: magic-link plugin, Drizzle adapter, `session.cookieCache` on, ids generated as uuid; `@better-auth/cli` generates its tables into the Drizzle schema |
+| Auth | Better Auth 1.7: magic-link plugin, Drizzle adapter, `session.cookieCache` on, ids generated as uuid; its CLI (the `auth` package) generates its tables into the Drizzle schema, timestamps post-processed to `timestamptz` |
 | i18n | next-intl 4, `localePrefix: 'as-needed'`, `he` default, `en`; `localeDetection: false` (Hebrew whatever the browser), the proxy redirects unprefixed URLs to `/en` when the `NEXT_LOCALE` cookie is `en` |
 | Styling | Tailwind v4, tokens in `@theme`, logical utilities only; Radix (`radix-ui`); `@heroicons/react` |
 | Mail | `app/lib/mail.ts`: `outbox` transport only when `MAIL_TRANSPORT=outbox` (refuses to start if `VERCEL_ENV` is set); Resend at launch |
