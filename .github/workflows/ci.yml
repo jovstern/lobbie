@@ -10,8 +10,9 @@ concurrency:
   cancel-in-progress: true
 
 # Database-free checks only: the database credentials live in the local .env, not on GitHub.
-# Unit tests, the build and the recorded browser tests run locally before each PR, and their
-# results are listed in the PR's Checks section.
+# Unit tests (and, from M1 task 3, PGlite data tests) run here too. The build and the
+# recorded browser tests run locally before each PR, and their results are listed in the
+# PR's Checks section.
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -25,3 +26,4 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm test
