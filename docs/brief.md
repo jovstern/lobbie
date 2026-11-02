@@ -1,6 +1,6 @@
 # Lobbie — product brief and plan
 
-> **Lobbie** (לובי) — *everyone under one roof.*
+> **Lobbie** (לובי) — _everyone under one roof._
 > A responsive web app where the residents of a building see everything about it, and the
 > building committee (ועד בית) runs it from one place.
 
@@ -11,6 +11,7 @@ milestone plan. Anything marked **Recommended** is still the user's decision the
 ## 1. Product
 
 **Who it is for**
+
 - **Residents** (owners and tenants): see what's going on, what they owe and where the money
   goes; report problems; vote on the meeting time.
 - **Committee members** (ועד): run the building, including fees, expenses, schedules,
@@ -21,6 +22,7 @@ milestone plan. Anything marked **Recommended** is still the user's decision the
 up, how much the building has, and what's happening this week.
 
 **Success looks like**
+
 - A committee can set up a building and invite every apartment in under 30 minutes.
 - Residents stop asking "did I pay?", "when is the cleaner coming?" and "who parks in spot 7?"
   in the WhatsApp group.
@@ -35,19 +37,19 @@ app for now; a PWA or Expo can come later on the same backend.
 
 ### Must-haves (v1)
 
-| Area | What residents see | What the committee/admin does |
-|---|---|---|
-| **Home** | This week at a glance: payment status, building balance, the next cleaning and gardening dates, the latest announcements, the meeting poll if one is open | — |
-| **Residents directory** | Who lives in which apartment (floor, apartment, names); contact details only if that resident opted in | Add, edit and remove apartments and residents; owner vs tenant |
-| **Payments** | Their apartment's monthly fee status (paid / due / overdue) and history | Set the monthly fee (per building or per apartment); record payments; see who is behind and send a reminder |
-| **Building balance** | The current fund balance; income and expenses by category (cleaning, garden, elevator, electricity, repairs) with receipts | Record expenses with a category, an amount, a date and a receipt upload |
-| **Schedules** | Cleaning days and times, gardening, garbage and recycling days, as a weekly view | Create recurring schedules and one-off changes ("no cleaning on Sukkot") |
-| **Announcements** | A feed of committee posts; important posts pinned | Write, pin and archive posts |
-| **Committee** | Who's on the committee, their roles and how to reach them | Assign committee members and roles |
-| **Parking** | A list or simple map of spots: who owns which, and guest spots | Assign spots to apartments, mark guest spots |
-| **Cameras** | Live views of shared-area cameras (entrance, parking, lobby), only if the building has them | Add a camera (name, location, embed or stream URL) and choose which roles can see it; the page is hidden when there are none |
-| **Annual meeting** | Mark each proposed slot ✅ works / 🤷 if needed / ❌ no, once per apartment; see the ranking | Open a poll with candidate slots, close it, confirm the winning slot (with an "Add to calendar" link), and later post the minutes |
-| **Admin panel** | — | One place for all of the above, plus building details and invites |
+| Area                    | What residents see                                                                                                                                        | What the committee/admin does                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Home**                | This week at a glance: payment status, building balance, the next cleaning and gardening dates, the latest announcements, the meeting poll if one is open | —                                                                                                                                 |
+| **Residents directory** | Who lives in which apartment (floor, apartment, names); contact details only if that resident opted in                                                    | Add, edit and remove apartments and residents; owner vs tenant                                                                    |
+| **Payments**            | Their apartment's monthly fee status (paid / due / overdue) and history                                                                                   | Set the monthly fee (per building or per apartment); record payments; see who is behind and send a reminder                       |
+| **Building balance**    | The current fund balance; income and expenses by category (cleaning, garden, elevator, electricity, repairs) with receipts                                | Record expenses with a category, an amount, a date and a receipt upload                                                           |
+| **Schedules**           | Cleaning days and times, gardening, garbage and recycling days, as a weekly view                                                                          | Create recurring schedules and one-off changes ("no cleaning on Sukkot")                                                          |
+| **Announcements**       | A feed of committee posts; important posts pinned                                                                                                         | Write, pin and archive posts                                                                                                      |
+| **Committee**           | Who's on the committee, their roles and how to reach them                                                                                                 | Assign committee members and roles                                                                                                |
+| **Parking**             | A list or simple map of spots: who owns which, and guest spots                                                                                            | Assign spots to apartments, mark guest spots                                                                                      |
+| **Cameras**             | Live views of shared-area cameras (entrance, parking, lobby), only if the building has them                                                               | Add a camera (name, location, embed or stream URL) and choose which roles can see it; the page is hidden when there are none      |
+| **Annual meeting**      | Mark each proposed slot ✅ works / 🤷 if needed / ❌ no, once per apartment; see the ranking                                                              | Open a poll with candidate slots, close it, confirm the winning slot (with an "Add to calendar" link), and later post the minutes |
+| **Admin panel**         | —                                                                                                                                                         | One place for all of the above, plus building details and invites                                                                 |
 
 ### Later (v2+)
 
@@ -62,23 +64,27 @@ app for now; a PWA or Expo can come later on the same backend.
 ## 3. Key rules and logic
 
 **Roles and access**
+
 - One user can belong to one or more apartments, each in one building (v1: one building per user is fine).
 - `resident` < `committee` < `admin`. Residents see their own apartment's payments in detail,
   and building totals only; the committee sees every apartment's status.
 - Everything is scoped to the building; no resident ever sees another building's data.
 
 **Joining**
+
 - The admin creates the building and its apartments, then shares an invite link or code per
   apartment. A resident signs in (magic link or phone OTP, **Recommended:** email magic link
   for v1) and is attached to that apartment.
 
 **Payments and balance**
+
 - Money is stored in agorot as integers, never floats. Currency is ILS.
 - An apartment's status for a month is `paid`, `due` (current month, unpaid) or `overdue`.
 - The balance is computed from the ledger (opening balance + payments − expenses), never
   stored as an editable number. Every change is a ledger entry, so the history is auditable.
 
 **Meeting scheduler**
+
 - One response per apartment per slot: `yes` = 2 points, `maybe` = 1, `no` = 0.
 - Ranking: most `yes`, then the highest score, then the fewest `no`, then the earliest date.
 - Quorum: each slot shows whether `yes` (and `yes + maybe`) reach the building's quorum,
@@ -87,12 +93,14 @@ app for now; a PWA or Expo can come later on the same backend.
   announcement and an `.ics` "Add to calendar" link.
 
 **Cameras**
+
 - Lobbie does not process video. It shows what the building's DVR, NVR or cloud camera
   service already exposes: an embed URL, an HLS stream or a snapshot URL.
 - The URLs are secrets: stored server-side and only rendered for allowed roles.
 - Shared areas only; the admin form says so.
 
 **Privacy**
+
 - Phone and email in the directory are hidden unless the resident opts in.
 - Receipts and camera URLs are never public.
 
@@ -130,6 +138,7 @@ nav on desktop. The admin panel is a separate section, shown only to committee a
 ## 6. Recommended stack (decided in `/build`)
 
 **Recommended:** the kit's Next.js starter, following the Next.js Learn conventions.
+
 - Next.js (App Router), TypeScript, Server Components for reads, Server Actions for writes,
   Zod validation, view state in the URL.
 - **Postgres on Neon** with a typed query layer. The data is relational (buildings →
@@ -147,15 +156,15 @@ parts and no benefit for this app.
 
 ## 7. Milestones (rough, re-estimated in `/build`)
 
-| # | Milestone | What you can do at the end |
-|---|---|---|
-| **M1** | Foundation | Scaffold, he/en with RTL, the layout (bottom tabs and side nav), the design direction, the database and migrations, seed data for a demo building, deploy previews |
-| **M2** | Auth and the building | Sign in by magic link; the admin creates a building, apartments and invites; residents join; the directory with contact opt-in; roles and the committee page |
-| **M3** | Money | Fees, recording payments, a resident's payment status and history, expenses with receipts, the ledger and balance, overdue reminders (in-app) |
-| **M4** | Life in the building | Recurring schedules with exceptions, announcements with pinning, the Home "this week" dashboard |
-| **M5** | Parking and cameras | Parking spots and assignments; the cameras page with role-based visibility |
-| **M6** | Annual meeting | Polls, slots, voting per apartment, ranking and quorum, confirming, `.ics`, minutes |
-| **M7** | Launch | Admin panel polish, empty/loading/error states everywhere, accessibility pass, metadata, 404/error pages, monitoring, README, production on lobbie.co.il |
+| #      | Milestone             | What you can do at the end                                                                                                                                         |
+| ------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **M1** | Foundation            | Scaffold, he/en with RTL, the layout (bottom tabs and side nav), the design direction, the database and migrations, seed data for a demo building, deploy previews |
+| **M2** | Auth and the building | Sign in by magic link; the admin creates a building, apartments and invites; residents join; the directory with contact opt-in; roles and the committee page       |
+| **M3** | Money                 | Fees, recording payments, a resident's payment status and history, expenses with receipts, the ledger and balance, overdue reminders (in-app)                      |
+| **M4** | Life in the building  | Recurring schedules with exceptions, announcements with pinning, the Home "this week" dashboard                                                                    |
+| **M5** | Parking and cameras   | Parking spots and assignments; the cameras page with role-based visibility                                                                                         |
+| **M6** | Annual meeting        | Polls, slots, voting per apartment, ranking and quorum, confirming, `.ics`, minutes                                                                                |
+| **M7** | Launch                | Admin panel polish, empty/loading/error states everywhere, accessibility pass, metadata, 404/error pages, monitoring, README, production on lobbie.co.il           |
 
 Each milestone is a branch and a PR with a code review, a UI review, a metrics report and a demo GIF.
 

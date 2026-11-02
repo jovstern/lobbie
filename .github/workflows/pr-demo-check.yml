@@ -1,0 +1,20 @@
+name: PR demo
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a demo image in the PR description
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if printf '%s' "$BODY" | grep -Eq '!\[[^]]*\]\([^)]+\)|<img [^>]*src='; then
+            echo "Demo image found."
+          else
+            echo "::error::This PR has no demo image or GIF in its description. Run the pr-demo skill and add it under a Demo heading."
+            exit 1
+          fi
