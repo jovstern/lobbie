@@ -413,6 +413,8 @@ Requirements: R34–R40.
    - The `storage.ts` Vercel Blob driver.
    - Env for each environment, and the domain's DNS.
    - `scripts/create-building.ts` (a name and the first admin's email).
+   - The sign-in rate limit per IP takes the platform's trusted address (`ipAddress()` from
+     `@vercel/functions`, or `x-real-ip`) instead of the first `x-forwarded-for` entry.
    - Tests: driver unit tests with the SDKs mocked; the script on PGlite.
 2. **Demo sign-in** (medium). `actions/demo.signInAsDemo(role)` creates a session for the
    seeded demo user (a Better Auth server session) only when the building is `isDemo`. A

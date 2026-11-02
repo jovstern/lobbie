@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
-import { getLocale, getTranslations } from 'next-intl/server'
+import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { dirFor } from '@/i18n/locale'
 import { routing } from '@/i18n/routing'
 import { rubik } from '@/app/ui/fonts'
@@ -22,13 +22,22 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'>) {
   // Validated in i18n/request.ts: an unknown locale is a 404.
   const locale = await getLocale()
+  const messages = await getMessages()
 
   return (
     <html lang={locale} dir={dirFor(locale)} className={rubik.variable}>
       <body className="min-h-dvh font-sans antialiased">
         {process.env.NODE_ENV === 'development' && <WebVitals />}
-        {/* No client component reads messages yet; each one adds its namespace here. */}
-        <NextIntlClientProvider messages={null}>{children}</NextIntlClientProvider>
+        {/* Only the namespaces client components read; each new one is added here. */}
+        <NextIntlClientProvider
+          messages={{
+            Common: messages.Common,
+            ErrorPage: messages.ErrorPage,
+            SignInForm: messages.SignInForm,
+          }}
+        >
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   )

@@ -154,7 +154,11 @@ export const rateLimits = pgTable(
     windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
     count: integer('count').notNull().default(0),
   },
-  (t) => [primaryKey({ name: 'rate_limits_pk', columns: [t.key, t.windowStart] })],
+  (t) => [
+    primaryKey({ name: 'rate_limits_pk', columns: [t.key, t.windowStart] }),
+    // Pruning deletes by window_start alone, which the primary key (key first) cannot serve.
+    index('rate_limits_window_start_idx').on(t.windowStart),
+  ],
 )
 
 export const feeRates = pgTable(

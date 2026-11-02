@@ -73,3 +73,9 @@ stable release with an official magic-link plugin and Drizzle adapter.
   and partial prefetching (installed `content-security-policy.md`).
 - Moving to production is configuration (env and drivers behind `mail.ts` and `storage.ts`),
   not a rewrite.
+- The sign-in limit of 3 links per email per 15 minutes lets a third party lock someone out
+  for up to 15 minutes by requesting links for their address. This is accepted: the limit
+  never reveals whether an email has an account, and the lockout is short.
+- Until launch, the sign-in limit per IP uses the first `x-forwarded-for` entry, which a
+  client can set. M7 switches it to the platform's trusted address (`ipAddress()` from
+  `@vercel/functions`, or `x-real-ip` on Vercel).

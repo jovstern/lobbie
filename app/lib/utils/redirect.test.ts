@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { safeNextPath } from '@/app/lib/utils/redirect'
+import { safeNextPath, withLocalePrefix } from '@/app/lib/utils/redirect'
 
 describe('safeNextPath', () => {
   it.each([
@@ -48,5 +48,22 @@ describe('safeNextPath', () => {
 
   it('returns the given fallback when the input is rejected', () => {
     expect(safeNextPath('//evil.com', '/en')).toBe('/en')
+  })
+})
+
+describe('withLocalePrefix', () => {
+  it.each([
+    ['/', 'he', '/'],
+    ['/money', 'he', '/money'],
+    ['/', 'en', '/en'],
+    ['/money?month=2026-11', 'en', '/en/money?month=2026-11'],
+    ['/?tab=1', 'en', '/en?tab=1'],
+    ['/en/money', 'en', '/en/money'],
+    ['/en/money', 'he', '/en/money'],
+    ['/he/money', 'en', '/he/money'],
+    ['/en?tab=1', 'en', '/en?tab=1'],
+    ['/#top', 'en', '/en#top'],
+  ] as const)('%j in %s is %j', (path, locale, expected) => {
+    expect(withLocalePrefix(path, locale)).toBe(expected)
   })
 })

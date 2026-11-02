@@ -1,4 +1,4 @@
-import type { feeRates, payments } from './schema'
+import type { feeRates, payments, roleEnum } from './schema'
 
 /** A fee rate as the fee logic needs it; `apartmentId` null is the building default. */
 export type FeeRate = Pick<
@@ -36,4 +36,18 @@ export type BuildingBalance = {
   paymentsAgorot: number
   expensesAgorot: number
   totalAgorot: number
+}
+
+/** A member's role in their building, lowest first. */
+export type Role = (typeof roleEnum.enumValues)[number]
+
+/** The signed-in person as a member of their building (one building per user, spec §3). */
+export type Member = {
+  userId: string
+  buildingId: string
+  role: Role
+  apartmentIds: string[]
+  isDemo: boolean
+  timeZone: string
+  buildingName: string
 }

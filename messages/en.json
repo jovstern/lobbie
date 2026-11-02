@@ -12,5 +12,57 @@
   },
   "Home": {
     "title": "Everything in your building, in one place"
+  },
+  "Auth": {
+    "appName": "Lobbie",
+    "tagline": "Everyone under one roof",
+    "panelDescription": "Payments, announcements and schedules for your building, in one place.",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "SignIn": {
+    "title": "Sign in",
+    "heading": "Sign in to Lobbie",
+    "lead": "Enter your email and we'll send you a link to sign in. No password needed.",
+    "expired": "That sign-in link has expired or was already used. Enter your email to get a new one.",
+    "signInFailed": "We couldn't sign you in. Please try again."
+  },
+  "SignInForm": {
+    "emailLabel": "Email",
+    "submit": "Send me a link",
+    "sending": "Sending…",
+    "rateLimited": "Too many attempts; try again in {minutes, plural, one {# minute} other {# minutes}}."
+  },
+  "SignInErrors": {
+    "invalidEmail": "Enter an email address like name@example.com.",
+    "sendFailed": "We couldn't send the email. Please try again in a moment."
+  },
+  "CheckEmail": {
+    "title": "Check your email",
+    "body": "We've sent you a sign-in link. It works once and is valid for 15 minutes.",
+    "hint": "Can't find it? Look in your spam folder.",
+    "differentEmail": "Use a different email"
+  },
+  "Join": {
+    "title": "Join your building",
+    "body": "Ask your building committee for an invite link, then open it on this device to join your apartment."
+  },
+  "Authz": {
+    "signedOut": "Your session has ended. Sign in again to continue.",
+    "noMembership": "You're not a member of a building yet.",
+    "forbidden": "You don't have permission to do that."
+  },
+  "Email": {
+    "subject": "Your Lobbie sign-in link",
+    "greeting": "Hi,",
+    "intro": "Here's your link to sign in to Lobbie:",
+    "action": "Sign in to Lobbie",
+    "expiry": "The link works once and expires in 15 minutes.",
+    "ignore": "If you didn't ask for it, you can ignore this email."
+  },
+  "ErrorPage": {
+    "title": "Something went wrong",
+    "body": "We couldn't load this page. Try again, or go back home.",
+    "retry": "Try again"
   }
 }

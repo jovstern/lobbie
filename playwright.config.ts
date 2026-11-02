@@ -22,5 +22,11 @@ export default defineConfig({
     // Always a fresh build: a server left running from an earlier run would test old code.
     reuseExistingServer: false,
     timeout: 180_000,
+    env: {
+      // Test-only values (approved in the plan); the e2e server never sees a real secret.
+      BETTER_AUTH_SECRET: 'e2e-only-not-a-secret-4f9c2a7d1b8e6c3f0a5d9b2e7c1f4a8d',
+      BETTER_AUTH_URL: `http://localhost:${port}`,
+      MAIL_TRANSPORT: 'outbox',
+    },
   },
 })

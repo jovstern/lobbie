@@ -1,5 +1,8 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { getSessionCookie } from 'better-auth/cookies'
+import { NextRequest, NextResponse } from 'next/server'
 import createMiddleware from 'next-intl/middleware'
+import { isAppPage } from '@/app/lib/utils/app-sections'
+import { requestPathHeader } from '@/app/lib/utils/redirect'
 import { localeInPath } from '@/i18n/locale'
 import { localeCookie, routing } from '@/i18n/routing'
 
@@ -30,8 +33,33 @@ function rememberLocale(request: NextRequest, response: NextResponse): NextRespo
   return response
 }
 
+// Optimistic: a cookie that exists may still be expired, so pages check the session too
+// (app/lib/authz.ts). This only saves a signed-out visitor a round trip.
+function redirectToSignIn(request: NextRequest): NextResponse | null {
+  const { pathname, search } = request.nextUrl
+  if (!isAppPage(pathname) || getSessionCookie(request) !== null) return null
+  const locale = localeInPath(pathname) ?? routing.defaultLocale
+  const url = request.nextUrl.clone()
+  url.pathname = locale === routing.defaultLocale ? '/sign-in' : `/${locale}/sign-in`
+  url.search = `?${new URLSearchParams({ next: `${pathname}${search}` })}`
+  return NextResponse.redirect(url)
+}
+
+// Pages read the requested path (for `?next=`) from this header; it is always overwritten, so
+// a client cannot choose it.
+function withRequestPath(request: NextRequest): NextRequest {
+  const headers = new Headers(request.headers)
+  headers.set(requestPathHeader, `${request.nextUrl.pathname}${request.nextUrl.search}`)
+  return new NextRequest(request, { headers })
+}
+
 export default function proxy(request: NextRequest) {
-  return redirectToSavedLocale(request) ?? rememberLocale(request, handleI18nRouting(request))
+  const savedLocale = redirectToSavedLocale(request)
+  if (savedLocale) return savedLocale
+  const response = handleI18nRouting(withRequestPath(request))
+  // next-intl's own redirects (such as /he → /) come first; the target is checked next time.
+  if (response.headers.has('location')) return rememberLocale(request, response)
+  return rememberLocale(request, redirectToSignIn(request) ?? response)
 }
 
 export const config = {

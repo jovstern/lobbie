@@ -1,3 +1,6 @@
+import { localeInPath } from '@/i18n/locale'
+import { routing, type Locale } from '@/i18n/routing'
+
 // C0 controls and DEL: browsers strip some of them, which can turn "/\t/evil" into "//evil".
 const controlCharacter = /[\u0000-\u001f\u007f]/
 
@@ -26,3 +29,16 @@ export function safeNextPath(input: unknown, fallback = '/'): string {
   if (decoded === null) return fallback
   return isSafeRelativePath(input) && isSafeRelativePath(decoded) ? input : fallback
 }
+
+/**
+ * Adds `locale`'s prefix to a site path that has none (Hebrew, the default, has no prefix).
+ * A path that already names a locale is kept, so a `next` path keeps the language it had.
+ */
+export function withLocalePrefix(path: string, locale: Locale): string {
+  const pathname = path.split(/[?#]/, 1)[0]
+  if (locale === routing.defaultLocale || localeInPath(pathname) !== null) return path
+  return pathname === '/' ? `/${locale}${path.slice(1)}` : `/${locale}${path}`
+}
+
+/** The request header the proxy sets to the requested path and query, for `?next=`. */
+export const requestPathHeader = 'x-request-path'
