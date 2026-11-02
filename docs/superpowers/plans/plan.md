@@ -33,8 +33,14 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
   `text-start`); no `left`/`right`/`ml`/`mr`; directional icons flip with
   `rtl:-scale-x-100`. Every string is in `messages/he.json` and `messages/en.json`.
 - **Cache Components:** session-dependent reads inside `<Suspense>` with a skeleton matching
-  the final layout; `setRequestLocale` in every layout and page; nothing user-specific in
-  `'use cache'`. `getSession`/`requireMember` are wrapped in React `cache()`.
+  the final layout; nothing user-specific in `'use cache'`. `getSession`/`requireMember` are
+  wrapped in React `cache()`.
+- **Locale:** `i18n/request.ts` reads it with `next/root-params` (`hasLocale`, else
+  `notFound()`), so pages stay static with no `setRequestLocale` (next-intl 4.14 deprecates
+  it); server code calls `getLocale()`/`getTranslations()` with no locale argument.
+  `localeDetection: false`: Hebrew whatever the browser's language; `proxy.ts` sends an
+  unprefixed URL to `/en` only when the `NEXT_LOCALE` cookie is `en`, and writes the cookie
+  on every page load. A language switch sets the cookie to the locale it moves to.
 - **Client components** only for leaves (forms with `useActionState`, save-on-change
   controls, nav active state, language switch, snapshot refresher, web vitals).
 - **Tests** never touch the Neon `dev` branch. Data tests use PGlite; e2e uses
@@ -119,16 +125,19 @@ and part of R25.
    - The CI and Vitest config changes listed above.
    - Tests: a logger unit test, and a token contrast test (the pairs from §7, computed).
 2. **i18n, routing and proxy** (medium).
-   - `i18n/routing.ts` (`he` default, `en`, `as-needed`), `request.ts`, `navigation.ts`, and
-     the messages files.
-   - `app/[locale]/layout.tsx` with `lang`, `dir`, `generateStaticParams` and
-     `setRequestLocale`. Delete `app/layout.tsx`; add `app/not-found.tsx` with its own
-     `<html>`.
-   - `proxy.ts`: next-intl, with the matcher excluding `api`, `_next` and files.
+   - `i18n/routing.ts` (`he` default, `en`, `as-needed`, `localeDetection: false`, a one-year
+     `NEXT_LOCALE` cookie), `request.ts` (locale from `next/root-params`), `navigation.ts`,
+     and the messages files.
+   - `app/[locale]/layout.tsx` (the root layout) with `lang`, `dir` and
+     `generateStaticParams`; the locale from `getLocale()`, no `setRequestLocale`. Delete
+     `app/layout.tsx`; add `app/not-found.tsx` with its own `<html>`, and a
+     `[locale]/[...rest]` page that calls `notFound()` for the localized 404.
+   - `proxy.ts`: next-intl, plus the cookie redirect to `/en` and writing the cookie, with
+     the matcher excluding `api`, `_next` and files.
    - `app/lib/utils/redirect.ts`: safe `next` paths.
    - Tests: a messages-parity test (the same keys in he and en); `redirect.ts` unit tests
-     (`//evil`, absolute URLs, the locale kept); an e2e smoke test that `/` is `dir="rtl"`
-     and `/en` is `dir="ltr"`.
+     (`//evil`, absolute URLs, the locale kept); e2e: `/` is `dir="rtl"` in an English
+     browser, `/en` is `dir="ltr"`, the cookie redirect, and the 404s.
 3. **Database layer** (large).
    - A minimal `app/lib/auth.ts` (Drizzle adapter, the magic-link plugin, `additionalFields`
      `phone` and `locale`, uuid ids). `auth:generate` turns it into the auth tables.

@@ -127,7 +127,7 @@ Per ADR 0001. Stack-conventions files that apply: **`SKILL.md`, `nextjs.md`, `sq
 | Data | Postgres on Neon (`dev`, `test` branches; `main` at launch); Drizzle ORM 0.45 on `postgres` 3.4; `drizzle-kit` SQL migrations |
 | Tests | Vitest + PGlite (data layer); Testing Library; Playwright + `@axe-core/playwright` against the Neon `test` branch |
 | Auth | Better Auth 1.7: magic-link plugin, Drizzle adapter, `session.cookieCache` on, ids generated as uuid; `@better-auth/cli` generates its tables into the Drizzle schema |
-| i18n | next-intl 4, `localePrefix: 'as-needed'`, `he` default, `en` |
+| i18n | next-intl 4, `localePrefix: 'as-needed'`, `he` default, `en`; `localeDetection: false` (Hebrew whatever the browser), the proxy redirects unprefixed URLs to `/en` when the `NEXT_LOCALE` cookie is `en` |
 | Styling | Tailwind v4, tokens in `@theme`, logical utilities only; Radix (`radix-ui`); `@heroicons/react` |
 | Mail | `app/lib/mail.ts`: `outbox` transport only when `MAIL_TRANSPORT=outbox` (refuses to start if `VERCEL_ENV` is set); Resend at launch |
 | Files | `app/lib/storage.ts` (`put`, `get`, `remove` by key): local disk under `.data/uploads/` now; Vercel Blob at launch; always served through an authorized Route Handler |
@@ -140,7 +140,9 @@ Per ADR 0001. Stack-conventions files that apply: **`SKILL.md`, `nextjs.md`, `sq
 app/
   [locale]/
     layout.tsx                    root layout: <html lang dir>, fonts, generateStaticParams(locales),
-                                  setRequestLocale, NextIntlClientProvider (client messages only)
+                                  locale via getLocale() (i18n/request.ts reads next/root-params;
+                                  no setRequestLocale, deprecated in next-intl 4.14),
+                                  NextIntlClientProvider (client messages only)
     (public)/sign-in/…  (public)/join/…  (public)/welcome/…
     (app)/layout.tsx              the shell: nav (role-dependent items in Suspense)
     (app)/page.tsx                Home
@@ -160,7 +162,7 @@ app/
   ui/<area>/*.tsx  ui/skeletons.tsx  ui/web-vitals.tsx
 i18n/ routing.ts request.ts navigation.ts      messages/he.json  en.json
 drizzle/  (migrations)   scripts/ seed.ts reset-test-db.ts create-building.ts (M7)
-proxy.ts                          next-intl routing + session-cookie check (getSessionCookie)
+proxy.ts                          next-intl routing, NEXT_LOCALE redirect + session-cookie check
 ```
 
 `data.ts` and `actions.ts` are split per area because the app has more than a dozen areas;

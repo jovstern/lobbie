@@ -1,0 +1,16 @@
+{
+  "Metadata": {
+    "appName": "Lobbie",
+    "description": "Your building's payments, balance, announcements and schedules, in one place for residents and the committee."
+  },
+  "Common": {
+    "backHome": "Back to home"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The link may be wrong, or the page may have moved."
+  },
+  "Home": {
+    "title": "Everything in your building, in one place"
+  }
+}
