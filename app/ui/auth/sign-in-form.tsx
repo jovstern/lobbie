@@ -8,9 +8,11 @@ import SubmitButton from '@/app/ui/submit-button'
 type Props = {
   /** `requestMagicLink` with the page's locale and `next` bound. */
   action: (state: SignInState, formData: FormData) => Promise<SignInState>
+  /** Focus the field on arrival: only where typing is the one thing left to do. */
+  autoFocus?: boolean
 }
 
-export default function SignInForm({ action }: Props) {
+export default function SignInForm({ action, autoFocus = false }: Props) {
   const t = useTranslations('SignInForm')
   const initialState: SignInState = {}
   const [state, formAction] = useActionState(action, initialState)
@@ -40,12 +42,13 @@ export default function SignInForm({ action }: Props) {
           type="email"
           autoComplete="email"
           required
+          autoFocus={autoFocus}
           // Addresses are written left to right, also on the Hebrew page.
           dir="ltr"
           defaultValue={state.email}
           aria-describedby="email-error"
           aria-invalid={fieldErrors !== undefined}
-          className="rounded-control border-text-muted bg-surface text-text hover:border-text focus-visible:border-accent aria-invalid:border-danger min-h-11 border px-3 text-base transition-colors"
+          className="rounded-control border-text-muted bg-surface text-text hover:border-text focus-visible:border-accent aria-invalid:border-danger min-h-11 border px-3 text-base transition-[background-color,border-color,color]"
         />
         <div id="email-error" aria-live="polite" aria-atomic="true">
           {fieldErrors?.map((error) => (

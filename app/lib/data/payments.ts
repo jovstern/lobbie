@@ -1,6 +1,8 @@
 import 'server-only'
-import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
+import { buildingTag, feesTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import type { ApartmentStatus } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
@@ -15,12 +17,34 @@ const monthPaymentRow = z.object({
   amountAgorot: z.coerce.number().int(),
 })
 
-function loadBilling(buildingId: string, apartmentIds: string[]) {
-  return Promise.all([
+/**
+ * What every apartment of the building shares: its time zone, billing start and fee rates
+ * (the building's and each apartment's). Cached per building until a write updates its tag.
+ */
+async function buildingBilling(buildingId: string) {
+  'use cache'
+  cacheTag(buildingTag(buildingId), feesTag(buildingId))
+  cacheLife('hours')
+  const [[building], rates] = await Promise.all([
     db
       .select({ timezone: buildings.timezone, billingStartMonth: buildings.billingStartMonth })
       .from(buildings)
       .where(eq(buildings.id, buildingId)),
+    db
+      .select({
+        apartmentId: feeRates.apartmentId,
+        amountAgorot: feeRates.amountAgorot,
+        effectiveFrom: feeRates.effectiveFrom,
+      })
+      .from(feeRates)
+      .where(eq(feeRates.buildingId, buildingId)),
+  ])
+  return { building, rates }
+}
+
+// The asked apartments' own rows: never cached, since they belong to particular people.
+function apartmentBilling(buildingId: string, apartmentIds: string[]) {
+  return Promise.all([
     db
       .select({
         id: apartments.id,
@@ -29,19 +53,6 @@ function loadBilling(buildingId: string, apartmentIds: string[]) {
       })
       .from(apartments)
       .where(and(eq(apartments.buildingId, buildingId), inArray(apartments.id, apartmentIds))),
-    db
-      .select({
-        apartmentId: feeRates.apartmentId,
-        amountAgorot: feeRates.amountAgorot,
-        effectiveFrom: feeRates.effectiveFrom,
-      })
-      .from(feeRates)
-      .where(
-        and(
-          eq(feeRates.buildingId, buildingId),
-          or(isNull(feeRates.apartmentId), inArray(feeRates.apartmentId, apartmentIds)),
-        ),
-      ),
     db
       .select({
         apartmentId: payments.apartmentId,
@@ -62,8 +73,8 @@ function loadBilling(buildingId: string, apartmentIds: string[]) {
 
 /**
  * What each apartment owes, with its number, keyed by apartment id in the order asked. Ids
- * that are not apartments of this building are left out. Four queries, one per table, run
- * together.
+ * that are not apartments of this building are left out. The building's part comes from the
+ * cache; the apartments and their payments are read together, in one round trip.
  */
 export async function statusForApartments(
   buildingId: string,
@@ -72,10 +83,10 @@ export async function statusForApartments(
 ): Promise<Map<string, ApartmentStatus>> {
   if (apartmentIds.length === 0) return new Map()
   try {
-    const [[building], apartmentRows, rates, paymentRows] = await loadBilling(
-      buildingId,
-      apartmentIds,
-    )
+    const [{ building, rates }, [apartmentRows, paymentRows]] = await Promise.all([
+      buildingBilling(buildingId),
+      apartmentBilling(buildingId, apartmentIds),
+    ])
     if (!building) throw new Error(`No building ${buildingId}`)
     const paymentsByApartment = Map.groupBy(
       z.array(monthPaymentRow).parse(paymentRows),

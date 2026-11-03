@@ -34,14 +34,15 @@
     "rateLimited": "יותר מדי ניסיונות. אפשר לנסות שוב בעוד {minutes, plural, one {דקה} two {שתי דקות} other {# דקות}}."
   },
   "SignInErrors": {
-    "invalidEmail": "צריך כתובת אימייל תקינה, למשל name@example.com.",
+    "invalidEmail": "צריך כתובת אימייל תקינה, למשל name@example.com",
     "sendFailed": "לא הצלחנו לשלוח את המייל. נסו שוב בעוד רגע."
   },
   "CheckEmail": {
     "title": "בדקו את המייל",
     "body": "שלחנו לכם קישור כניסה. הוא עובד פעם אחת ותקף ל־15 דקות.",
+    "sentTo": "שלחנו אל <address>{email}</address> קישור כניסה. הוא עובד פעם אחת ותקף ל־15 דקות.",
     "hint": "לא מוצאים אותו? הציצו בתיקיית הספאם.",
-    "differentEmail": "להשתמש באימייל אחר"
+    "differentEmail": "השתמשו באימייל אחר"
   },
   "Join": {
     "title": "הצטרפות לבניין",
@@ -69,7 +70,8 @@
     "label": "ראשי",
     "home": "בית",
     "more": "עוד",
-    "skipToContent": "דילוג לתוכן"
+    "skipToContent": "דילוג לתוכן",
+    "moreHidden": "אפשרויות"
   },
   "LanguageSwitch": {
     "otherLanguage": "English"
@@ -85,7 +87,7 @@
     "dueFor": "לתשלום עבור {month}",
     "partialFor": "נותר לשלם עבור {month}",
     "totalOwed": "סך החוב",
-    "monthsBehind": "פיגור של {count, plural, one {חודש} two {חודשיים} other {# חודשים}}",
+    "monthsBehind": "{count, plural, one {חודש} two {חודשיים} other {# חודשים}} ללא תשלום",
     "noFeeBody": "הוועד לא קבע דמי ועד ל{month}, אז אין מה לשלם.",
     "notBilledTitle": "החיוב עוד לא התחיל",
     "notBilledBody": "כשהוועד יתחיל לגבות דמי ועד, תראו כאן אם שילמתם.",
@@ -94,7 +96,7 @@
     "apartment": "דירה {number}",
     "rowPaid": "שולם עבור {month}",
     "rowDue": "{amount} לתשלום",
-    "rowOverdue": "חוב של {amount} · פיגור של {count, plural, one {חודש} two {חודשיים} other {# חודשים}}"
+    "rowOverdue": "חוב של {amount} · {count, plural, one {חודש} two {חודשיים} other {# חודשים}} ללא תשלום"
   },
   "BalanceCard": {
     "title": "קופת הבניין",

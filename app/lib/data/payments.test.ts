@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm'
+import { cacheTag } from 'next/cache'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { db } from '@/app/lib/db'
 import { apartments, buildings, payments, user } from '@/app/lib/schema'
@@ -10,6 +11,8 @@ const testDb = await vi.hoisted(async () => {
   return createTestDb()
 })
 vi.mock('@/app/lib/db', () => ({ db: testDb.db }))
+// Outside Next, `'use cache'` is an inert string and the cache functions only record tags.
+vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }))
 afterAll(() => testDb.close())
 
 // The seed is relative to "now": billing starts 12 months back, so 2025-11 through 2026-11.
@@ -39,6 +42,13 @@ beforeAll(async () => {
 })
 
 describe('statusForApartments', () => {
+  it("caches only the building's part, under the building's tags", async () => {
+    vi.mocked(cacheTag).mockClear()
+    await statusForApartments(buildingId, [idOf('4')], now)
+    expect(cacheTag).toHaveBeenCalledTimes(1)
+    expect(cacheTag).toHaveBeenCalledWith(`building:${buildingId}`, `building:${buildingId}:fees`)
+  })
+
   it('apartments 4 and 9 are behind, owing the fee for each unpaid month', async () => {
     const statuses = await statusForApartments(buildingId, [idOf('4'), idOf('9')], now)
 

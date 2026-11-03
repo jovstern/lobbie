@@ -55,7 +55,7 @@ export async function memberForUser(userId: string): Promise<Member | null> {
     const [row] = rows
     return row ? { userId, ...memberRow.parse(row) } : null
   } catch (err) {
-    logger.error('memberForUser failed', { err, userId })
-    throw new Error('Could not load your building membership.')
+    logger.error('Failed to load the membership', { area: 'data/members', userId, err })
+    throw new Error('Failed to load the membership')
   }
 }

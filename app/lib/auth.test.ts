@@ -75,4 +75,25 @@ describe('auth', () => {
     expect(response.status).toBe(404)
     expect(sendMagicLinkEmail).not.toHaveBeenCalled()
   })
+
+  it('ignores phone and locale sent to /update-user: only the app writes them', async () => {
+    const link = await requestLink('omer@example.com')
+    const verified = await getAuth().handler(new Request(link))
+    const cookie = verified.headers
+      .getSetCookie()
+      .map((setCookie) => setCookie.split(';')[0])
+      .join('; ')
+
+    const response = await getAuth().handler(
+      new Request(`${baseURL}/api/auth/update-user`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: baseURL, cookie },
+        body: JSON.stringify({ name: 'Omer', phone: '+972500000000', locale: 'en' }),
+      }),
+    )
+
+    const [stored] = await db.select().from(user).where(eq(user.email, 'omer@example.com'))
+    expect(response.ok, 'the request is rejected outright').toBe(false)
+    expect(stored).toMatchObject({ name: '', phone: null, locale: 'he' })
+  })
 })

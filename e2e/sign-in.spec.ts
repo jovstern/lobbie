@@ -15,16 +15,17 @@ test('an unknown email still reaches check-email, revealing nothing', async ({
 }, testInfo) => {
   await asNewClient(page)
   await page.goto('/en/sign-in')
+  const address = `nobody-${testInfo.project.name}@example.com`
 
-  await page
-    .getByLabel('Email', { exact: true })
-    .fill(`nobody-${testInfo.project.name}@example.com`)
+  await page.getByLabel('Email', { exact: true }).fill(address)
   await page.getByRole('button', { name: 'Send me a link', exact: true }).click()
 
-  await expect(page).toHaveURL('/en/sign-in/check-email')
+  await expect(page).toHaveURL(`/en/sign-in/check-email?${new URLSearchParams({ email: address })}`)
   await expect(
     page.getByRole('heading', { level: 1, name: 'Check your email', exact: true }),
   ).toBeVisible()
+  // The page says where the link went.
+  await expect(page.getByRole('main')).toContainText(`We've sent a sign-in link to ${address}.`)
 })
 
 test('a signed-out visit to /more comes back to /more after signing in', async ({ page }) => {
@@ -43,7 +44,9 @@ test('signing out returns to sign-in, Home asks to sign in again, and the used l
 
   await page.goto('/en/more')
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
-  await expect(page).toHaveURL('/en/sign-in')
+  await expect(page).toHaveURL('/en/sign-in?signedOut=1')
+  // Signing in again is the only thing left to do, so the field has focus.
+  await expect(page.getByLabel('Email', { exact: true })).toBeFocused()
 
   await page.goto('/en')
   await expect(page).toHaveURL('/en/sign-in?next=%2Fen')

@@ -111,7 +111,9 @@ describe('requestMagicLink', () => {
   it('sends the link with a callback to the page asked for, then shows check-email', async () => {
     await expect(
       requestMagicLink({ locale: 'en', next: '/en/money' }, initial, form('dana@example.com')),
-    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'en' }))
+    ).rejects.toEqual(
+      new Redirected({ href: '/sign-in/check-email?email=dana%40example.com', locale: 'en' }),
+    )
 
     expect(api.signInMagicLink).toHaveBeenCalledWith({
       body: {
@@ -135,7 +137,9 @@ describe('requestMagicLink', () => {
   it('reaches check-email for an email no one has used before, too', async () => {
     await expect(
       requestMagicLink({ locale: 'he' }, initial, form('stranger@example.com')),
-    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'he' }))
+    ).rejects.toEqual(
+      new Redirected({ href: '/sign-in/check-email?email=stranger%40example.com', locale: 'he' }),
+    )
 
     expect(api.signInMagicLink.mock.calls[0][0].body).toMatchObject({
       callbackURL: '/',
@@ -158,7 +162,9 @@ describe('requestMagicLink', () => {
   it('falls back to Hebrew for an unknown locale', async () => {
     await expect(
       requestMagicLink({ locale: 'fr' }, initial, form('dana@example.com')),
-    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'he' }))
+    ).rejects.toEqual(
+      new Redirected({ href: '/sign-in/check-email?email=dana%40example.com', locale: 'he' }),
+    )
   })
 
   it('returns a message and logs when the email cannot be sent', async () => {
@@ -189,14 +195,18 @@ describe('signOut', () => {
   it('ends the session and goes to sign-in in the same language', async () => {
     api.signOut.mockResolvedValue({ success: true })
 
-    await expect(signOut('en')).rejects.toEqual(new Redirected({ href: '/sign-in', locale: 'en' }))
+    await expect(signOut('en')).rejects.toEqual(
+      new Redirected({ href: '/sign-in?signedOut=1', locale: 'en' }),
+    )
     expect(api.signOut).toHaveBeenCalledWith({ headers: requestHeaders })
   })
 
   it('still goes to sign-in, logged, when there was no session to end', async () => {
     api.signOut.mockRejectedValue(new Error('FAILED_TO_GET_SESSION'))
 
-    await expect(signOut('he')).rejects.toEqual(new Redirected({ href: '/sign-in', locale: 'he' }))
+    await expect(signOut('he')).rejects.toEqual(
+      new Redirected({ href: '/sign-in?signedOut=1', locale: 'he' }),
+    )
     expect(logger.warn).toHaveBeenCalled()
   })
 })

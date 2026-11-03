@@ -87,7 +87,12 @@ export async function requestMagicLink(
     return { email, message: t('sendFailed') }
   }
 
-  return redirect({ href: '/sign-in/check-email', locale })
+  // The page shows where the link went. It is the address the person just typed, in their
+  // own URL; nothing logs it.
+  return redirect({
+    href: `/sign-in/check-email?${new URLSearchParams({ email: address })}`,
+    locale,
+  })
 }
 
 /** Ends the session and returns to sign-in in the same language. */
@@ -98,5 +103,6 @@ export async function signOut(locale: string): Promise<void> {
     // Usually a session that had already ended; sign-in is the right place either way.
     logger.warn('sign-out failed', { err, route: '/sign-out' })
   }
-  return redirect({ href: '/sign-in', locale: resolveLocale(locale) })
+  // The flag focuses the email field, ready for the next sign-in.
+  return redirect({ href: '/sign-in?signedOut=1', locale: resolveLocale(locale) })
 }

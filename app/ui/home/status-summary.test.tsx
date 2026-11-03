@@ -72,7 +72,7 @@ describe('StatusSummary, one apartment', () => {
     )
 
     expect(within(card).getByText('בפיגור')).toBeVisible()
-    expect(card).toHaveTextContent('פיגור של חודשיים')
+    expect(card).toHaveTextContent('חודשיים ללא תשלום')
   })
 
   it('no fee: explains there is nothing to pay', () => {

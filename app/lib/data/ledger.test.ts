@@ -1,4 +1,5 @@
 import { and, eq, isNull } from 'drizzle-orm'
+import { cacheTag } from 'next/cache'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { db } from '@/app/lib/db'
 import { balanceAdjustments, buildings, expenses, payments, user } from '@/app/lib/schema'
@@ -10,6 +11,8 @@ const testDb = await vi.hoisted(async () => {
   return createTestDb()
 })
 vi.mock('@/app/lib/db', () => ({ db: testDb.db }))
+// Outside Next, `'use cache'` is an inert string and the cache functions only record tags.
+vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }))
 afterAll(() => testDb.close())
 
 const now = new Date('2026-11-02T10:00:00Z')
@@ -125,6 +128,15 @@ describe('balance', () => {
       expensesAgorot: 7_777,
       totalAgorot: 1_000 + 500 - 7_777,
     })
+  })
+
+  it("is cached under the building's tags, which writes update", async () => {
+    vi.mocked(cacheTag).mockClear()
+    await balance(buildingId)
+    expect(cacheTag).toHaveBeenCalledWith(
+      `building:${buildingId}`,
+      `building:${buildingId}:balance`,
+    )
   })
 
   it('logs and throws a short message for an unknown building', async () => {

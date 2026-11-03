@@ -34,3 +34,23 @@ describe('messages', () => {
     },
   )
 })
+
+// In a right-to-left sentence, punctuation right after Latin text (or an inserted address)
+// is drawn on the far side of it, so "name@example.com." shows as ".name@example.com".
+// Hebrew messages keep Latin text away from punctuation instead.
+describe('Hebrew messages with Latin text', () => {
+  // ICU arguments ({count, plural, …}) are code, not text: removed innermost first.
+  function withoutArguments(message: string): string {
+    const stripped = message.replace(/\{[^{}]*\}/g, '')
+    return stripped === message ? message : withoutArguments(stripped)
+  }
+
+  it('never end Latin text or a tagged value with punctuation', () => {
+    const latinThenPunctuation = /([A-Za-z0-9]|<\/[a-z]+>)[.,:;!?)](\s|$)/
+    const offending = leaves(he)
+      .map(({ key, value }) => ({ key, text: withoutArguments(String(value)) }))
+      .filter(({ text }) => latinThenPunctuation.test(text))
+      .map(({ key }) => key)
+    expect(offending).toEqual([])
+  })
+})

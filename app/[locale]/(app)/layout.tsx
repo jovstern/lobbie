@@ -26,9 +26,11 @@ export default async function AppLayout({ children }: LayoutProps<'/[locale]'>) 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         {/* The bottom padding keeps the last content above the tab bar on phones. */}
+        {/* Focusable by the skip link only, so focus lands here and the next Tab moves on. */}
         <main
           id="main"
-          className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-[calc(3.5rem+env(safe-area-inset-bottom)+2rem)] lg:px-8 lg:pt-8 lg:pb-12"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-[calc(3.5rem+env(safe-area-inset-bottom)+2rem)] outline-none lg:px-8 lg:pt-8 lg:pb-12"
         >
           {children}
         </main>

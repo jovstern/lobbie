@@ -86,15 +86,17 @@ describe('sendMagicLinkEmail', () => {
     expect(file.content.html).toContain('כניסה ללובי')
   })
 
-  it('logs the recipient but never the link', async () => {
+  it("logs the recipient's domain, never the address or the link", async () => {
     vi.stubEnv('MAIL_TRANSPORT', 'outbox')
 
     await sendMagicLinkEmail({ to: 'a@example.com', url, locale: 'en' }, { outboxDir, now })
 
     expect(logger.info).toHaveBeenCalledWith('magic link written to outbox', {
-      to: 'a@example.com',
+      toDomain: 'example.com',
     })
-    expect(JSON.stringify(vi.mocked(logger.info).mock.calls)).not.toContain('token')
+    const logged = JSON.stringify(vi.mocked(logger.info).mock.calls)
+    expect(logged).not.toContain('a@example.com')
+    expect(logged).not.toContain('token')
   })
 
   it('keeps an odd recipient inside the outbox directory', async () => {

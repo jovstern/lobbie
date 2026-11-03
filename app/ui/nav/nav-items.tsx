@@ -13,6 +13,11 @@ type NavItem = {
   /** The paths that make this item current. */
   sections: string[]
   label: 'home' | 'more'
+  /**
+   * Read after the label by screen readers and search engines only, where the short label
+   * alone would be too vague ("More" is one of Lighthouse's generic link texts).
+   */
+  hiddenLabel?: 'moreHidden'
   icon: ReactNode
   activeIcon: ReactNode
 }
@@ -25,6 +30,7 @@ export const navItems: NavItem[] = [
     href: '/more',
     sections: ['/more', '/profile'],
     label: 'more',
+    hiddenLabel: 'moreHidden',
     icon: <MoreOutline />,
     activeIcon: <MoreSolid />,
   },

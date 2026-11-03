@@ -21,7 +21,7 @@
   --color-warning-fill: #b7791f;
   --color-danger: #b23a3a;
 
-  /* Type scale 1.25: 14, 16, 20, 25, 31, and a fluid display size for the balance figure. */
+  /* Type scale 1.25: 14, 16, 20, 25, 31, and a fluid display size for the status amount. */
   --text-*: initial;
   --text-sm: 0.875rem;
   --text-sm--line-height: 1.4;

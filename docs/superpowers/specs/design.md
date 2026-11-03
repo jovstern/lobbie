@@ -126,7 +126,7 @@ Per ADR 0001. Stack-conventions files that apply: **`SKILL.md`, `nextjs.md`, `sq
 | Framework | Next.js 16.4 App Router, TypeScript strict, React Compiler, Cache Components, partial prefetching |
 | Data | Postgres on Neon (`dev`, `test` branches; `main` at launch); Drizzle ORM 0.45 on `postgres` 3.4; `drizzle-kit` SQL migrations |
 | Tests | Vitest + PGlite (data layer); Testing Library; Playwright + `@axe-core/playwright` against the Neon `test` branch |
-| Auth | Better Auth 1.7: magic-link plugin, Drizzle adapter, `session.cookieCache` on, ids generated as uuid; its CLI (the `auth` package) generates its tables into the Drizzle schema, timestamps post-processed to `timestamptz` |
+| Auth | Better Auth 1.7: magic-link plugin (its HTTP request endpoint disabled, tokens stored hashed), Drizzle adapter, `session.cookieCache` on (renewed by the proxy), ids generated as uuid, `user.phone`/`locale` with `input: false`; its CLI (the `auth` package) generates its tables into the Drizzle schema, timestamps post-processed to `timestamptz` |
 | i18n | next-intl 4, `localePrefix: 'as-needed'`, `he` default, `en`; `localeDetection: false` (Hebrew whatever the browser), the proxy redirects unprefixed URLs to `/en` when the `NEXT_LOCALE` cookie is `en` |
 | Styling | Tailwind v4, tokens in `@theme`, logical utilities only; Radix (`radix-ui`); `@heroicons/react` |
 | Mail | `app/lib/mail.ts`: `outbox` transport only when `MAIL_TRANSPORT=outbox` (refuses to start if `VERCEL_ENV` is set); Resend at launch |
@@ -145,7 +145,7 @@ app/
                                   NextIntlClientProvider (client messages only)
     (public)/sign-in/…  (public)/join/…  (public)/welcome/…
     (app)/layout.tsx              the shell: nav (role-dependent items in Suspense)
-    (app)/page.tsx                Home
+    (app)/(home)/page.tsx         Home (the group gives Home its own loading.tsx)
     (app)/money/…  schedule/…  building/…  meeting/…  more/…  profile/…  admin/…
   not-found.tsx                   for unmatched non-locale paths (own <html>)
   api/auth/[...all]/route.ts            Better Auth (M1)
@@ -153,17 +153,25 @@ app/
   api/cameras/[id]/snapshot/route.ts    (M5)
   api/meetings/[id]/ics/route.ts        (M6)
   lib/
-    db.ts  schema.ts  definitions.ts  session.ts  authz.ts  auth.ts  mail.ts  storage.ts
-    logger.ts  rate-limit.ts  safe-fetch.ts
+    db.ts                         the app's client; db-client.ts opens one (app, scripts, tests)
+    env.ts                        requireEnv(name): names a missing variable, never its value
+    schema.ts  auth-schema.ts     app tables; Better Auth's (from `npm run auth:generate`)
+    auth.ts  auth-options.ts      Better Auth; the options that shape its schema (CLI input)
+    definitions.ts  session.ts  authz.ts  mail.ts  storage.ts  logger.ts  rate-limit.ts
+    safe-fetch.ts
     data/<area>.ts                one async function per query, building-scoped
+    data/cache-tags.ts            the `building:<id>` tags of the cached building-wide reads
     actions/<area>.ts             'use server'; Zod schemas and State types next to each action
     utils/money.ts fees.ts status.ts ledger.ts recurrence.ts meeting.ts ics.ts
-          dates.ts redirect.ts
+          dates.ts redirect.ts app-sections.ts roles.ts contrast.ts session-cache.ts
     test/db.ts                    PGlite + migrations, per test file
   ui/<area>/*.tsx  ui/skeletons.tsx  ui/web-vitals.tsx
-i18n/ routing.ts request.ts navigation.ts      messages/he.json  en.json
+  ui/tokens.ts                    the palette in TypeScript (emails, contrast test)
+  ui/button-styles.ts             buttonClassName('primary' | 'secondary') for buttons and links
+i18n/ routing.ts request.ts navigation.ts locale.ts      messages/he.json  en.json
 drizzle/  (migrations)   scripts/ seed.ts reset-test-db.ts create-building.ts (M7)
-proxy.ts                          next-intl routing, NEXT_LOCALE redirect + session-cookie check
+proxy.ts                          next-intl routing, NEXT_LOCALE redirect, session-cookie check,
+                                  renewal of the session cache cookie
 ```
 
 `data.ts` and `actions.ts` are split per area because the app has more than a dozen areas;
@@ -173,12 +181,17 @@ each file keeps the course's rules.
 
 - `app/lib/session.ts`: `getSession()` wraps `auth.api.getSession({ headers })` in React
   `cache()` (once per request); Better Auth `cookieCache` (5 min) avoids a database read for
-  most requests.
+  most requests. Server Components cannot write cookies, so `proxy.ts` renews the cache
+  cookie: when the session cookie is there and the cache cookie is missing or expired
+  (`utils/session-cache.ts` decides, without a database call), it calls `getSession` once
+  with `returnHeaders` and forwards its `Set-Cookie` onto the response and the request. A
+  revoked session therefore ends within 5 minutes.
 - `app/lib/authz.ts`, also `cache()`d: `requireMember()` → `{ userId, buildingId, role,
-  apartmentIds, isDemo }`, or redirects to `/sign-in?next=…` (no session) or `/join` (no
-  membership). `requireRole(min)` returns the member or calls **`notFound()`** for a lower
-  role (no `forbidden()`: it is experimental and needs a config flag; a 404 also hides that
-  the page exists). Actions use `authorizeAction(min)` returning `{ message }` instead.
+  apartmentIds, isDemo, timeZone, buildingName }`, or redirects to `/sign-in?next=…` (no
+  session) or `/join` (no membership). `requireRole(min)` returns the member or calls
+  **`notFound()`** for a lower role (no `forbidden()`: it is experimental and needs a config
+  flag; a 404 also hides that the page exists). Actions use `authorizeAction(min, locale)`
+  returning `{ message }` instead (the locale is passed in: actions cannot read the route's).
   **Every admin page, data function and action checks its role itself**; the admin layout's
   check only hides navigation (layouts do not re-run on client navigation).
 - Every data function takes `buildingId` and filters by it; every action checks that each
@@ -188,8 +201,15 @@ each file keeps the course's rules.
 - **Sign-in:** a Server Action validates the email with Zod, applies `rate-limit.ts`
   (database-backed: 3 per email and 10 per IP per 15 minutes), then calls
   `auth.api.signInMagicLink` with a locale-aware callback. It always continues to
-  `/sign-in/check-email`, so it never reveals whether an email exists. Rate-limited requests
-  get a message saying when to try again.
+  `/sign-in/check-email?email=…` (the page shows where the link went), so it never reveals
+  whether an email exists. Rate-limited requests get a message saying when to try again.
+  Better Auth's HTTP endpoint for requesting a link is disabled (`disabledPaths`), so the
+  rate limits cannot be bypassed, and link tokens are stored hashed. A failed link returns to
+  `/sign-in?error=INVALID_TOKEN` (expired or used) or another code (a general failure).
+- **Caching:** building-wide reads (the building row, fee rates, the balance) use
+  `'use cache'` keyed by `buildingId`, tagged `building:<id>` (plus `:fees`, `:balance`),
+  `cacheLife('hours')`. Nothing per user or per apartment is cached. Every action that writes
+  those tables calls `updateTag('building:<id>')`.
 - Revalidation targets the locale route: `revalidatePath('/[locale]/…', 'page')`;
   redirects use next-intl's `redirect` so the locale prefix is kept.
 
@@ -244,8 +264,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 
 | Route | Job | Primary action | States | Read / write | Phone / desktop |
 |---|---|---|---|---|---|
-| `/sign-in` | Get a magic link | "Send me a link" | idle, pending, invalid email, rate-limited (with retry time), send failure; `?error=expired` | write `actions/auth.requestMagicLink` | centered card; desktop adds a warm illustration panel at the start side |
-| `/sign-in/check-email` | Confirm the link was sent | "Use a different email" | — | — | same card |
+| `/sign-in` | Get a magic link | "Send me a link" | idle, pending, invalid email, rate-limited (with retry time), send failure; `?error=INVALID_TOKEN` (expired or used link) or another code (failure); `?signedOut=1` and errors focus the field | write `actions/auth.requestMagicLink` | centered card; desktop adds a warm illustration panel at the start side |
+| `/sign-in/check-email` | Confirm the link was sent, and to which address | "Use a different email" | with `?email=` (Zod-checked) the address; without, a general sentence | — | same card |
 | `/join/[code]` (M2) | Redeem an invite | "Join apartment 7" | valid, expired, full, revoked, already a member, member of another building, signed out (sign in, then return) | read `data/invites.preview`; write `actions/invites.redeem` | card |
 | `/join` (M2) | Enter a code by hand | "Join" | invalid code, rate-limited | same | card |
 | `/welcome` (M7) | Explain Lobbie to a visitor | "Sign in" / "Try the demo" (resident or committee) | static | write `actions/demo.signInAsDemo` | hero + 3 feature rows; 2 columns on desktop |
@@ -301,11 +321,13 @@ Destructive actions confirm in a Radix AlertDialog.
 
 ## 7. Design tokens (warm and neighbourly)
 
-Rubik (variable, `hebrew` + `latin` subsets) for everything; `tabular-nums` for money and
-dates. Type scale 1.25 (14, 16, 20, 25, 31; display `clamp(2rem, 1.5rem + 2.5vw, 3rem)` for
-the balance figure). Spacing 4 px grid. Radii: card 12 px, control 10 px, chip 999 px.
-Shadow `--shadow-card: 0 1px 2px rgb(31 27 22 / .06), 0 4px 12px rgb(31 27 22 / .05)` (none
-in dark; a border instead). Motion 180 ms ease-out; none under `prefers-reduced-motion`.
+Rubik (variable, `hebrew` + `latin` + `latin-ext` subsets, all preloaded: `latin-ext` holds
+the ₪ the browser draws from it) for everything; `tabular-nums` for money and dates. Type
+scale 1.25 (14, 16, 20, 25, 31; display `clamp(2rem, 1.5rem + 2.5vw, 3rem)` for the status
+card's amount; the balance figure is a step down, 31). Spacing 4 px grid. Radii: card 12 px,
+control 10 px, chip 999 px. Shadow `--shadow-card: 0 1px 2px rgb(31 27 22 / .06), 0 4px 12px
+rgb(31 27 22 / .05)` (none in dark; a border instead). Motion 180 ms ease-out; none under
+`prefers-reduced-motion`.
 
 | Token | Light | Dark | Contrast on surface |
 |---|---|---|---|
@@ -342,7 +364,8 @@ outline, 2 px offset. Directional icons flip with `rtl:-scale-x-100`.
 ## 9. Observability
 
 - `app/lib/logger.ts`: JSON lines; data functions and actions log failures once at the
-  boundary with the route and error; no bare `console.log`.
+  boundary; no bare `console.log`. Data functions log their `area` (`data/payments`) and
+  throw a short "Failed to load …"; actions and route handlers log their `route`.
 - `app/ui/web-vitals.tsx` (`useReportWebVitals`) logs LCP, CLS and INP from M1; at launch it
   also feeds Vercel Analytics.
 - Production (M7): Vercel Web Analytics, Speed Insights, runtime logs.

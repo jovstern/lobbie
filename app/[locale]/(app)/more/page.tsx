@@ -1,4 +1,4 @@
-import { ChevronRightIcon, UserCircleIcon } from '@heroicons/react/24/outline'
+import { ChevronRightIcon, LanguageIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
@@ -24,7 +24,7 @@ export default async function MorePage() {
         <li className="py-1 first:pt-0 last:pb-0">
           <Link
             href="/profile"
-            className="rounded-control hover:bg-surface active:bg-border flex min-h-12 items-center gap-3 px-3 font-medium transition-colors"
+            className="rounded-control hover:bg-surface active:bg-border flex min-h-12 items-center gap-3 px-3 font-medium transition-[background-color,border-color,color]"
           >
             <UserCircleIcon aria-hidden className="text-text-muted size-6" />
             {t('profile')}
@@ -35,7 +35,10 @@ export default async function MorePage() {
           </Link>
         </li>
         <li className="flex min-h-12 items-center justify-between gap-3 py-1 ps-3 first:pt-0 last:pb-0">
-          <span className="font-medium">{t('language')}</span>
+          <span className="flex items-center gap-3 font-medium">
+            <LanguageIcon aria-hidden className="text-text-muted size-6" />
+            {t('language')}
+          </span>
           <Suspense fallback={<LanguageSwitchLink />}>
             <LanguageSwitch />
           </Suspense>

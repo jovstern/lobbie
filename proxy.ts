@@ -1,8 +1,11 @@
-import { getSessionCookie } from 'better-auth/cookies'
+import { applySetCookies, getSessionCookie } from 'better-auth/cookies'
 import { NextRequest, NextResponse } from 'next/server'
 import createMiddleware from 'next-intl/middleware'
+import { getAuth } from '@/app/lib/auth'
+import { logger } from '@/app/lib/logger'
 import { isAppPage } from '@/app/lib/utils/app-sections'
 import { requestPathHeader } from '@/app/lib/utils/redirect'
+import { needsSessionCacheRenewal } from '@/app/lib/utils/session-cache'
 import { localeInPath } from '@/i18n/locale'
 import { localeCookie, routing } from '@/i18n/routing'
 
@@ -45,21 +48,52 @@ function redirectToSignIn(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(url)
 }
 
+/**
+ * Pages read the session from Better Auth's signed cache cookie, which lives 5 minutes, and
+ * Server Components cannot write cookies. So once it expires the proxy asks Better Auth for
+ * the session (one database read) and returns its `Set-Cookie` headers: the new cache cookie,
+ * and a longer-lived session cookie when the session was extended. Without a session, or
+ * while the cache is fresh, nothing is read.
+ */
+async function renewSessionCache(request: NextRequest): Promise<string[]> {
+  if (!needsSessionCacheRenewal(request.headers.get('cookie'))) return []
+  try {
+    const { headers } = await getAuth().api.getSession({
+      headers: request.headers,
+      returnHeaders: true,
+    })
+    return headers.getSetCookie()
+  } catch (err) {
+    // The page reads the session itself, so a failure here only costs that read.
+    logger.warn('session cache renewal failed', { area: 'proxy', err })
+    return []
+  }
+}
+
 // Pages read the requested path (for `?next=`) from this header; it is always overwritten, so
-// a client cannot choose it.
-function withRequestPath(request: NextRequest): NextRequest {
+// a client cannot choose it. Renewed cookies are applied too, so this very request's page
+// reads the fresh cache instead of the database.
+function forwardedRequest(request: NextRequest, renewedCookies: string[]): NextRequest {
   const headers = new Headers(request.headers)
   headers.set(requestPathHeader, `${request.nextUrl.pathname}${request.nextUrl.search}`)
+  if (renewedCookies.length > 0) applySetCookies(headers, renewedCookies)
   return new NextRequest(request, { headers })
 }
 
-export default function proxy(request: NextRequest) {
+function withCookies(response: NextResponse, setCookies: string[]): NextResponse {
+  for (const setCookie of setCookies) response.headers.append('set-cookie', setCookie)
+  return response
+}
+
+export default async function proxy(request: NextRequest) {
   const savedLocale = redirectToSavedLocale(request)
   if (savedLocale) return savedLocale
-  const response = handleI18nRouting(withRequestPath(request))
+  const renewed = await renewSessionCache(request)
+  const response = handleI18nRouting(forwardedRequest(request, renewed))
   // next-intl's own redirects (such as /he → /) come first; the target is checked next time.
-  if (response.headers.has('location')) return rememberLocale(request, response)
-  return rememberLocale(request, redirectToSignIn(request) ?? response)
+  if (response.headers.has('location'))
+    return withCookies(rememberLocale(request, response), renewed)
+  return withCookies(rememberLocale(request, redirectToSignIn(request) ?? response), renewed)
 }
 
 export const config = {

@@ -22,7 +22,7 @@ function isWithin(pathname: string, section: string): boolean {
 }
 
 const variants = {
-  tab: 'min-h-11 flex-col gap-0.5 rounded-control px-3 py-1 text-sm',
+  tab: 'min-h-11 w-full flex-col justify-center gap-0.5 rounded-control px-3 py-1 text-sm',
   side: 'min-h-11 gap-3 rounded-control px-3 text-base',
 }
 
@@ -43,7 +43,7 @@ export default function NavLink({
       href={href}
       aria-current={isCurrent ? 'page' : undefined}
       className={clsx(
-        'text-text-muted hover:bg-surface hover:text-text active:bg-border aria-[current=page]:text-accent flex items-center font-medium transition-colors',
+        'text-text-muted hover:bg-surface hover:text-text active:bg-border aria-[current=page]:text-accent flex items-center font-medium transition-[background-color,border-color,color]',
         variant === 'side' && 'aria-[current=page]:bg-surface',
         variants[variant],
       )}

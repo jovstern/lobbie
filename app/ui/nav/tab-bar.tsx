@@ -14,7 +14,7 @@ export default async function TabBar() {
     >
       <ul className="mx-auto flex h-14 max-w-md items-center justify-around">
         {navItems.map((item) => (
-          <li key={item.href}>
+          <li key={item.href} className="flex-1">
             <NavLink
               href={item.href}
               sections={item.sections}
@@ -23,6 +23,7 @@ export default async function TabBar() {
               variant="tab"
             >
               {t(item.label)}
+              {item.hiddenLabel ? <span className="sr-only"> {t(item.hiddenLabel)}</span> : null}
             </NavLink>
           </li>
         ))}

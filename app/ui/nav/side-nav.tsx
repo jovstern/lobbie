@@ -27,6 +27,7 @@ export default async function SideNav() {
               activeIcon={item.activeIcon}
             >
               {t(item.label)}
+              {item.hiddenLabel ? <span className="sr-only"> {t(item.hiddenLabel)}</span> : null}
             </NavLink>
           </li>
         ))}

@@ -25,7 +25,7 @@ export default function LanguageSwitchLink({ query }: Props) {
     <Link
       href={query ? { pathname, query } : pathname}
       locale={target}
-      className="rounded-control text-text hover:bg-surface active:bg-border inline-flex min-h-11 items-center gap-2 px-3 font-medium transition-colors"
+      className="rounded-control text-text hover:bg-surface active:bg-border inline-flex min-h-11 items-center gap-2 px-3 font-medium transition-[background-color,border-color,color]"
     >
       <LanguageIcon aria-hidden className="text-text-muted size-5" />
       <span lang={target}>{t('otherLanguage')}</span>

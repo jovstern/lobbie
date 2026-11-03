@@ -1,6 +1,8 @@
 import 'server-only'
 import { and, eq, isNull, sql } from 'drizzle-orm'
+import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
+import { balanceTag, buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import type { BuildingBalance } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
@@ -17,8 +19,14 @@ const balanceRow = z.object({
   expensesAgorot: agorot,
 })
 
-/** The building fund: its parts and the total, in one query of correlated subqueries. */
+/**
+ * The building fund: its parts and the total, in one query of correlated subqueries. The same
+ * for every member, so it is cached per building until a write to its money updates the tag.
+ */
 export async function balance(buildingId: string): Promise<BuildingBalance> {
+  'use cache'
+  cacheTag(buildingTag(buildingId), balanceTag(buildingId))
+  cacheLife('hours')
   try {
     const [row] = await db
       .select({

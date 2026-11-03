@@ -22,9 +22,11 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
   APIs, read their current docs through context7.
 - **Reads** run in Server Components through `app/lib/data/<area>.ts`.
 - **Writes** go through Server Actions in `app/lib/actions/<area>.ts`, in this order:
-  `authorizeAction(minRole)`, then Zod `safeParse`, then the demo-building refusal, then a
-  check that every id belongs to the caller's building, then the write in a `try/catch`, then
-  `revalidatePath('/[locale]/…', 'page')`, then next-intl's `redirect`, outside the try/catch.
+  `authorizeAction(minRole, locale)`, then Zod `safeParse`, then the demo-building refusal,
+  then a check that every id belongs to the caller's building, then the write in a
+  `try/catch`, then `updateTag('building:<id>')` when it wrote a building-wide table (below),
+  then `revalidatePath('/[locale]/…', 'page')`, then next-intl's `redirect`, outside the
+  try/catch.
 - **Authorization is checked where the data is**, never only in a layout: every page,
   data function and action checks its role. Use `notFound()` for a role that is too low.
 - **Every query filters by `buildingId`.** No N+1. Transactions for multi-row writes. Money
@@ -34,7 +36,14 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
   `rtl:-scale-x-100`. Every string is in `messages/he.json` and `messages/en.json`.
 - **Cache Components:** session-dependent reads inside `<Suspense>` with a skeleton matching
   the final layout; nothing user-specific in `'use cache'`. `getSession`/`requireMember` are
-  wrapped in React `cache()`.
+  wrapped in React `cache()`. Building-wide reads (building row, fee rates, balance) are
+  `'use cache'` with `cacheTag` from `app/lib/data/cache-tags.ts`, so **from M2 on, every
+  action that writes `buildings`, `fee_rates`, `payments`, `expenses` or
+  `balance_adjustments` calls `updateTag('building:<id>')` after the write**.
+- **Session:** Better Auth's cookie cache lives 5 minutes; `proxy.ts` renews it (one
+  `getSession` with `returnHeaders`) when the session cookie is there and the cache cookie is
+  missing or expired. Sign-in errors arrive as `?error=INVALID_TOKEN` (or another code); the
+  HTTP magic-link endpoint is disabled and tokens are stored hashed.
 - **Locale:** `i18n/request.ts` reads it with `next/root-params` (`hasLocale`, else
   `notFound()`), so pages stay static with no `setRequestLocale` (next-intl 4.14 deprecates
   it); server code calls `getLocale()`/`getTranslations()` with no locale argument.
@@ -59,6 +68,7 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `next-intl` | `i18n/`, `proxy.ts`, `app/[locale]/layout.tsx` | he/en routing, RTL, ICU messages; its `NextIntlClientProvider` is the only context, given only the messages client components need |
 | `tsx` (dev) | `scripts/*.ts` | Runs TypeScript scripts with the `@/` alias, outside Next.js |
 | `@axe-core/playwright` (dev) | `e2e/a11y.spec.ts` | The `metrics` accessibility gate |
+| `radix-ui`, `use-debounce` | not used in M1 | House stack, installed with the starter: `use-debounce` is first used by M2's search, `radix-ui` by the dialogs and radio groups of M2 and M6 |
 | `resend` (M7) | `app/lib/mail.ts` | Production magic-link email |
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |

@@ -41,5 +41,7 @@ export default defineConfig([
     'test-results/**',
     'playwright-report/**',
     '.superpowers/**',
+    '.metrics/**',
+    '.data/**',
   ]),
 ])

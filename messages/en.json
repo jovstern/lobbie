@@ -40,6 +40,7 @@
   "CheckEmail": {
     "title": "Check your email",
     "body": "We've sent you a sign-in link. It works once and is valid for 15 minutes.",
+    "sentTo": "We've sent a sign-in link to <address>{email}</address>. It works once and is valid for 15 minutes.",
     "hint": "Can't find it? Look in your spam folder.",
     "differentEmail": "Use a different email"
   },
@@ -69,7 +70,8 @@
     "label": "Main",
     "home": "Home",
     "more": "More",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "moreHidden": "options"
   },
   "LanguageSwitch": {
     "otherLanguage": "עברית"

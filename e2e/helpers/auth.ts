@@ -3,16 +3,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { expect, type Page } from '@playwright/test'
 import { z } from 'zod'
+import { messages, type Locale } from './copy'
 import { latestLinkFor } from './outbox'
 
-type Locale = 'he' | 'en'
-
 export const sessionsDir = path.join('.data', 'e2e-sessions')
-
-const copy = {
-  he: { email: 'אימייל', send: 'שלחו לי קישור' },
-  en: { email: 'Email', send: 'Send me a link' },
-} as const
 
 export const localePrefix = (locale: Locale) => (locale === 'en' ? '/en' : '')
 
@@ -46,9 +40,12 @@ export async function signIn(page: Page, email: string, options: SignInOptions =
   }
 
   const since = new Date()
-  await page.getByLabel(copy[locale].email).fill(email)
-  await page.getByRole('button', { name: copy[locale].send }).click()
-  await expect(page).toHaveURL(`${prefix}/sign-in/check-email`)
+  const form = messages[locale].SignInForm
+  await page.getByLabel(form.emailLabel).fill(email)
+  await page.getByRole('button', { name: form.submit }).click()
+  await expect(page).toHaveURL(
+    `${prefix}/sign-in/check-email?${new URLSearchParams({ email: email.toLowerCase() })}`,
+  )
 
   await expect
     .poll(() => latestLinkFor(email, since), { timeout: 10_000, message: `no link for ${email}` })

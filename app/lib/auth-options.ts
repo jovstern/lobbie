@@ -12,9 +12,11 @@ export const authOptions = {
     database: { generateId: 'uuid' },
   },
   user: {
+    // `input: false`: Better Auth's own endpoints (sign-up, /update-user) never accept these;
+    // only the app's Server Actions write them, after their own validation (M2).
     additionalFields: {
-      phone: { type: 'string', required: false },
-      locale: { type: 'string', required: false, defaultValue: 'he' },
+      phone: { type: 'string', required: false, input: false },
+      locale: { type: 'string', required: false, defaultValue: 'he', input: false },
     },
   },
 } satisfies BetterAuthOptions

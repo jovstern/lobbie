@@ -61,8 +61,8 @@ async function writeToOutbox(message: Message, { outboxDir, now = new Date() }: 
   // Written aside, then renamed (atomic): a reader polling for `*.json` never sees half a file.
   await writeFile(`${file}.tmp`, JSON.stringify({ ...message, sentAt: now.toISOString() }, null, 2))
   await rename(`${file}.tmp`, file)
-  // The link signs someone in, so it never reaches the logs.
-  logger.info('magic link written to outbox', { to: message.to })
+  // The link signs someone in and the address is personal: only the domain is logged.
+  logger.info('magic link written to outbox', { toDomain: message.to.split('@').at(-1) })
 }
 
 /** Sends the sign-in link in the person's language through the transport `MAIL_TRANSPORT` names. */

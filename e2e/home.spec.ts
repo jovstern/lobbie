@@ -2,6 +2,7 @@ import { currentMonthIn, formatMonth } from '@/app/lib/utils/dates'
 import { formatAgorot } from '@/app/lib/utils/money'
 import { expect, test } from './fixtures'
 import { useSessionOf } from './helpers/auth'
+import { messages, translator, type Locale } from './helpers/copy'
 import { demoBuildingBalanceAgorot } from './helpers/db'
 
 // Read-only: seeded residents, signed in once per run. Apartment 1 is paid up; apartment 9
@@ -10,31 +11,23 @@ const paidResident = 'resident1@example.com'
 const overdueResident = 'resident9@example.com'
 const thisMonth = currentMonthIn('Asia/Jerusalem')
 
-const copy = {
-  he: {
-    home: '/',
-    status: 'התשלומים שלכם',
-    fund: 'קופת הבניין',
-    paid: 'שולם',
-    paidUp: `שילמתם את דמי הוועד ל${formatMonth(thisMonth, 'he')}`,
-    overdue: 'בפיגור',
-    behind: 'פיגור של חודשיים',
-    homeTab: 'בית',
-  },
-  en: {
-    home: '/en',
-    status: 'Your payments',
-    fund: 'Building fund',
-    paid: 'Paid',
-    paidUp: `You're paid up for ${formatMonth(thisMonth, 'en')}`,
-    overdue: 'Overdue',
-    behind: "You're 2 months behind",
-    homeTab: 'Home',
-  },
-} as const
+function copyFor(locale: Locale) {
+  const t = translator(locale)
+  const text = messages[locale]
+  return {
+    home: locale === 'en' ? '/en' : '/',
+    status: text.StatusCard.title,
+    fund: text.BalanceCard.title,
+    paid: text.StatusCard.paid,
+    paidUp: t('StatusCard.paidUpFor', { month: formatMonth(thisMonth, locale) }),
+    overdue: text.StatusCard.overdue,
+    behind: t('StatusCard.monthsBehind', { count: 2 }),
+    homeTab: text.Nav.home,
+  }
+}
 
 for (const locale of ['he', 'en'] as const) {
-  const text = copy[locale]
+  const text = copyFor(locale)
 
   test.describe(`Home in ${locale}`, () => {
     test('a fully paid resident sees "paid" for this month', async ({ page }) => {
@@ -117,10 +110,16 @@ test('the language switch keeps the query too', async ({ page }) => {
   // No page reads a query yet; `probe` stands in for one such as `?month=`.
   await page.goto('/?probe=1')
 
-  await page.getByRole('banner').getByRole('link', { name: 'English', exact: true }).click()
+  // The switch learns the query on hydration (its server fallback cannot read it), so the
+  // test waits for that before clicking, as a person would not click in that instant.
+  const english = page.getByRole('banner').getByRole('link', { name: 'English', exact: true })
+  await expect(english).toHaveAttribute('href', /probe=1/)
+  await english.click()
   await expect(page).toHaveURL('/en?probe=1')
 
-  await page.getByRole('banner').getByRole('link', { name: 'עברית', exact: true }).click()
+  const hebrew = page.getByRole('banner').getByRole('link', { name: 'עברית', exact: true })
+  await expect(hebrew).toHaveAttribute('href', /probe=1/)
+  await hebrew.click()
   await expect(page).toHaveURL('/?probe=1')
 })
 

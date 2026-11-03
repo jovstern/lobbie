@@ -56,6 +56,8 @@ test.describe('the sign-in page', () => {
   test('check-email links back to sign-in', async ({ page }) => {
     await page.goto('/en/sign-in/check-email')
     await expect(page.getByRole('heading', { level: 1, name: 'Check your email' })).toBeVisible()
+    // Without a valid ?email= the page says it in general terms.
+    await expect(page.getByRole('main')).toContainText("We've sent you a sign-in link.")
     await page.getByRole('link', { name: 'Use a different email' }).click()
     await expect(page).toHaveURL('/en/sign-in')
   })

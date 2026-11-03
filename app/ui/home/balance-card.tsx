@@ -16,9 +16,8 @@ export default async function BalanceCard() {
   return (
     <Card titleId="balance-card-title" title={t('title')} minHeight={homeCardHeights.balance}>
       <div className="flex flex-col gap-1">
-        <p className="text-display font-semibold tabular-nums">
-          {formatAgorot(totalAgorot, locale)}
-        </p>
+        {/* A step below the status card's figure: the status stays the focal point. */}
+        <p className="text-2xl font-semibold tabular-nums">{formatAgorot(totalAgorot, locale)}</p>
         <p className="text-text-muted">{t('asOf')}</p>
       </div>
     </Card>
