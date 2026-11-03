@@ -16,7 +16,8 @@ function single(value: string | string[] | undefined): string | undefined {
 
 /**
  * The part of sign-in that depends on the URL: the failed-link notice, `next`, and whether
- * the field takes focus (after signing out or a failed link, typing is the only next step).
+ * the field takes focus. After signing out or a failed sign-in, typing is the next step; an
+ * expired link's notice is read first, so focus stays at the top.
  */
 export default async function SignInSection({ searchParams, locale }: Props) {
   const params = await searchParams
@@ -42,7 +43,7 @@ export default async function SignInSection({ searchParams, locale }: Props) {
           {expired ? t('expired') : t('signInFailed')}
         </p>
       )}
-      <SignInForm action={action} autoFocus={signedOut || error !== undefined} />
+      <SignInForm action={action} autoFocus={signedOut || (error !== undefined && !expired)} />
     </>
   )
 }

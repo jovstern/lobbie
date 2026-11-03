@@ -1,6 +1,6 @@
 'use server'
 
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { hasLocale } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
@@ -8,6 +8,7 @@ import { getAuth } from '@/app/lib/auth'
 import { logger } from '@/app/lib/logger'
 import { consume, type RateLimitRule } from '@/app/lib/rate-limit'
 import { safeNextPath, withLocalePrefix } from '@/app/lib/utils/redirect'
+import { sentToCookie } from '@/app/lib/utils/sent-to'
 import { redirect } from '@/i18n/navigation'
 import { routing, type Locale } from '@/i18n/routing'
 
@@ -87,12 +88,10 @@ export async function requestMagicLink(
     return { email, message: t('sendFailed') }
   }
 
-  // The page shows where the link went. It is the address the person just typed, in their
-  // own URL; nothing logs it.
-  return redirect({
-    href: `/sign-in/check-email?${new URLSearchParams({ email: address })}`,
-    locale,
-  })
+  // Check-email shows where the link went, from a short-lived cookie rather than the URL.
+  const cookieStore = await cookies()
+  cookieStore.set(sentToCookie.name, address, sentToCookie.options)
+  return redirect({ href: '/sign-in/check-email', locale })
 }
 
 /** Ends the session and returns to sign-in in the same language. */

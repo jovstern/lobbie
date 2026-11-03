@@ -43,9 +43,7 @@ export async function signIn(page: Page, email: string, options: SignInOptions =
   const form = messages[locale].SignInForm
   await page.getByLabel(form.emailLabel).fill(email)
   await page.getByRole('button', { name: form.submit }).click()
-  await expect(page).toHaveURL(
-    `${prefix}/sign-in/check-email?${new URLSearchParams({ email: email.toLowerCase() })}`,
-  )
+  await expect(page).toHaveURL(`${prefix}/sign-in/check-email`)
 
   await expect
     .poll(() => latestLinkFor(email, since), { timeout: 10_000, message: `no link for ${email}` })

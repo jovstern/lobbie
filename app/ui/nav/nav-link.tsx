@@ -22,7 +22,8 @@ function isWithin(pathname: string, section: string): boolean {
 }
 
 const variants = {
-  tab: 'min-h-11 w-full flex-col justify-center gap-0.5 rounded-control px-3 py-1 text-sm',
+  // The ring sits inside the tab, so the screen's bottom edge cannot clip it.
+  tab: 'min-h-11 w-full flex-col justify-center gap-0.5 rounded-control px-3 py-1 text-sm focus-visible:outline-offset-[-2px]',
   side: 'min-h-11 gap-3 rounded-control px-3 text-base',
 }
 

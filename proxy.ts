@@ -37,7 +37,8 @@ function rememberLocale(request: NextRequest, response: NextResponse): NextRespo
 }
 
 // Optimistic: a cookie that exists may still be expired, so pages check the session too
-// (app/lib/authz.ts). This only saves a signed-out visitor a round trip.
+// (app/lib/authz.ts). This only saves a signed-out visitor a round trip. It is given the
+// forwarded request, so a session the renewal just ended counts as signed out.
 function redirectToSignIn(request: NextRequest): NextResponse | null {
   const { pathname, search } = request.nextUrl
   if (!isAppPage(pathname) || getSessionCookie(request) !== null) return null
@@ -48,21 +49,28 @@ function redirectToSignIn(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(url)
 }
 
+const cookieName = (setCookie: string) => setCookie.slice(0, setCookie.indexOf('='))
+
 /**
  * Pages read the session from Better Auth's signed cache cookie, which lives 5 minutes, and
  * Server Components cannot write cookies. So once it expires the proxy asks Better Auth for
- * the session (one database read) and returns its `Set-Cookie` headers: the new cache cookie,
- * and a longer-lived session cookie when the session was extended. Without a session, or
- * while the cache is fresh, nothing is read.
+ * the session (one database read) and returns its `Set-Cookie` headers, one per cookie: the
+ * new cache cookie, and a longer-lived session cookie when the session was extended (or
+ * expired ones when it has ended). Without a session, or while the cache is fresh, nothing
+ * is read. Only page loads renew: a Server Action (a POST) such as sign-out writes the
+ * session cookies itself, and a renewal on the same response could undo its deletion.
  */
 async function renewSessionCache(request: NextRequest): Promise<string[]> {
-  if (!needsSessionCacheRenewal(request.headers.get('cookie'))) return []
+  const isRead = request.method === 'GET' || request.method === 'HEAD'
+  if (!isRead || !needsSessionCacheRenewal(request.headers.get('cookie'))) return []
   try {
     const { headers } = await getAuth().api.getSession({
       headers: request.headers,
       returnHeaders: true,
     })
-    return headers.getSetCookie()
+    // The last word on each cookie, once.
+    const byName = new Map(headers.getSetCookie().map((cookie) => [cookieName(cookie), cookie]))
+    return [...byName.values()]
   } catch (err) {
     // The page reads the session itself, so a failure here only costs that read.
     logger.warn('session cache renewal failed', { area: 'proxy', err })
@@ -85,15 +93,18 @@ function withCookies(response: NextResponse, setCookies: string[]): NextResponse
   return response
 }
 
+// Every response carries the renewed cookies, redirects included, so the renewal is never
+// repeated on the next request.
 export default async function proxy(request: NextRequest) {
-  const savedLocale = redirectToSavedLocale(request)
-  if (savedLocale) return savedLocale
   const renewed = await renewSessionCache(request)
-  const response = handleI18nRouting(forwardedRequest(request, renewed))
+  const savedLocale = redirectToSavedLocale(request)
+  if (savedLocale) return withCookies(savedLocale, renewed)
+  const forwarded = forwardedRequest(request, renewed)
+  const response = handleI18nRouting(forwarded)
   // next-intl's own redirects (such as /he → /) come first; the target is checked next time.
   if (response.headers.has('location'))
     return withCookies(rememberLocale(request, response), renewed)
-  return withCookies(rememberLocale(request, redirectToSignIn(request) ?? response), renewed)
+  return withCookies(rememberLocale(request, redirectToSignIn(forwarded) ?? response), renewed)
 }
 
 export const config = {

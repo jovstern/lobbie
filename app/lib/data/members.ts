@@ -1,5 +1,6 @@
 import 'server-only'
 import { and, eq, sql } from 'drizzle-orm'
+import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
@@ -55,6 +56,8 @@ export async function memberForUser(userId: string): Promise<Member | null> {
     const [row] = rows
     return row ? { userId, ...memberRow.parse(row) } : null
   } catch (err) {
+    // Next's own signals (such as a prerender that ended) are not failures.
+    unstable_rethrow(err)
     logger.error('Failed to load the membership', { area: 'data/members', userId, err })
     throw new Error('Failed to load the membership')
   }

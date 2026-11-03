@@ -31,7 +31,7 @@ export default function AuthCardFrame({ appName, tagline, panelDescription, chil
           <p className="relative text-xl font-medium">{tagline}</p>
           <p className="relative max-w-xs">{panelDescription}</p>
         </div>
-        <div className="flex flex-col justify-center gap-6 p-6 sm:p-10">
+        <div className="flex min-w-0 flex-col justify-center gap-6 p-6 sm:p-10">
           <p className="text-accent flex items-center gap-2 font-semibold lg:hidden">
             <HomeIcon aria-hidden className="size-6" />
             {appName}

@@ -18,7 +18,11 @@ const requestHeaders = vi.hoisted(() => new Headers())
 vi.mock('@/app/lib/auth', () => ({ getAuth: () => ({ api }) }))
 vi.mock('@/app/lib/rate-limit', () => ({ consume: vi.fn() }))
 vi.mock('@/app/lib/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
-vi.mock('next/headers', () => ({ headers: async () => requestHeaders }))
+const cookieStore = vi.hoisted(() => ({ set: vi.fn() }))
+vi.mock('next/headers', () => ({
+  headers: async () => requestHeaders,
+  cookies: async () => cookieStore,
+}))
 vi.mock('@/i18n/navigation', () => ({
   redirect: vi.fn((target: unknown) => {
     throw new Redirected(target)
@@ -111,9 +115,7 @@ describe('requestMagicLink', () => {
   it('sends the link with a callback to the page asked for, then shows check-email', async () => {
     await expect(
       requestMagicLink({ locale: 'en', next: '/en/money' }, initial, form('dana@example.com')),
-    ).rejects.toEqual(
-      new Redirected({ href: '/sign-in/check-email?email=dana%40example.com', locale: 'en' }),
-    )
+    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'en' }))
 
     expect(api.signInMagicLink).toHaveBeenCalledWith({
       body: {
@@ -137,9 +139,7 @@ describe('requestMagicLink', () => {
   it('reaches check-email for an email no one has used before, too', async () => {
     await expect(
       requestMagicLink({ locale: 'he' }, initial, form('stranger@example.com')),
-    ).rejects.toEqual(
-      new Redirected({ href: '/sign-in/check-email?email=stranger%40example.com', locale: 'he' }),
-    )
+    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'he' }))
 
     expect(api.signInMagicLink.mock.calls[0][0].body).toMatchObject({
       callbackURL: '/',
@@ -162,9 +162,7 @@ describe('requestMagicLink', () => {
   it('falls back to Hebrew for an unknown locale', async () => {
     await expect(
       requestMagicLink({ locale: 'fr' }, initial, form('dana@example.com')),
-    ).rejects.toEqual(
-      new Redirected({ href: '/sign-in/check-email?email=dana%40example.com', locale: 'he' }),
-    )
+    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'he' }))
   })
 
   it('returns a message and logs when the email cannot be sent', async () => {
@@ -188,6 +186,28 @@ describe('requestMagicLink', () => {
     expect(state.message).toBe(en.SignInErrors.sendFailed)
     expect(logger.error).toHaveBeenCalled()
     expect(api.signInMagicLink).not.toHaveBeenCalled()
+  })
+})
+
+describe('requestMagicLink, where the link went', () => {
+  it('tells check-email the address in a short-lived httpOnly cookie, not the URL', async () => {
+    await expect(
+      requestMagicLink({ locale: 'en' }, initial, form('  Dana@Example.COM ')),
+    ).rejects.toEqual(new Redirected({ href: '/sign-in/check-email', locale: 'en' }))
+
+    expect(cookieStore.set).toHaveBeenCalledWith('lobbie_sent_to', 'dana@example.com', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      path: '/',
+      maxAge: 600,
+    })
+  })
+
+  it('sets no cookie when nothing was sent', async () => {
+    await requestMagicLink({ locale: 'en' }, initial, form('not-an-email'))
+
+    expect(cookieStore.set).not.toHaveBeenCalled()
   })
 })
 

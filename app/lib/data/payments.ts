@@ -1,6 +1,7 @@
 import 'server-only'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
+import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
 import { buildingTag, feesTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
@@ -123,6 +124,8 @@ export async function statusForUser(
       }),
     )
   } catch (err) {
+    // Next's own signals (such as a prerender that ended) are not failures.
+    unstable_rethrow(err)
     logger.error('Failed to load payment statuses', { area: 'data/payments', userId, err })
     throw new Error('Failed to load payment statuses')
   }

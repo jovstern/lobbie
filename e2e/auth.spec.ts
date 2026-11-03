@@ -1,5 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { expect, test } from './fixtures'
+import { useSessionOf } from './helpers/auth'
+import { messages } from './helpers/copy'
 
 const outbox = '.data/outbox'
 
@@ -54,11 +56,12 @@ test.describe('the sign-in page', () => {
   })
 
   test('check-email links back to sign-in', async ({ page }) => {
+    const text = messages.en.CheckEmail
     await page.goto('/en/sign-in/check-email')
-    await expect(page.getByRole('heading', { level: 1, name: 'Check your email' })).toBeVisible()
-    // Without a valid ?email= the page says it in general terms.
-    await expect(page.getByRole('main')).toContainText("We've sent you a sign-in link.")
-    await page.getByRole('link', { name: 'Use a different email' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: text.title })).toBeVisible()
+    // Opened directly, with no flash cookie, the page says it in general terms.
+    await expect(page.getByRole('main')).toContainText(text.body)
+    await page.getByRole('link', { name: text.differentEmail }).click()
     await expect(page).toHaveURL('/en/sign-in')
   })
 })
@@ -79,4 +82,26 @@ test('the HTTP endpoint for requesting a link is disabled, so the rate limits ca
     ? readdirSync(outbox).filter((name) => name.includes(recipient))
     : []
   expect(sent).toEqual([])
+})
+
+test('the proxy renews an expired session cache once, then serves pages from it', async ({
+  page,
+  context,
+}) => {
+  await useSessionOf(page, 'resident1@example.com')
+  // As if five minutes had passed: the browser has dropped the cache cookie.
+  await context.clearCookies({ name: /session_data/ })
+
+  const renewal = await page.goto('/en')
+  const renewed = (await renewal?.headersArray()) ?? []
+  const cacheCookies = renewed.filter(
+    ({ name, value }) => name.toLowerCase() === 'set-cookie' && value.includes('session_data='),
+  )
+  // One Set-Cookie for it: the proxy's, with no second copy from Better Auth's Next plugin.
+  expect(cacheCookies).toHaveLength(1)
+  expect(cacheCookies[0].value).toContain('Max-Age=300')
+
+  const next = await page.goto('/en/more')
+  const again = (await next?.headersArray()) ?? []
+  expect(again.some(({ value }) => value.includes('session_data='))).toBe(false)
 })

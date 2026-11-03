@@ -12,9 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title'), robots: { index: false } }
 }
 
-export default async function CheckEmailPage({
-  searchParams,
-}: PageProps<'/[locale]/sign-in/check-email'>) {
+export default async function CheckEmailPage() {
   const t = await getTranslations('CheckEmail')
 
   return (
@@ -22,9 +20,10 @@ export default async function CheckEmailPage({
       <EnvelopeIcon aria-hidden className="text-accent size-10" />
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold">{t('title')}</h1>
-        {/* Only the address reads the URL; until it streams in, the general sentence stands. */}
+        {/* Only the address reads the request; until it streams in, the general sentence
+            stands. */}
         <Suspense fallback={<p>{t('body')}</p>}>
-          <SentTo searchParams={searchParams} />
+          <SentTo />
         </Suspense>
         <p className="text-text-muted">{t('hint')}</p>
       </header>

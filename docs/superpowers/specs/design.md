@@ -201,8 +201,8 @@ each file keeps the course's rules.
 - **Sign-in:** a Server Action validates the email with Zod, applies `rate-limit.ts`
   (database-backed: 3 per email and 10 per IP per 15 minutes), then calls
   `auth.api.signInMagicLink` with a locale-aware callback. It always continues to
-  `/sign-in/check-email?email=…` (the page shows where the link went), so it never reveals
-  whether an email exists. Rate-limited requests get a message saying when to try again.
+  `/sign-in/check-email`, so it never reveals whether an email exists; a 10-minute httpOnly
+  flash cookie (not the URL) tells that page where the link went. Rate-limited requests get a message saying when to try again.
   Better Auth's HTTP endpoint for requesting a link is disabled (`disabledPaths`), so the
   rate limits cannot be bypassed, and link tokens are stored hashed. A failed link returns to
   `/sign-in?error=INVALID_TOKEN` (expired or used) or another code (a general failure).
@@ -264,8 +264,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 
 | Route | Job | Primary action | States | Read / write | Phone / desktop |
 |---|---|---|---|---|---|
-| `/sign-in` | Get a magic link | "Send me a link" | idle, pending, invalid email, rate-limited (with retry time), send failure; `?error=INVALID_TOKEN` (expired or used link) or another code (failure); `?signedOut=1` and errors focus the field | write `actions/auth.requestMagicLink` | centered card; desktop adds a warm illustration panel at the start side |
-| `/sign-in/check-email` | Confirm the link was sent, and to which address | "Use a different email" | with `?email=` (Zod-checked) the address; without, a general sentence | — | same card |
+| `/sign-in` | Get a magic link | "Send me a link" | idle, pending, invalid email, rate-limited (with retry time), send failure; `?error=INVALID_TOKEN` (expired or used link) or another code (failure); `?signedOut=1` and a failed sign-in focus the field (an expired link's notice does not) | write `actions/auth.requestMagicLink` | centered card; desktop adds a warm illustration panel at the start side |
+| `/sign-in/check-email` | Confirm the link was sent, and to which address | "Use a different email" | with the flash cookie (Zod-checked) the address; without, a general sentence | — | same card |
 | `/join/[code]` (M2) | Redeem an invite | "Join apartment 7" | valid, expired, full, revoked, already a member, member of another building, signed out (sign in, then return) | read `data/invites.preview`; write `actions/invites.redeem` | card |
 | `/join` (M2) | Enter a code by hand | "Join" | invalid code, rate-limited | same | card |
 | `/welcome` (M7) | Explain Lobbie to a visitor | "Sign in" / "Try the demo" (resident or committee) | static | write `actions/demo.signInAsDemo` | hero + 3 feature rows; 2 columns on desktop |
@@ -324,7 +324,7 @@ Destructive actions confirm in a Radix AlertDialog.
 Rubik (variable, `hebrew` + `latin` + `latin-ext` subsets, all preloaded: `latin-ext` holds
 the ₪ the browser draws from it) for everything; `tabular-nums` for money and dates. Type
 scale 1.25 (14, 16, 20, 25, 31; display `clamp(2rem, 1.5rem + 2.5vw, 3rem)` for the status
-card's amount; the balance figure is a step down, 31). Spacing 4 px grid. Radii: card 12 px,
+card's amount; the balance figure is smaller, 25). Spacing 4 px grid. Radii: card 12 px,
 control 10 px, chip 999 px. Shadow `--shadow-card: 0 1px 2px rgb(31 27 22 / .06), 0 4px 12px
 rgb(31 27 22 / .05)` (none in dark; a border instead). Motion 180 ms ease-out; none under
 `prefers-reduced-motion`.
@@ -365,7 +365,9 @@ outline, 2 px offset. Directional icons flip with `rtl:-scale-x-100`.
 
 - `app/lib/logger.ts`: JSON lines; data functions and actions log failures once at the
   boundary; no bare `console.log`. Data functions log their `area` (`data/payments`) and
-  throw a short "Failed to load …"; actions and route handlers log their `route`.
+  throw a short "Failed to load …", after `unstable_rethrow(err)` so Next's own signals (an
+  ended prerender, a redirect) are not logged as failures; actions and route handlers log
+  their `route`.
 - `app/ui/web-vitals.tsx` (`useReportWebVitals`) logs LCP, CLS and INP from M1; at launch it
   also feeds Vercel Analytics.
 - Production (M7): Vercel Web Analytics, Speed Insights, runtime logs.

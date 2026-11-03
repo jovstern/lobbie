@@ -103,7 +103,8 @@ both outside React.
 - `vitest.config.mts` (M1): `include` adds `{scripts,i18n,messages}/**/*.test.ts`; `node`
   environment for `app/lib/**`; `server-only` aliased to an empty module.
 - `package.json` scripts (M1): `db:generate`, `db:migrate`, `db:seed`, `db:studio`,
-  `auth:generate`.
+  `auth:generate`. `db:seed` writes behind the app, so it updates no cache tag: restart a
+  running server afterwards to drop its cached building data (the script says so).
 - `.github/workflows/ci.yml` (M1): add `npm test` (approved in discovery).
 
 ## Your setup before M1's task 3 (about 5 minutes)
@@ -252,6 +253,9 @@ Requirements: R6–R13.
    - directory contact visibility and language, both with the save-on-change pattern;
      language is saved to the profile and the cookie;
    - the committee contact, for committee members only.
+   - The language switch's server fallback (`LanguageSwitchLink` without a query) drops the
+     query when it is clicked before hydration. Fix it once a page relies on a query, for
+     example by rendering the switch in Suspense with the page's server `searchParams`.
    - Tests: actions; Testing Library for the toggle, including reverting when it fails.
 - **Acceptance tests:**
   - `e2e/invite.spec.ts`: the admin creates an invite for `e2e-1`, a new user signs in from

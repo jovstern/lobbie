@@ -12,6 +12,7 @@ import {
   user,
 } from '@/app/lib/schema'
 import { addMonths, todayIn } from '@/app/lib/utils/dates'
+import { logger } from '@/app/lib/logger'
 import { isEntryPoint, runScript } from './run'
 
 const timeZone = 'Asia/Jerusalem'
@@ -464,6 +465,9 @@ if (isEntryPoint(import.meta.url)) {
     const { db, close } = createDbClient(requireEnv('DATABASE_URL'))
     try {
       await seed(db)
+      // Building rows, fee rates and balances are cached for hours ('use cache'), and the
+      // seed writes behind the app's back, so no tag is updated.
+      logger.info('db:seed: restart any running server to drop its cached building data')
     } finally {
       await close()
     }

@@ -1,6 +1,7 @@
 import 'server-only'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
+import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
 import { balanceTag, buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
@@ -53,6 +54,8 @@ export async function balance(buildingId: string): Promise<BuildingBalance> {
     const parts = balanceRow.parse(row)
     return { ...parts, totalAgorot: computeBalance(parts) }
   } catch (err) {
+    // Next's own signals (such as a prerender that ended) are not failures.
+    unstable_rethrow(err)
     logger.error('Failed to load the balance', { area: 'data/ledger', buildingId, err })
     throw new Error('Failed to load the balance')
   }
