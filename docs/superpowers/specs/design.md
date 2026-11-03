@@ -333,7 +333,7 @@ outline, 2 px offset. Directional icons flip with `rtl:-scale-x-100`.
 | LCP | ≤ 2.0 s |
 | CLS | ≤ 0.05 |
 | TBT | ≤ 150 ms |
-| First-load JS per route | ≤ 130 kB gzip (≤ 110 kB for Home) |
+| First-load JS per route (module scripts, gzip; the `noModule` polyfill excluded) | ≤ 165 kB total, of which ≤ 30 kB is Lobbie's own code (everything beyond the React/Next runtime shared by every route). Rebased in M1: React 19 + Next 16 alone are ~138 kB, so the original 110/130 kB could not be met; decided by the user on 2026-11-03 |
 | axe violations | 0 (every route, both languages; Home in both themes) |
 | Console errors in e2e | 0 |
 | Server p95 (local, warm) | ≤ 200 ms reads, ≤ 400 ms writes; the observer reports the Neon round trip (Israel → Frankfurt) separately, and a miss caused only by it is noted, not hidden |
