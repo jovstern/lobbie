@@ -1,12 +1,19 @@
 import 'server-only'
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { z } from 'zod'
 import { buildingTag, feesTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import type { ApartmentStatus } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
-import { apartments, buildings, feeRates, payments } from '@/app/lib/schema'
+import {
+  apartmentResidents,
+  apartments,
+  buildingMembers,
+  buildings,
+  feeRates,
+  payments,
+} from '@/app/lib/schema'
 import { currentMonthIn } from '@/app/lib/utils/dates'
 import { apartmentSummary } from '@/app/lib/utils/status'
 
@@ -42,17 +49,31 @@ async function buildingBilling(buildingId: string) {
   return { building, rates }
 }
 
-// The asked apartments' own rows: never cached, since they belong to particular people.
-function apartmentBilling(buildingId: string, apartmentIds: string[]) {
+// The person's own apartments and their payments, two queries sent together (one round trip).
+// Both start from `apartment_residents` for this user and keep only apartments of the building
+// the user is a member of, so another person's apartment or another building's cannot appear.
+function userBilling(userId: string) {
+  const ownApartment = and(
+    eq(apartmentResidents.apartmentId, apartments.id),
+    eq(apartmentResidents.userId, userId),
+  )
+  const inOwnBuilding = and(
+    eq(buildingMembers.userId, userId),
+    eq(buildingMembers.buildingId, apartments.buildingId),
+  )
   return Promise.all([
     db
       .select({
         id: apartments.id,
+        buildingId: apartments.buildingId,
         number: apartments.number,
         billingStartMonth: apartments.billingStartMonth,
       })
       .from(apartments)
-      .where(and(eq(apartments.buildingId, buildingId), inArray(apartments.id, apartmentIds))),
+      .innerJoin(apartmentResidents, ownApartment)
+      .innerJoin(buildingMembers, inOwnBuilding)
+      // Natural order (2 before 10), as in the membership.
+      .orderBy(sql`length(${apartments.number})`, apartments.number),
     db
       .select({
         apartmentId: payments.apartmentId,
@@ -60,46 +81,37 @@ function apartmentBilling(buildingId: string, apartmentIds: string[]) {
         amountAgorot: sql`cast(sum(${payments.amountAgorot}) as integer)`,
       })
       .from(payments)
-      .where(
-        and(
-          eq(payments.buildingId, buildingId),
-          inArray(payments.apartmentId, apartmentIds),
-          isNull(payments.voidedAt),
-        ),
-      )
+      .innerJoin(apartments, eq(apartments.id, payments.apartmentId))
+      .innerJoin(apartmentResidents, ownApartment)
+      .innerJoin(buildingMembers, inOwnBuilding)
+      .where(and(eq(payments.buildingId, apartments.buildingId), isNull(payments.voidedAt)))
       .groupBy(payments.apartmentId, payments.month),
   ])
 }
 
 /**
- * What each apartment owes, with its number, keyed by apartment id in the order asked. Ids
- * that are not apartments of this building are left out. The building's part comes from the
- * cache; the apartments and their payments are read together, in one round trip.
+ * What each of the person's apartments owes, with its number, keyed by apartment id in
+ * natural order. Scoped by construction: only apartments the user lives in, in the building
+ * they belong to. One uncached round trip; the building's part comes from the cache.
  */
-export async function statusForApartments(
-  buildingId: string,
-  apartmentIds: string[],
+export async function statusForUser(
+  userId: string,
   now: Date = new Date(),
 ): Promise<Map<string, ApartmentStatus>> {
-  if (apartmentIds.length === 0) return new Map()
   try {
-    const [{ building, rates }, [apartmentRows, paymentRows]] = await Promise.all([
-      buildingBilling(buildingId),
-      apartmentBilling(buildingId, apartmentIds),
-    ])
-    if (!building) throw new Error(`No building ${buildingId}`)
+    const [apartmentRows, paymentRows] = await userBilling(userId)
+    const [first] = apartmentRows
+    if (!first) return new Map()
+    const { building, rates } = await buildingBilling(first.buildingId)
+    if (!building) throw new Error(`No building ${first.buildingId}`)
     const paymentsByApartment = Map.groupBy(
       z.array(monthPaymentRow).parse(paymentRows),
       (payment) => payment.apartmentId,
     )
     const currentMonth = currentMonthIn(building.timezone, now)
 
-    const rowsById = new Map(apartmentRows.map((apartment) => [apartment.id, apartment]))
-
     return new Map(
-      apartmentIds.flatMap((id) => {
-        const apartment = rowsById.get(id)
-        if (!apartment) return []
+      apartmentRows.map((apartment) => {
         const summary = apartmentSummary({
           apartment,
           buildingBillingStartMonth: building.billingStartMonth,
@@ -107,11 +119,11 @@ export async function statusForApartments(
           payments: paymentsByApartment.get(apartment.id) ?? [],
           currentMonth,
         })
-        return [[id, { number: apartment.number, ...summary }]]
+        return [apartment.id, { number: apartment.number, ...summary }]
       }),
     )
   } catch (err) {
-    logger.error('Failed to load payment statuses', { area: 'data/payments', buildingId, err })
+    logger.error('Failed to load payment statuses', { area: 'data/payments', userId, err })
     throw new Error('Failed to load payment statuses')
   }
 }

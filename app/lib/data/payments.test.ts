@@ -2,9 +2,16 @@ import { and, eq } from 'drizzle-orm'
 import { cacheTag } from 'next/cache'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { db } from '@/app/lib/db'
-import { apartments, buildings, payments, user } from '@/app/lib/schema'
+import {
+  apartmentResidents,
+  apartments,
+  buildingMembers,
+  buildings,
+  payments,
+  user,
+} from '@/app/lib/schema'
 import { seed } from '@/scripts/seed'
-import { statusForApartments } from './payments'
+import { statusForUser } from './payments'
 
 const testDb = await vi.hoisted(async () => {
   const { createTestDb } = await import('@/app/lib/test/db')
@@ -30,6 +37,30 @@ const idOf = (number: string) => {
   return id
 }
 
+let people = 0
+
+/**
+ * A new person living in the given apartments, a resident of `building` (the demo building by
+ * default). Each test gets its own, so the apartments are exactly those it names.
+ */
+async function residentOf(apartmentIdsToJoin: string[], building = buildingId) {
+  people += 1
+  const [person] = await db
+    .insert(user)
+    .values({ name: `P${people}`, email: `p${people}@example.com`, emailVerified: true })
+    .returning({ id: user.id })
+  await db.insert(buildingMembers).values({ userId: person.id, buildingId: building })
+  if (apartmentIdsToJoin.length > 0) {
+    await db
+      .insert(apartmentResidents)
+      .values(apartmentIdsToJoin.map((apartmentId) => ({ userId: person.id, apartmentId })))
+  }
+  return person.id
+}
+
+const statusesOf = async (numbers: string[]) =>
+  statusForUser(await residentOf(numbers.map(idOf)), now)
+
 beforeAll(async () => {
   await seed(db, { now })
   const [demo] = await db.select().from(buildings).where(eq(buildings.isDemo, true))
@@ -41,16 +72,16 @@ beforeAll(async () => {
   apartmentIds = new Map(rows.map((row) => [row.number, row.id]))
 })
 
-describe('statusForApartments', () => {
+describe('statusForUser', () => {
   it("caches only the building's part, under the building's tags", async () => {
     vi.mocked(cacheTag).mockClear()
-    await statusForApartments(buildingId, [idOf('4')], now)
+    await statusesOf(['4'])
     expect(cacheTag).toHaveBeenCalledTimes(1)
     expect(cacheTag).toHaveBeenCalledWith(`building:${buildingId}`, `building:${buildingId}:fees`)
   })
 
   it('apartments 4 and 9 are behind, owing the fee for each unpaid month', async () => {
-    const statuses = await statusForApartments(buildingId, [idOf('4'), idOf('9')], now)
+    const statuses = await statusesOf(['4', '9'])
 
     // Apartment 4 has not paid its last 2 months: October is overdue, November is due.
     expect(statuses.get(idOf('4'))).toEqual({
@@ -69,7 +100,7 @@ describe('statusForApartments', () => {
   })
 
   it('a fully paid apartment is paid, at its own fee', async () => {
-    const statuses = await statusForApartments(buildingId, [idOf('1'), idOf('10')], now)
+    const statuses = await statusesOf(['1', '10'])
 
     expect(statuses.get(idOf('1'))).toEqual({
       number: '1',
@@ -86,7 +117,7 @@ describe('statusForApartments', () => {
   })
 
   it('an apartment with its own billing start owes only from it', async () => {
-    const statuses = await statusForApartments(buildingId, [idOf('e2e-1')], now)
+    const statuses = await statusesOf(['e2e-1'])
 
     expect(statuses.get(idOf('e2e-1'))).toEqual({
       number: 'e2e-1',
@@ -114,7 +145,7 @@ describe('statusForApartments', () => {
       voidReason: 'test',
     })
 
-    const statuses = await statusForApartments(buildingId, [idOf('4')], now)
+    const statuses = await statusesOf(['4'])
 
     expect(statuses.get(idOf('4'))?.current).toEqual({
       kind: 'due',
@@ -127,35 +158,50 @@ describe('statusForApartments', () => {
       .where(and(eq(payments.apartmentId, idOf('4')), eq(payments.month, currentMonth)))
   })
 
-  it("ignores another building's apartments, and apartments asked under the wrong building", async () => {
+  it("never lists another person's apartments", async () => {
+    // Apartment 9's own residents exist in the seed; this person lives only in 1.
+    const statuses = await statusesOf(['1'])
+    expect([...statuses.keys()]).toEqual([idOf('1')])
+  })
+
+  it('gives a member of another building nothing of this building', async () => {
     const [other] = await db
       .insert(buildings)
       .values({ name: 'Other', address: 'Elsewhere 1', billingStartMonth: '2026-01' })
       .returning()
-    const [stranger] = await db
+    const [own] = await db
       .insert(apartments)
       .values({ buildingId: other.id, number: '1', floor: 1 })
       .returning()
+    // A stray residence in the demo building (as if left behind by a move) must not leak.
+    const outsider = await residentOf([own.id, idOf('4')], other.id)
 
-    const statuses = await statusForApartments(buildingId, [idOf('1'), stranger.id], now)
-    expect([...statuses.keys()]).toEqual([idOf('1')])
-
-    const asked = await statusForApartments(other.id, [idOf('1'), idOf('4')], now)
-    expect(asked.size).toBe(0)
+    const statuses = await statusForUser(outsider, now)
+    expect([...statuses.keys()]).toEqual([own.id])
   })
 
-  it('keeps the apartments in the order asked', async () => {
-    const statuses = await statusForApartments(buildingId, [idOf('10'), idOf('2')], now)
-    expect([...statuses.values()].map((status) => status.number)).toEqual(['10', '2'])
+  it('gives nothing to someone who is not a member of any building', async () => {
+    const [person] = await db
+      .insert(user)
+      .values({ name: 'Nobody', email: 'nobody@example.com', emailVerified: true })
+      .returning({ id: user.id })
+    await db.insert(apartmentResidents).values({ userId: person.id, apartmentId: idOf('4') })
+
+    expect((await statusForUser(person.id, now)).size).toBe(0)
   })
 
-  it('returns an empty map for no apartments', async () => {
-    expect((await statusForApartments(buildingId, [], now)).size).toBe(0)
+  it('lists the apartments in natural order', async () => {
+    const statuses = await statusesOf(['10', '2'])
+    expect([...statuses.values()].map((status) => status.number)).toEqual(['2', '10'])
+  })
+
+  it('returns an empty map for a member without apartments', async () => {
+    expect((await statusesOf([])).size).toBe(0)
   })
 
   it('logs and throws a short message when the query fails', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await expect(statusForApartments(buildingId, ['not-a-uuid'], now)).rejects.toThrow(
+    await expect(statusForUser('not-a-uuid', now)).rejects.toThrow(
       'Failed to load payment statuses',
     )
     expect(consoleError).toHaveBeenCalledOnce()

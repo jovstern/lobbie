@@ -169,8 +169,9 @@ and part of R25.
    - `monthStatus`: paid, due, overdue, not billed, and the amount remaining; uses the
      apartment's billing start and the current month in the building's time zone.
    - `balance`.
-   - `data/payments.statusForApartments` and `data/ledger.balance`, one query each, with
-     sums cast.
+   - `data/payments.statusForUser` (the person's apartments, joined from the session's user
+     id; one uncached round trip beside the membership) and `data/ledger.balance`, with sums
+     cast.
    - Tests: table-driven unit tests, covering a fee change mid-year, a partial payment, a
      voided payment, an apartment added late, a month boundary at 23:30 Israel time, and a
      balance adjustment; data tests on PGlite.

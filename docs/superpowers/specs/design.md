@@ -274,7 +274,7 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 
 | Route | Job | Primary action | States | Read / write | Phone / desktop |
 |---|---|---|---|---|---|
-| `/` Home | Five-second overview | the most urgent item (pay / vote / none) | Suspense per card group, not billed yet, empty week, reminder banner, poll open | `data/payments.statusForApartments`, `data/ledger.balance`, `data/schedules.nextPerKind`, `data/announcements.latest`, `data/meeting.openPoll` | stacked cards, status + balance first; desktop 2-column grid |
+| `/` Home | Five-second overview | the most urgent item (pay / vote / none) | Suspense per card group, not billed yet, empty week, reminder banner, poll open | `data/payments.statusForUser`, `data/ledger.balance`, `data/schedules.nextPerKind`, `data/announcements.latest`, `data/meeting.openPoll` | stacked cards, status + balance first; desktop 2-column grid |
 | `/money` | My apartment's payments | — (status is the point) | paid, due, overdue, partial, not billed, several apartments (`?apartment=`) | `data/payments.monthlyStatus`, `history` | status hero + month list; desktop table |
 | `/money/balance` | Where the money goes | open a receipt | opening balance only, `?year=` | `data/ledger.balance`, `byCategory`, `data/expenses.list` | balance figure, CSS category bars (no chart library), expense list |
 | `/schedule` | What happens this week | prev/next week (`?week=YYYY-MM-DD`, a Sunday) | empty week, cancelled/moved marked | `data/schedules.occurrences(range)` | phone day list; desktop 7 columns |
