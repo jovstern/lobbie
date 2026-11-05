@@ -1,0 +1,118 @@
+{
+  "Metadata": {
+    "appName": "Lobbie",
+    "description": "Your building's payments, balance, announcements and schedules, in one place for residents and the committee."
+  },
+  "Common": {
+    "backHome": "Back to home"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The link may be wrong, or the page may have moved."
+  },
+  "Home": {
+    "title": "Home"
+  },
+  "Auth": {
+    "appName": "Lobbie",
+    "tagline": "Everyone under one roof",
+    "panelDescription": "Payments, announcements and schedules for your building, in one place.",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "SignIn": {
+    "title": "Sign in",
+    "heading": "Sign in to Lobbie",
+    "lead": "Enter your email and we'll send you a link to sign in. No password needed.",
+    "expired": "That sign-in link has expired or was already used. Enter your email to get a new one.",
+    "signInFailed": "We couldn't sign you in. Please try again."
+  },
+  "SignInForm": {
+    "emailLabel": "Email",
+    "submit": "Send me a link",
+    "sending": "Sending…",
+    "rateLimited": "Too many attempts; try again in {minutes, plural, one {# minute} other {# minutes}}."
+  },
+  "SignInErrors": {
+    "invalidEmail": "Enter an email address like name@example.com.",
+    "sendFailed": "We couldn't send the email. Please try again in a moment."
+  },
+  "CheckEmail": {
+    "title": "Check your email",
+    "body": "We've sent you a sign-in link. It works once and is valid for 15 minutes.",
+    "sentTo": "We've sent a sign-in link to <address>{email}</address>. It works once and is valid for 15 minutes.",
+    "hint": "Can't find it? Look in your spam folder.",
+    "differentEmail": "Use a different email"
+  },
+  "Join": {
+    "title": "Join your building",
+    "body": "Ask your building committee for an invite link, then open it on this device to join your apartment."
+  },
+  "Authz": {
+    "signedOut": "Your session has ended. Sign in again to continue.",
+    "noMembership": "You're not a member of a building yet.",
+    "forbidden": "You don't have permission to do that."
+  },
+  "Email": {
+    "subject": "Your Lobbie sign-in link",
+    "greeting": "Hi,",
+    "intro": "Here's your link to sign in to Lobbie:",
+    "action": "Sign in to Lobbie",
+    "expiry": "The link works once and expires in 15 minutes.",
+    "ignore": "If you didn't ask for it, you can ignore this email."
+  },
+  "ErrorPage": {
+    "title": "Something went wrong",
+    "body": "We couldn't load this page. Try again, or go back home.",
+    "retry": "Try again"
+  },
+  "Nav": {
+    "label": "Main",
+    "home": "Home",
+    "more": "More",
+    "skipToContent": "Skip to content",
+    "moreHidden": "options"
+  },
+  "LanguageSwitch": {
+    "otherLanguage": "עברית"
+  },
+  "StatusCard": {
+    "title": "Your payments",
+    "paid": "Paid",
+    "due": "Due",
+    "overdue": "Overdue",
+    "noFee": "No fee",
+    "notBilled": "Not billed yet",
+    "paidUpFor": "You're paid up for {month}",
+    "dueFor": "Due for {month}",
+    "partialFor": "Left to pay for {month}",
+    "totalOwed": "Total owed",
+    "monthsBehind": "You're {count, plural, one {# month} other {# months}} behind",
+    "noFeeBody": "The committee hasn't set a fee for {month}, so there's nothing to pay.",
+    "notBilledTitle": "Billing hasn't started yet",
+    "notBilledBody": "Once the committee starts billing, you'll see here whether you're paid up.",
+    "noApartmentTitle": "You're not linked to an apartment yet",
+    "noApartmentBody": "Ask your building committee to add you to your apartment.",
+    "apartment": "Apartment {number}",
+    "rowPaid": "Paid for {month}",
+    "rowDue": "{amount} to pay",
+    "rowOverdue": "{amount} owed · {count, plural, one {# month} other {# months}} behind"
+  },
+  "BalanceCard": {
+    "title": "Building fund",
+    "asOf": "As of today"
+  },
+  "More": {
+    "title": "More",
+    "profile": "Profile",
+    "language": "Language"
+  },
+  "Profile": {
+    "title": "Profile",
+    "name": "Name",
+    "email": "Email",
+    "language": "Language",
+    "notSet": "Not set",
+    "languageName": "English"
+  }
+}
