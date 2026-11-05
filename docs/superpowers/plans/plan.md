@@ -505,7 +505,7 @@ M1's PR.
 
 | Milestone | Estimated | Actual | Why it differed |
 |---|---|---|---|
-| M1 | 2 h 45 min | | |
+| M1 | 2 h 45 min | ~3 h 30 min agent (ratio 1.28); wall clock 3 days | Security and latency findings needed real fixes (HTTP magic-link bypass, plain tokens, session-cache renewal, one-round-trip status); workarounds for Better Auth + Cache Components + next-intl; three fix rounds. Wall clock: two usage-limit pauses and a Neon branch recreation. Remaining milestones re-scaled ×1.28 (M2–M7 ≈ 13 h) |
 | M2 | 1 h 45 min | | |
 | M3 | 2 h | | |
 | M4 | 1 h 40 min | | |
