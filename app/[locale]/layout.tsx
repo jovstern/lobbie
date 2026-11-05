@@ -34,6 +34,8 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
         {/* Only the namespaces client components read; each new one is added here. */}
         <NextIntlClientProvider
           messages={{
+            AdjustmentForm: messages.AdjustmentForm,
+            BuildingForm: messages.BuildingForm,
             Common: messages.Common,
             ErrorPage: messages.ErrorPage,
             LanguageSwitch: messages.LanguageSwitch,

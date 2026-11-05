@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { useSessionOf } from './helpers/auth'
+import { messages } from './helpers/copy'
 
 // WCAG 2.2 AA (spec §8): zero violations on every page, in both languages.
 const wcag = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -58,6 +59,33 @@ for (const locale of ['he', 'en'] as const) {
       await useSessionOf(page, 'resident1@example.com')
       await page.goto(`${prefix}/profile`)
       await expect(page.getByRole('main')).toContainText('resident1@example.com')
+      await expectNoViolations(page)
+    })
+
+    test('Admin', async ({ page }) => {
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: messages[locale].Admin.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Admin: building details, and the adjustment dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/building`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: text.AdminBuilding.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await page.getByRole('button', { name: text.AdjustmentForm.open, exact: true }).click()
+      await expect(
+        page.getByRole('dialog', { name: text.AdjustmentForm.title, exact: true }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
       await expectNoViolations(page)
     })
 

@@ -62,3 +62,21 @@ export type Member = {
   timeZone: string
   buildingName: string
 }
+
+/** The building's settings, as the admin edits them (R7). */
+export type BuildingDetails = {
+  name: string
+  address: string
+  quorumPercent: number
+  billingStartMonth: string
+  openingBalanceAgorot: number
+}
+
+/** A recorded correction to the building fund: signed, never zero (R7). */
+export type BalanceAdjustment = {
+  id: string
+  amountAgorot: number
+  reason: string
+  recordedByName: string
+  createdAt: Date
+}

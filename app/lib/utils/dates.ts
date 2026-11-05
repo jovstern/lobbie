@@ -36,3 +36,10 @@ export function formatMonth(month: string, locale: Locale): string {
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(year, monthOfYear - 1, 1)))
 }
+
+/** The calendar date of an instant in the building's time zone, in the locale's words. */
+export function formatDate(instant: Date, timeZone: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeZone }).format(
+    instant,
+  )
+}

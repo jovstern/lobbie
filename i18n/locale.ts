@@ -18,3 +18,8 @@ export function localeInPath(pathname: string): Locale | null {
   const firstSegment = pathname.split('/')[1] ?? ''
   return isLocale(firstSegment) ? firstSegment : null
 }
+
+/** A locale passed to a Server Action (which cannot read the route's), or the default. */
+export function resolveLocale(value: string): Locale {
+  return isLocale(value) ? value : routing.defaultLocale
+}

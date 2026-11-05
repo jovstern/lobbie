@@ -4,14 +4,22 @@ import type { Locale } from '@/i18n/routing'
 const agorotPerShekel = 100
 const maxAgorot = 10_000_000 * agorotPerShekel
 
-/** Formats agorot as shekels: whole amounts with no decimals (₪350), others with two (₪350.50). */
-export function formatAgorot(agorot: number, locale: Locale): string {
+/**
+ * Formats agorot as shekels: whole amounts with no decimals (₪350), others with two (₪350.50).
+ * `signed` also marks a positive amount (+₪350), for changes such as balance adjustments.
+ */
+export function formatAgorot(
+  agorot: number,
+  locale: Locale,
+  { signed = false }: { signed?: boolean } = {},
+): string {
   const fractionDigits = agorot % agorotPerShekel === 0 ? 0 : 2
   return new Intl.NumberFormat(intlLocales[locale], {
     style: 'currency',
     currency: 'ILS',
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
+    signDisplay: signed ? 'exceptZero' : 'auto',
   }).format(agorot / agorotPerShekel)
 }
 

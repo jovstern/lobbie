@@ -37,6 +37,12 @@ describe('formatAgorot', () => {
     const formatted = formatAgorot(35_050, 'he').replace(/[\p{Cf}\s]/gu, '')
     expect(formatted).toBe('350.50₪')
   })
+
+  it('marks both signs when signed, as a change to a balance', () => {
+    expect(formatAgorot(25_000, 'en', { signed: true })).toBe('+₪250')
+    expect(formatAgorot(-12_050, 'en', { signed: true })).toBe('-₪120.50')
+    expect(formatAgorot(25_000, 'en')).toBe('₪250')
+  })
 })
 
 describe('parseShekelsToAgorot', () => {

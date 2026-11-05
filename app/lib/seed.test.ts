@@ -1,5 +1,6 @@
 import { count, eq, isNotNull, isNull } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { demoBuildingId, demoBuildingName } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
 import type { Db } from './db-client'
 import {
@@ -18,8 +19,9 @@ let db: Db
 let close: () => Promise<void>
 const now = new Date('2026-11-02T10:00:00Z')
 
-// Another (real) building whose member uses one of the seed's emails. The seed must leave
-// all of it alone, and must not move that member into the demo building.
+// Another (real) building, with the demo building's name, whose member uses one of the seed's
+// emails. The seed must leave all of it alone, and must not move that member into the demo
+// building.
 const sharedEmail = 'resident13@example.com'
 let otherBuildingId: string
 let otherBefore: Awaited<ReturnType<typeof otherBuildingRows>>
@@ -28,7 +30,7 @@ beforeAll(async () => {
   ;({ db, close } = await createTestDb())
   const [other] = await db
     .insert(buildings)
-    .values({ name: 'רחוב הזית 3', address: 'הזית 3, חיפה', billingStartMonth: '2026-01' })
+    .values({ name: demoBuildingName, address: 'הזית 3, חיפה', billingStartMonth: '2026-01' })
     .returning()
   otherBuildingId = other.id
   const [apartment] = await db
@@ -138,10 +140,10 @@ describe('seed', () => {
   })
 
   it('sets up the demo building as the spec describes', async () => {
-    const [building] = await db.select().from(buildings).where(eq(buildings.isDemo, true))
+    const [building] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
     expect(building).toMatchObject({
-      name: 'רחוב הרימון 12',
-      isDemo: true,
+      name: demoBuildingName,
+      isDemo: false,
       timezone: 'Asia/Jerusalem',
       quorumPercent: 50,
       openingBalanceAgorot: 850_000,
@@ -180,5 +182,47 @@ describe('seed', () => {
     const voided = await db.select().from(payments).where(isNotNull(payments.voidedAt))
     expect(voided).toHaveLength(1)
     expect(voided[0].voidReason).toBeTruthy()
+  })
+})
+
+describe('seed, demo mode', () => {
+  const demoRows = () => db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
+
+  it('is not a demo building by default, so the seeded admin can write', async () => {
+    await seed(db, { now })
+    expect((await demoRows()).map((row) => row.isDemo)).toEqual([false])
+  })
+
+  it('marks the same building as a demo with `demo`, and is idempotent', async () => {
+    const before = await rowCounts()
+    const [plain] = await demoRows()
+
+    await seed(db, { now, demo: true })
+    await seed(db, { now, demo: true })
+
+    expect(await demoRows()).toEqual([{ ...plain, isDemo: true }])
+    expect(await rowCounts()).toEqual(before)
+    expect(await otherBuildingRows()).toEqual(otherBefore)
+  })
+
+  it('finds the demo building again when seeded without `demo`, and clears the flag', async () => {
+    const before = await rowCounts()
+
+    await seed(db, { now })
+
+    expect((await demoRows()).map((row) => row.isDemo)).toEqual([false])
+    expect(await rowCounts()).toEqual(before)
+    expect(await otherBuildingRows()).toEqual(otherBefore)
+  })
+
+  it('finds the building by its id after an admin renamed it, and restores the name', async () => {
+    await db.update(buildings).set({ name: 'Renamed' }).where(eq(buildings.id, demoBuildingId))
+    const before = await rowCounts()
+
+    await seed(db, { now })
+
+    expect((await demoRows()).map((row) => row.name)).toEqual([demoBuildingName])
+    expect(await rowCounts()).toEqual(before)
+    expect(await otherBuildingRows()).toEqual(otherBefore)
   })
 })

@@ -42,6 +42,23 @@
 
   --default-transition-duration: 180ms;
   --default-transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+
+  /* Dialogs enter (spec §7 motion); reduced motion turns these off below. */
+  --animate-fade-in: fade-in 180ms cubic-bezier(0, 0, 0.2, 1);
+  --animate-dialog-in: dialog-in 180ms cubic-bezier(0, 0, 0.2, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.98);
+    }
+  }
 }
 
 /*
@@ -51,10 +68,13 @@
 @theme inline {
   --font-sans: var(--font-rubik), system-ui, sans-serif;
   --shadow-card: var(--elevation-card);
+  /* Dims the page behind a dialog. */
+  --color-scrim: var(--scrim);
 }
 
 :root {
   --elevation-card: 0 1px 2px rgb(31 27 22 / 0.06), 0 4px 12px rgb(31 27 22 / 0.05);
+  --scrim: rgb(31 27 22 / 0.45);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -72,6 +92,7 @@
     --color-danger: #ec7b7b;
     /* A border separates cards in dark mode instead. */
     --elevation-card: none;
+    --scrim: rgb(0 0 0 / 0.6);
   }
 }
 

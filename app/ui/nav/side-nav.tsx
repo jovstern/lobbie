@@ -1,7 +1,9 @@
 import { HomeIcon } from '@heroicons/react/24/outline'
 import { getTranslations } from 'next-intl/server'
+import { Suspense } from 'react'
 import NavLink from '@/app/ui/nav/nav-link'
 import { navItems } from '@/app/ui/nav/nav-items'
+import SideNavAdmin from '@/app/ui/nav/side-nav-admin'
 
 /** From 1024 px: the navigation runs down the inline-start edge, under the app's name. */
 export default async function SideNav() {
@@ -32,6 +34,10 @@ export default async function SideNav() {
           </li>
         ))}
       </ul>
+      {/* Role-dependent, so it streams in and the rest of the shell stays static. */}
+      <Suspense fallback={null}>
+        <SideNavAdmin />
+      </Suspense>
     </nav>
   )
 }

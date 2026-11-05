@@ -2,6 +2,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { db } from '@/app/lib/db'
 import { apartmentResidents, apartments, buildings, user } from '@/app/lib/schema'
+import { demoBuildingId } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
 import { memberForUser } from './members'
 
@@ -18,7 +19,7 @@ beforeAll(async () => {
 
 describe('memberForUser', () => {
   it('lists apartments in natural order: 2, then 10, then 11', async () => {
-    const [demo] = await db.select().from(buildings).where(eq(buildings.isDemo, true))
+    const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
     const [person] = await db
       .select({ id: user.id })
       .from(user)

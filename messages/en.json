@@ -71,7 +71,8 @@
     "home": "Home",
     "more": "More",
     "skipToContent": "Skip to content",
-    "moreHidden": "options"
+    "moreHidden": "options",
+    "admin": "Admin"
   },
   "LanguageSwitch": {
     "otherLanguage": "עברית"
@@ -105,7 +106,8 @@
   "More": {
     "title": "More",
     "profile": "Profile",
-    "language": "Language"
+    "language": "Language",
+    "admin": "Admin"
   },
   "Profile": {
     "title": "Profile",
@@ -114,5 +116,76 @@
     "language": "Language",
     "notSet": "Not set",
     "languageName": "English"
+  },
+  "Demo": {
+    "readOnly": "This is a demo building, so changes are turned off."
+  },
+  "Admin": {
+    "title": "Admin",
+    "navLabel": "Admin",
+    "overview": "Overview",
+    "building": "Building",
+    "lead": "Manage the building and its money.",
+    "buildingLink": "Building details",
+    "buildingLinkBody": "Name, address, quorum and billing, and corrections to the fund.",
+    "noToolsYet": "The committee's tools, such as payments and announcements, will appear here as they're added."
+  },
+  "AdminBuilding": {
+    "title": "Building details",
+    "detailsTitle": "Details",
+    "fundTitle": "Building fund",
+    "openingBalance": "Opening balance",
+    "openingBalanceHint": "Set when the building was created. To correct the fund, add an adjustment.",
+    "adjustmentsTitle": "Adjustments",
+    "emptyTitle": "No adjustments yet",
+    "emptyBody": "If the fund doesn’t match the bank, record the difference here with a reason.",
+    "date": "Date",
+    "amount": "Amount",
+    "reason": "Reason",
+    "recordedBy": "Recorded by"
+  },
+  "BuildingForm": {
+    "name": "Building name",
+    "address": "Address",
+    "quorumPercent": "Quorum for the annual meeting",
+    "quorumHint": "The share of apartments that must take part, in percent.",
+    "billingStartMonth": "Billing starts",
+    "billingStartHint": "Apartments owe the monthly fee from this month on, unless they have their own start. Without a month picker, type it as YYYY-MM, for example 2026-01.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "confirmTitle": "Change when billing starts?",
+    "confirmBody": "Billing would start in {to} instead of {from}. This changes what every apartment owes, past months included.",
+    "saveAnyway": "Save anyway"
+  },
+  "BuildingErrors": {
+    "name": "Enter a name of 2 to 80 characters.",
+    "address": "Keep the address to 160 characters.",
+    "quorumPercent": "Enter a whole number from 1 to 100.",
+    "billingStartMonth": "Choose a month, such as 2026-01.",
+    "saveFailed": "We couldn’t save the details. Please try again."
+  },
+  "AdjustmentForm": {
+    "open": "Add adjustment",
+    "title": "Add an adjustment",
+    "description": "Corrects the building fund. It’s recorded with your name and today’s date.",
+    "direction": "Direction",
+    "in": "Add to the fund",
+    "out": "Take from the fund",
+    "amount": "Amount in shekels",
+    "amountHint": "For example 250 or 1,200.50",
+    "reason": "Reason",
+    "reasonHint": "For example: bank fees not recorded earlier.",
+    "submit": "Add adjustment",
+    "adding": "Adding…",
+    "cancel": "Cancel",
+    "added": "Adjustment added",
+    "close": "Close"
+  },
+  "AdjustmentErrors": {
+    "direction": "Choose whether the money is added to the fund or taken from it.",
+    "amount": "Enter an amount above zero, such as 250 or 1,200.50.",
+    "reason": "Write a reason of 3 to 200 characters.",
+    "addFailed": "We couldn’t add the adjustment. Please try again."
   }
 }

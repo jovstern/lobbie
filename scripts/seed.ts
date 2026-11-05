@@ -1,9 +1,10 @@
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { createDbClient, type Db } from '@/app/lib/db-client'
 import { requireEnv } from '@/app/lib/env'
 import {
   apartmentResidents,
   apartments,
+  balanceAdjustments,
   buildingMembers,
   buildings,
   expenses,
@@ -13,6 +14,7 @@ import {
 } from '@/app/lib/schema'
 import { addMonths, todayIn } from '@/app/lib/utils/dates'
 import { logger } from '@/app/lib/logger'
+import { demoBuildingId, demoBuildingName } from './demo-building'
 import { isEntryPoint, runScript } from './run'
 
 const timeZone = 'Asia/Jerusalem'
@@ -253,13 +255,26 @@ const expenseRows = [
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+type SeedOptions = {
+  now?: Date
+  /**
+   * Marks the building as a demo, where every write is refused (`npm run db:seed -- --demo`).
+   * Off by default, so the seeded admin can try every screen.
+   */
+  demo?: boolean
+}
+
 /**
- * Seeds the demo building. Idempotent: people, apartments, memberships and residents are
- * upserted on their natural keys; the demo building's fees, payments and expenses (which
- * have no natural key, and are relative to the current month) are replaced as a whole.
- * Everything runs in one transaction.
+ * Seeds the demo building. Idempotent: the building is upserted on its fixed id, whether or
+ * not it is marked as a demo; people, apartments, memberships and residents are upserted on their
+ * natural keys; the demo building's fees, payments and expenses (which have no natural key,
+ * and are relative to the current month) are replaced as a whole. Everything runs in one
+ * transaction.
  */
-export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): Promise<void> {
+export async function seed(
+  db: Db,
+  { now = new Date(), demo: isDemo = false }: SeedOptions = {},
+): Promise<void> {
   const today = todayIn(timeZone, now)
   const currentMonth = today.slice(0, 7)
   const todayDay = Number(today.slice(8))
@@ -268,26 +283,26 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
 
   await db.transaction(async (tx) => {
     const demo = {
-      name: 'רחוב הרימון 12',
+      name: demoBuildingName,
       address: 'הרימון 12, רמת גן',
       timezone: timeZone,
       quorumPercent: 50,
       openingBalanceAgorot: 850_000,
       billingStartMonth,
-      isDemo: true,
+      isDemo,
     }
-    const [existing] = await tx
-      .select({ id: buildings.id })
-      .from(buildings)
-      .where(and(eq(buildings.name, demo.name), eq(buildings.isDemo, true)))
-    const [building] = existing
-      ? await tx.update(buildings).set(demo).where(eq(buildings.id, existing.id)).returning()
-      : await tx.insert(buildings).values(demo).returning()
-    const buildingId = building.id
+    // Upserted on its fixed id: a re-run restores its name and settings, and a building
+    // elsewhere with the same name is never touched.
+    const buildingId = demoBuildingId
+    await tx
+      .insert(buildings)
+      .values({ id: buildingId, ...demo })
+      .onConflictDoUpdate({ target: buildings.id, set: demo })
 
     await tx.delete(payments).where(eq(payments.buildingId, buildingId))
     await tx.delete(expenses).where(eq(expenses.buildingId, buildingId))
     await tx.delete(feeRates).where(eq(feeRates.buildingId, buildingId))
+    await tx.delete(balanceAdjustments).where(eq(balanceAdjustments.buildingId, buildingId))
 
     const apartmentRows = [
       ...Array.from({ length: 12 }, (_, i) => ({
@@ -464,7 +479,7 @@ if (isEntryPoint(import.meta.url)) {
   void runScript('db:seed', async () => {
     const { db, close } = createDbClient(requireEnv('DATABASE_URL'))
     try {
-      await seed(db)
+      await seed(db, { demo: process.argv.includes('--demo') })
       // Building rows, fee rates and balances are cached for hours ('use cache'), and the
       // seed writes behind the app's back, so no tag is updated.
       logger.info('db:seed: restart any running server to drop its cached building data')
