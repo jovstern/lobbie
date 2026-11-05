@@ -123,7 +123,7 @@ test('the language switch keeps the query too', async ({ page }) => {
   await expect(page).toHaveURL('/?probe=1')
 })
 
-test('More leads to the profile, read-only', async ({ page }) => {
+test('More leads to the profile', async ({ page }) => {
   await useSessionOf(page, paidResident)
   await page.goto('/en/more')
 

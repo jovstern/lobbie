@@ -12,7 +12,11 @@ export default function TopBar() {
           <BuildingName />
         </Suspense>
         {/* The link needs the pathname, which a page with a dynamic segment only knows at
-            request time; there the outer placeholder stands in until it streams. */}
+            request time; there the outer placeholder stands in until it streams. The inner
+            fallback is the static shell's link, without the query. The switch reads the query
+            with useSearchParams, which Cache Components render on the server at request time,
+            so the link with the query (a search's ?q=) streams in with the same document and
+            replaces it before hydration (e2e/directory.spec.ts checks the HTML). */}
         <Suspense fallback={<LanguageSwitchSkeleton />}>
           <Suspense fallback={<LanguageSwitchLink />}>
             <LanguageSwitch />

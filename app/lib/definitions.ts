@@ -1,3 +1,4 @@
+import type { Locale } from '@/i18n/routing'
 import type { feeRates, payments, roleEnum } from './schema'
 
 /** A fee rate as the fee logic needs it; `apartmentId` null is the building default. */
@@ -175,6 +176,23 @@ export type CommitteeMember = {
   userId: string
   name: string
   role: Exclude<Role, 'resident'>
+  committeeTitle: string | null
+  committeePhone: string | null
+  committeeEmail: string | null
+}
+
+/** The signed-in member's own profile and settings, as `/profile` edits them (R13). */
+export type Profile = {
+  name: string
+  /** The sign-in identity: shown, never edited here. */
+  email: string
+  /** E.164 (`+9725…`), or null when not given. */
+  phone: string | null
+  /** The language saved to the profile; the page's own language may differ. */
+  locale: Locale
+  role: Role
+  /** Whether neighbours see their phone and email in the directory. */
+  showContact: boolean
   committeeTitle: string | null
   committeePhone: string | null
   committeeEmail: string | null

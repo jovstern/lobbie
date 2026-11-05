@@ -147,3 +147,49 @@ export async function isMember(email: string): Promise<boolean> {
     return rows.length > 0
   })
 }
+
+/** Sets a demo-building member's own phone (E.164) and directory choice, by their email. */
+export async function setContact(
+  email: string,
+  { phone, showContact }: { phone: string | null; showContact: boolean },
+): Promise<void> {
+  await withE2eSql((sql) =>
+    sql.begin(async (tx) => {
+      await tx`UPDATE "user" SET phone = ${phone} WHERE email = ${email}`
+      await tx`
+        UPDATE building_members SET show_contact = ${showContact}
+        WHERE building_id = ${demoBuildingId}
+          AND user_id = (SELECT id FROM "user" WHERE email = ${email})`
+    }),
+  )
+}
+
+/** Sets the contact a demo-building committee member publishes, by their email. */
+export async function setCommitteeContact(
+  email: string,
+  contact: { phone: string | null; email: string | null },
+): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE building_members
+      SET committee_phone = ${contact.phone}, committee_email = ${contact.email}
+      WHERE building_id = ${demoBuildingId}
+        AND user_id = (SELECT id FROM "user" WHERE email = ${email})`,
+  )
+}
+
+/** The language saved to someone's profile. */
+export async function savedLocaleOf(email: string): Promise<string | null> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`SELECT locale FROM "user" WHERE email = ${email}`
+    return z
+      .string()
+      .nullable()
+      .parse(row?.locale ?? null)
+  })
+}
+
+/** Sets the language saved to someone's profile (the seed saves Hebrew). */
+export async function setSavedLocaleOf(email: string, locale: 'he' | 'en'): Promise<void> {
+  await withE2eSql((sql) => sql`UPDATE "user" SET locale = ${locale} WHERE email = ${email}`)
+}

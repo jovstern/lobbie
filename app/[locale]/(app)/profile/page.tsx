@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
-import ProfileDetails from '@/app/ui/profile/profile-details'
+import ProfileSettings from '@/app/ui/profile/profile-settings'
 import { ProfileSkeleton } from '@/app/ui/skeletons'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,7 +16,7 @@ export default async function ProfilePage() {
     <div className="flex max-w-xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">{t('title')}</h1>
       <Suspense fallback={<ProfileSkeleton />}>
-        <ProfileDetails />
+        <ProfileSettings />
       </Suspense>
     </div>
   )

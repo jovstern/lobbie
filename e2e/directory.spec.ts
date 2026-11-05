@@ -1,20 +1,28 @@
 import { expect, test } from './fixtures'
 import { useSessionOf } from './helpers/auth'
 import { messages, translator } from './helpers/copy'
+import { setCommitteeContact, setContact } from './helpers/db'
 
 // The flows are in Hebrew, the app's default language; the a11y spec covers English too.
 const text = messages.he
 const t = translator('he')
 const resident = 'resident1@example.com'
-// Seeded: noa shares her contact in the directory, avi does not.
-const noa = { name: 'נועה לוי', phone: '054-5550301', apartment: '3' }
+// Seeded: noa shares her contact in the directory, avi does not. Phones are saved in E.164
+// and shown as Israelis write them.
+const noa = { name: 'נועה לוי', phone: '054-555-0301', tel: 'tel:+972545550301', apartment: '3' }
 const avi = {
   name: 'אבי מזרחי',
-  phone: '050-5550401',
+  phone: '050-555-0401',
+  e164: '+972505550401',
   email: 'resident3@example.com',
   apartment: '4',
 }
-const chair = { name: 'דוד כהן', title: 'יו״ר', committeePhone: '052-5550201' }
+const chair = {
+  name: 'דוד כהן',
+  title: 'יו״ר',
+  committeePhone: '052-555-0201',
+  tel: 'tel:+972525550201',
+}
 
 test('a resident sees the directory by floor, with their own apartment marked', async ({
   page,
@@ -55,12 +63,13 @@ test('a phone shows only when its owner shared it, and a hidden one never reache
     page
       .getByRole('main')
       .getByRole('link', { name: `${text.Contact.phone} ${noa.phone}`, exact: true }),
-  ).toHaveAttribute('href', `tel:${noa.phone.replace(/\D/g, '')}`)
+  ).toHaveAttribute('href', noa.tel)
   await expect(page.getByRole('main')).toContainText(avi.name)
   // The whole response, streamed data included: not hidden, absent.
   const html = (await response?.text()) ?? ''
   expect(html).toContain(noa.phone)
   expect(html).not.toContain(avi.phone)
+  expect(html).not.toContain(avi.e164)
   expect(html).not.toContain(avi.email)
 
   // A search that finds avi: his row reaches the page, his contact does not.
@@ -74,6 +83,7 @@ test('a phone shows only when its owner shared it, and a hidden one never reache
   const everything = (await Promise.all(bodies)).join('\n')
   expect(everything).toContain(avi.name)
   expect(everything).not.toContain(avi.phone)
+  expect(everything).not.toContain(avi.e164)
   expect(everything).not.toContain(avi.email)
 })
 
@@ -120,7 +130,7 @@ test('the committee page leads with the chair and their committee contact', asyn
       name: `${text.Contact.phone} ${chair.committeePhone}`,
       exact: true,
     }),
-  ).toHaveAttribute('href', `tel:${chair.committeePhone.replace(/\D/g, '')}`)
+  ).toHaveAttribute('href', chair.tel)
   // The seeded admin publishes no committee contact.
   await expect(main).toContainText(text.Committee.noContact)
 })
@@ -140,3 +150,126 @@ for (const path of ['/building', '/building/directory', '/building/committee']) 
     )
   })
 }
+
+// The acceptance flows of M2: a resident opts in, a committee member publishes a contact.
+const tester = {
+  email: 'e2e3@example.com',
+  name: 'בודק שלוש',
+  seededPhone: '+972505559003',
+  seededShown: '050-555-9003',
+}
+
+test('a resident adds a phone and shares it, and it appears in the directory', async ({ page }) => {
+  const typed = '052 555 9013'
+  const shown = '052-555-9013'
+  await useSessionOf(page, tester.email)
+  try {
+    // Hidden at first, as seeded: the saved phone is nowhere in the document.
+    const before = await page.goto('/building/directory')
+    const directory = page.getByRole('main')
+    await expect(directory).toContainText(tester.name)
+    await expect(directory).not.toContainText(tester.seededShown)
+    await expect(directory).not.toContainText(shown)
+    const html = (await before?.text()) ?? ''
+    expect(html).not.toContain(tester.seededPhone)
+    expect(html).not.toContain(tester.seededShown)
+
+    await page.goto('/profile')
+    const main = page.getByRole('main')
+    const phone = main.getByLabel(text.ProfileForm.phone, { exact: true })
+    await phone.fill(typed)
+    await main.getByRole('button', { name: text.ProfileForm.save, exact: true }).click()
+    await expect(main.getByText(text.ProfileForm.saved, { exact: true })).toBeVisible()
+    // Saved in E.164, shown as Israelis write it.
+    await expect(phone).toHaveValue(shown)
+
+    const share = main.getByRole('switch', { name: text.ContactVisibility.label, exact: true })
+    await expect(share).not.toBeChecked()
+    const saved = page.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().endsWith('/profile'),
+    )
+    await share.click()
+    await expect(share).toBeChecked()
+    expect((await saved).ok()).toBe(true)
+
+    await page.goto('/building/directory')
+    await expect(
+      directory.getByRole('link', { name: `${text.Contact.phone} ${shown}`, exact: true }),
+    ).toHaveAttribute('href', 'tel:+972525559013')
+    await expect(
+      directory.getByRole('link', { name: `${text.Contact.email} ${tester.email}`, exact: true }),
+    ).toBeVisible()
+  } finally {
+    await setContact(tester.email, { phone: tester.seededPhone, showContact: false })
+  }
+})
+
+test('a committee member publishes a committee phone, and the Committee page shows it', async ({
+  page,
+}) => {
+  // Seeded: the treasurer publishes her own phone and email for the role.
+  const treasurer = {
+    email: 'committee2@example.com',
+    name: 'רונית ביטון',
+    seeded: { phone: '+972525550601', email: 'committee2@example.com' },
+  }
+  const shown = '03-555-0699'
+  await useSessionOf(page, treasurer.email)
+  try {
+    await page.goto('/profile')
+    const main = page.getByRole('main')
+    const committee = main.getByRole('region', { name: text.Profile.committeeTitle, exact: true })
+    await expect(committee).toContainText(text.Profile.committeeLead)
+    await committee.getByLabel(text.CommitteeContactForm.phone, { exact: true }).fill('03 5550699')
+    await committee
+      .getByRole('button', { name: text.CommitteeContactForm.save, exact: true })
+      .click()
+    await expect(
+      committee.getByText(text.CommitteeContactForm.saved, { exact: true }),
+    ).toBeVisible()
+
+    await page.goto('/building/committee')
+    const card = page
+      .getByRole('main')
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { level: 2, name: treasurer.name, exact: true }) })
+    await expect(
+      card.getByRole('link', { name: `${text.Contact.phone} ${shown}`, exact: true }),
+    ).toHaveAttribute('href', 'tel:+97235550699')
+  } finally {
+    await setCommitteeContact(treasurer.email, treasurer.seeded)
+  }
+})
+
+test('a resident has no committee contact to publish', async ({ page }) => {
+  await useSessionOf(page, resident)
+  await page.goto('/profile')
+  const main = page.getByRole('main')
+  await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+    text.Profile.detailsTitle,
+    text.Profile.directoryTitle,
+    text.Profile.languageTitle,
+  ])
+})
+
+test('the language switch keeps the search, also in the HTML before any script runs', async ({
+  page,
+}) => {
+  // One word: a space could be written as %20 or +.
+  const q = 'נועה'
+  const english = `/en/building/directory?q=${encodeURIComponent(q)}`
+  await useSessionOf(page, resident)
+  const response = await page.goto(`/building/directory?q=${encodeURIComponent(q)}`)
+  // The document as the server sent it, streamed parts included: the switch's link carries the
+  // query even if it is followed before hydration.
+  expect((await response?.text()) ?? '').toContain(`href="${english}"`)
+
+  await page
+    .getByRole('banner')
+    .getByRole('link', { name: messages.he.LanguageSwitch.otherLanguage, exact: true })
+    .click()
+  await expect(page).toHaveURL(english)
+  await expect(
+    page.getByRole('main').getByLabel(messages.en.Directory.searchLabel, { exact: true }),
+  ).toHaveValue(q)
+})

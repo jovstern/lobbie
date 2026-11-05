@@ -93,15 +93,33 @@ export function LanguageSwitchSkeleton() {
   )
 }
 
+/** `/profile`: the details form, then the directory switch and the language choice. */
 export function ProfileSkeleton() {
   return (
-    <div aria-hidden className={cardClassName}>
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="flex flex-col gap-1">
+    <div aria-hidden className="flex flex-col gap-6">
+      <div className={cardClassName}>
+        <div className={`${block} h-6 w-28`} />
+        {[0, 1].map((field) => (
+          <div key={field} className="flex flex-col gap-2">
+            <div className={`${block} h-5 w-16`} />
+            <div className={`${block} h-11`} />
+          </div>
+        ))}
+        <div className="flex flex-col gap-1">
           <div className={`${block} h-5 w-16`} />
-          <div className={`${block} h-6 w-48`} />
+          <div className={`${block} h-6 w-56 max-w-full`} />
         </div>
-      ))}
+        <div className={`${block} h-11 w-24`} />
+      </div>
+      <div className={cardClassName}>
+        <div className={`${block} h-6 w-28`} />
+        <div className={`${block} h-11`} />
+        <div className={`${block} h-4 w-3/4`} />
+      </div>
+      <div className={cardClassName}>
+        <div className={`${block} h-6 w-20`} />
+        <div className={`${block} h-12 w-44`} />
+      </div>
     </div>
   )
 }

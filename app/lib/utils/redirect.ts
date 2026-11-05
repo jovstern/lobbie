@@ -42,3 +42,24 @@ export function withLocalePrefix(path: string, locale: Locale): string {
 
 /** The request header the proxy sets to the requested path and query, for `?next=`. */
 export const requestPathHeader = 'x-request-path'
+
+/**
+ * Where a verified sign-in lands, in the language saved to the profile: an unprefixed (Hebrew)
+ * callback gains the saved locale's prefix; one that already names a locale keeps it, since
+ * the person chose it on that page. Returns the absolute URL and the locale it is in, for the
+ * locale cookie, so the proxy does not reset it on arrival.
+ */
+export function localizedLanding(
+  location: string,
+  base: string,
+  savedLocale: unknown,
+): { url: string; locale: Locale } {
+  const url = new URL(location, base)
+  const saved = routing.locales.find((locale) => locale === savedLocale) ?? routing.defaultLocale
+  const path = withLocalePrefix(`${url.pathname}${url.search}${url.hash}`, saved)
+  const landing = new URL(path, url)
+  return {
+    url: landing.toString(),
+    locale: localeInPath(landing.pathname) ?? routing.defaultLocale,
+  }
+}

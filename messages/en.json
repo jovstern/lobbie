@@ -113,11 +113,50 @@
   },
   "Profile": {
     "title": "Profile",
+    "detailsTitle": "Your details",
+    "directoryTitle": "Directory",
+    "languageTitle": "Language",
+    "committeeTitle": "Committee contact",
+    "committeeLead": "Neighbours see this contact on the Committee page, for your role. It is separate from whether the directory shows your own phone and email.",
+    "committeeRole": "Your title",
+    "committeeRoleNone": "No title yet",
+    "committeeRoleHint": "The building’s admin sets titles."
+  },
+  "ProfileForm": {
     "name": "Name",
+    "phone": "Phone",
+    "phoneHint": "Optional. An Israeli number, such as 050-123-4567.",
     "email": "Email",
-    "language": "Language",
-    "notSet": "Not set",
-    "languageName": "English"
+    "emailHint": "You sign in with this address, so it can’t be changed here.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved"
+  },
+  "CommitteeContactForm": {
+    "phone": "Committee phone",
+    "email": "Committee email",
+    "hint": "Optional. Leave both empty to publish no contact.",
+    "save": "Save contact",
+    "saving": "Saving…",
+    "saved": "Saved"
+  },
+  "ContactVisibility": {
+    "label": "Show my phone and email to neighbours",
+    "hint": "When this is off, neighbours see only your name and apartment.",
+    "noPhoneHint": "You haven’t added a phone, so the directory will show only your email."
+  },
+  "LanguageChoice": {
+    "hint": "Saved to your profile and to this device.",
+    "he": "עברית",
+    "en": "English"
+  },
+  "ProfileErrors": {
+    "name": "Enter a name of 2 to 60 characters.",
+    "phone": "Enter an Israeli phone number, such as 050-123-4567.",
+    "committeePhone": "Enter an Israeli phone number, such as 050-123-4567.",
+    "committeeEmail": "Enter an email address, such as name@example.com.",
+    "locale": "Choose Hebrew or English.",
+    "saveFailed": "We couldn’t save the change. Please try again."
   },
   "Demo": {
     "readOnly": "This is a demo building, so changes are turned off."

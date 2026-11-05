@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { safeNextPath, withLocalePrefix } from '@/app/lib/utils/redirect'
+import { localizedLanding, safeNextPath, withLocalePrefix } from '@/app/lib/utils/redirect'
 
 describe('safeNextPath', () => {
   it.each([
@@ -65,5 +65,22 @@ describe('withLocalePrefix', () => {
     ['/#top', 'en', '/en#top'],
   ] as const)('%j in %s is %j', (path, locale, expected) => {
     expect(withLocalePrefix(path, locale)).toBe(expected)
+  })
+})
+
+describe('localizedLanding', () => {
+  const base = 'http://localhost:3100'
+
+  it.each([
+    ['/', 'en', `${base}/en`, 'en'],
+    [`${base}/money?apartment=2`, 'en', `${base}/en/money?apartment=2`, 'en'],
+    [`${base}/money`, 'he', `${base}/money`, 'he'],
+    // A page that names its language keeps it: the person chose it there.
+    [`${base}/en/money`, 'he', `${base}/en/money`, 'en'],
+    // A value the app does not know reads as Hebrew.
+    [`${base}/money`, 'fr', `${base}/money`, 'he'],
+    [`${base}/money`, null, `${base}/money`, 'he'],
+  ])('%s with %j lands on %s in %s', (location, saved, url, locale) => {
+    expect(localizedLanding(location, base, saved)).toEqual({ url, locale })
   })
 })

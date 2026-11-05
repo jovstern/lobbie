@@ -32,6 +32,7 @@ type Role = 'resident' | 'committee' | 'admin'
 type Person = {
   email: string
   name: string
+  /** E.164, as the profile saves it. */
   phone: string
   apartment: string
   isOwner: boolean
@@ -44,7 +45,7 @@ const people: Person[] = [
   {
     email: 'admin@example.com',
     name: 'מיכל אברהם',
-    phone: '050-5550101',
+    phone: '+972505550101',
     apartment: '1',
     isOwner: true,
     role: 'admin',
@@ -53,7 +54,7 @@ const people: Person[] = [
   {
     email: 'resident1@example.com',
     name: 'יונתן אברהם',
-    phone: '050-5550102',
+    phone: '+972505550102',
     apartment: '1',
     isOwner: true,
     role: 'resident',
@@ -61,7 +62,7 @@ const people: Person[] = [
   {
     email: 'committee1@example.com',
     name: 'דוד כהן',
-    phone: '052-5550201',
+    phone: '+972525550201',
     apartment: '2',
     isOwner: true,
     role: 'committee',
@@ -71,7 +72,7 @@ const people: Person[] = [
   {
     email: 'resident2@example.com',
     name: 'נועה לוי',
-    phone: '054-5550301',
+    phone: '+972545550301',
     apartment: '3',
     isOwner: false,
     role: 'resident',
@@ -80,7 +81,7 @@ const people: Person[] = [
   {
     email: 'resident3@example.com',
     name: 'אבי מזרחי',
-    phone: '050-5550401',
+    phone: '+972505550401',
     apartment: '4',
     isOwner: true,
     role: 'resident',
@@ -88,7 +89,7 @@ const people: Person[] = [
   {
     email: 'resident4@example.com',
     name: 'שרה פרץ',
-    phone: '053-5550501',
+    phone: '+972535550501',
     apartment: '5',
     isOwner: true,
     role: 'resident',
@@ -97,7 +98,7 @@ const people: Person[] = [
   {
     email: 'resident5@example.com',
     name: 'משה פרץ',
-    phone: '053-5550502',
+    phone: '+972535550502',
     apartment: '5',
     isOwner: true,
     role: 'resident',
@@ -105,7 +106,7 @@ const people: Person[] = [
   {
     email: 'committee2@example.com',
     name: 'רונית ביטון',
-    phone: '052-5550601',
+    phone: '+972525550601',
     apartment: '6',
     isOwner: true,
     role: 'committee',
@@ -115,7 +116,7 @@ const people: Person[] = [
   {
     email: 'resident6@example.com',
     name: 'עומר דהן',
-    phone: '054-5550701',
+    phone: '+972545550701',
     apartment: '7',
     isOwner: false,
     role: 'resident',
@@ -123,7 +124,7 @@ const people: Person[] = [
   {
     email: 'resident7@example.com',
     name: 'תמר אוחיון',
-    phone: '050-5550801',
+    phone: '+972505550801',
     apartment: '8',
     isOwner: false,
     role: 'resident',
@@ -132,7 +133,7 @@ const people: Person[] = [
   {
     email: 'resident8@example.com',
     name: 'איתי אוחיון',
-    phone: '050-5550802',
+    phone: '+972505550802',
     apartment: '8',
     isOwner: false,
     role: 'resident',
@@ -140,7 +141,7 @@ const people: Person[] = [
   {
     email: 'resident9@example.com',
     name: 'יעל גבאי',
-    phone: '058-5550901',
+    phone: '+972585550901',
     apartment: '9',
     isOwner: true,
     role: 'resident',
@@ -148,7 +149,7 @@ const people: Person[] = [
   {
     email: 'resident10@example.com',
     name: 'אריאל שפירא',
-    phone: '052-5551001',
+    phone: '+972525551001',
     apartment: '10',
     isOwner: true,
     role: 'resident',
@@ -157,7 +158,7 @@ const people: Person[] = [
   {
     email: 'resident11@example.com',
     name: 'חנה רוזן',
-    phone: '054-5551101',
+    phone: '+972545551101',
     apartment: '11',
     isOwner: true,
     role: 'resident',
@@ -165,7 +166,7 @@ const people: Person[] = [
   {
     email: 'resident12@example.com',
     name: 'יוסף רוזן',
-    phone: '054-5551102',
+    phone: '+972545551102',
     apartment: '11',
     isOwner: true,
     role: 'resident',
@@ -173,7 +174,7 @@ const people: Person[] = [
   {
     email: 'resident13@example.com',
     name: 'ליאור אלון',
-    phone: '050-5551201',
+    phone: '+972505551201',
     apartment: '12',
     isOwner: false,
     role: 'resident',
@@ -181,7 +182,7 @@ const people: Person[] = [
   {
     email: 'e2e1@example.com',
     name: 'בודק אחד',
-    phone: '050-5559001',
+    phone: '+972505559001',
     apartment: 'e2e-1',
     isOwner: true,
     role: 'resident',
@@ -189,7 +190,7 @@ const people: Person[] = [
   {
     email: 'e2e2@example.com',
     name: 'בודקת שתיים',
-    phone: '050-5559002',
+    phone: '+972505559002',
     apartment: 'e2e-2',
     isOwner: true,
     role: 'resident',
@@ -197,7 +198,7 @@ const people: Person[] = [
   {
     email: 'e2e3@example.com',
     name: 'בודק שלוש',
-    phone: '050-5559003',
+    phone: '+972505559003',
     apartment: 'e2e-3',
     isOwner: true,
     role: 'resident',

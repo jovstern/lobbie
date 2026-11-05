@@ -63,6 +63,15 @@ for (const locale of ['he', 'en'] as const) {
       await expectNoViolations(page)
     })
 
+    test('Profile of a committee member, with the committee contact', async ({ page }) => {
+      await useSessionOf(page, 'committee1@example.com')
+      await page.goto(`${prefix}/profile`)
+      await expect(
+        page.getByRole('region', { name: messages[locale].Profile.committeeTitle, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
     test('Admin', async ({ page }) => {
       await useSessionOf(page, 'admin@example.com')
       await page.goto(`${prefix}/admin`)

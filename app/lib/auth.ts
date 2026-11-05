@@ -1,6 +1,7 @@
 import 'server-only'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { createAuthMiddleware } from 'better-auth/api'
 import { nextCookies } from 'better-auth/next-js'
 import { magicLink } from 'better-auth/plugins'
 import { z } from 'zod'
@@ -8,7 +9,8 @@ import { authOptions } from './auth-options'
 import { db } from './db'
 import { requireEnv } from './env'
 import { sendMagicLinkEmail } from './mail'
-import { routing } from '@/i18n/routing'
+import { localizedLanding } from './utils/redirect'
+import { localeCookie, routing } from '@/i18n/routing'
 
 // The locale the sign-in action passes as `metadata`, so the email speaks the page's language.
 const linkMetadata = z.object({ locale: z.enum(routing.locales) })
@@ -26,6 +28,23 @@ function createAuth() {
     disabledPaths: ['/sign-in/magic-link'],
     // Most requests read the session from a signed cookie instead of the database.
     session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
+    hooks: {
+      // A verified link opens the app in the language saved to the profile (R1), on any
+      // device. Only a valid token creates a session, so this reveals nothing about accounts.
+      after: createAuthMiddleware(async (ctx) => {
+        const created = ctx.context.newSession
+        const location = ctx.context.responseHeaders?.get('location')
+        if (ctx.path !== '/magic-link/verify' || !created || !location) return
+        const landing = localizedLanding(location, baseURL, created.user.locale)
+        // The cookie matches where the link lands, so the proxy keeps it.
+        ctx.setCookie(localeCookie.name, landing.locale, {
+          maxAge: localeCookie.maxAge,
+          sameSite: localeCookie.sameSite,
+          path: '/',
+        })
+        throw ctx.redirect(landing.url)
+      }),
+    },
     plugins: [
       magicLink({
         expiresIn: 15 * 60,

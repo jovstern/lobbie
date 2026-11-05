@@ -17,7 +17,7 @@ const floors: DirectoryFloor[] = [
             userId: 'u1',
             name: 'Ana Levi',
             isOwner: true,
-            phone: '050-555 0101',
+            phone: '+972505550101',
             email: 'ana@example.com',
           },
           { userId: 'u2', name: 'Ben Cohen', isOwner: false, phone: null, email: null },
@@ -79,11 +79,11 @@ describe('DirectoryFloors', () => {
     expect(screen.getAllByText(en.Directory.yourApartment)).toHaveLength(1)
   })
 
-  it('links a shared phone and email, left to right, and nothing for a hidden one', () => {
+  it('links a shared phone (shown as Israelis write it) and email, left to right, and nothing for a hidden one', () => {
     renderFloors()
 
-    const call = screen.getByRole('link', { name: 'Phone: 050-555 0101' })
-    expect(call).toHaveAttribute('href', 'tel:0505550101')
+    const call = screen.getByRole('link', { name: 'Phone: 050-555-0101' })
+    expect(call).toHaveAttribute('href', 'tel:+972505550101')
     expect(call.querySelector('bdi')).toHaveAttribute('dir', 'ltr')
     const write = screen.getByRole('link', { name: 'Email: ana@example.com' })
     expect(write).toHaveAttribute('href', 'mailto:ana@example.com')
