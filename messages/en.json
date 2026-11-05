@@ -46,7 +46,8 @@
   },
   "Join": {
     "title": "Join your building",
-    "body": "Ask your building committee for an invite link, then open it on this device to join your apartment."
+    "body": "Ask your building committee for an invite link and open it on this device, or type the code here.",
+    "wrongAccount": "Signed in with the wrong email?"
   },
   "Authz": {
     "signedOut": "Your session has ended. Sign in again to continue.",
@@ -260,6 +261,112 @@
   "ApartmentBlockers": {
     "residents": "Move or remove its {count, plural, one {resident} other {# residents}} first.",
     "payments": "It has payment history, which is kept.",
-    "feeOverrides": "It has its own fee history, which is kept."
+    "feeOverrides": "It has its own fee history, which is kept.",
+    "activeInvites": "It has an active invite. Revoke it first."
+  },
+  "InviteErrors": {
+    "apartmentNotFound": "This apartment no longer exists. Reload the page to see the current list.",
+    "inviteNotFound": "This invite is no longer active. Reload the page to see the current one.",
+    "activeExists": "This apartment already has an active invite. Reload the page to see it.",
+    "createFailed": "We couldn’t create the invite. Please try again.",
+    "revokeFailed": "We couldn’t revoke the invite. Please try again.",
+    "noApartments": "Add apartments first, then invite the people who live in them."
+  },
+  "InviteAdmin": {
+    "title": "Invite",
+    "lead": "One link for this apartment: up to 6 people can join with it within 14 days.",
+    "none": "No active invite. Create one and send the link to the people who live here.",
+    "active": "Active invite",
+    "uses": "{uses} of {max} used",
+    "expires": "Expires {date}",
+    "codeHidden": "Code hidden",
+    "onceNote": "For safety, a link is shown only once, right after it’s created. To send it again, create a new invite; the current one then stops working.",
+    "create": "Create invite",
+    "creating": "Creating…",
+    "replace": "Create new invite",
+    "replaceTitle": "Replace the invite for apartment {number}?",
+    "replaceBody": "The current link stops working, also for anyone who hasn’t used it yet. People who already joined stay.",
+    "replaceConfirm": "Replace invite",
+    "cancel": "Cancel",
+    "revoke": "Revoke",
+    "revokeLabel": "Revoke the invite for apartment {number}",
+    "revokeTitle": "Revoke the invite for apartment {number}?",
+    "revokeBody": "The link stops working at once. People who already joined stay.",
+    "revokeConfirm": "Revoke invite",
+    "revoking": "Revoking…",
+    "revoked": "Invite revoked",
+    "created": "Invite created",
+    "newTitle": "New invite link",
+    "newLead": "Copy it now: it won’t be shown again.",
+    "link": "Link",
+    "code": "Code",
+    "copyLink": "Copy link"
+  },
+  "InviteAll": {
+    "open": "Create invites for all apartments",
+    "creating": "Creating invites…",
+    "dialogTitle": "Create invites for all apartments?",
+    "dialogBody": "{active, plural, one {One apartment already has} other {# apartments already have}} an active invite, whose link was shown only when it was created.",
+    "missingOnly": "{count, plural, one {Only the one without an invite} other {Only the # without an invite}}",
+    "replaceAll": "{count, plural, one {Replace it too} other {Replace all # invites}}",
+    "replaceNote": "Replacing makes the current links stop working.",
+    "cancel": "Cancel",
+    "resultTitle": "{count, plural, one {One new invite link} other {# new invite links}}",
+    "resultLead": "Copy them now: they’re shown only this once. Each link lets up to 6 people join within 14 days.",
+    "skipped": "{count, plural, one {One apartment already had an active invite and isn’t listed.} other {# apartments already had an active invite and aren’t listed.}}",
+    "copyAll": "Copy all",
+    "line": "Apartment {number}: {link}",
+    "apartment": "Apartment {number}",
+    "copyLinkLabel": "Copy the link for apartment {number}",
+    "done": "{count, plural, one {One invite created} other {# invites created}}",
+    "sectionTitle": "Invite the residents",
+    "sectionLead": "Create a link for each apartment and send it to the people who live there, for example in the building’s WhatsApp group.",
+    "listLabel": "New invite links",
+    "copyLink": "Copy link"
+  },
+  "CopyButton": {
+    "copied": "Copied",
+    "copyFailed": "Couldn’t copy automatically. The text is selected: copy it with your device’s copy command."
+  },
+  "JoinCodeForm": {
+    "label": "Invite code",
+    "hint": "10 letters and digits, like ABCDE-23456",
+    "submit": "Continue",
+    "checking": "Checking…"
+  },
+  "JoinErrors": {
+    "format": "Enter the 10 letters and digits of the code, like ABCDE-23456.",
+    "unknown": "We couldn’t find this code. Check it, or ask your building committee for a new link.",
+    "rateLimited": "Too many attempts. Try again in {minutes, plural, one {a minute} other {# minutes}}.",
+    "failed": "Something went wrong. Please try again.",
+    "invalid": "This invite link isn’t valid.",
+    "expired": "This invite has expired. Ask your building committee for a new link.",
+    "full": "This invite has been used up. Ask your building committee for a new link.",
+    "revoked": "This invite was cancelled. Ask your building committee for a new link.",
+    "otherBuilding": "You already belong to another building. Lobbie supports one building per account."
+  },
+  "JoinInvite": {
+    "invitedTo": "You’re invited to apartment {number} in {building}",
+    "join": "Join apartment {number}",
+    "joining": "Joining…",
+    "signInLead": "Sign in first; you’ll come back here to join.",
+    "signIn": "Sign in to join",
+    "invalidTitle": "This invite link isn’t valid",
+    "invalidBody": "Check that you opened the whole link, or type the code instead.",
+    "expiredTitle": "This invite has expired",
+    "expiredBody": "Invites work for 14 days. Ask your building committee for a new link.",
+    "fullTitle": "This invite has been used up",
+    "fullBody": "Each invite works for up to 6 people. Ask your building committee for a new link.",
+    "revokedTitle": "This invite was cancelled",
+    "revokedBody": "Ask your building committee for a new link.",
+    "alreadyTitle": "You’re already in apartment {number}",
+    "alreadyBody": "You’re a member of {building}.",
+    "otherTitle": "You already belong to another building",
+    "otherBody": "Your account is a member of {building}. Lobbie supports one building per account, so you can’t join this one.",
+    "goHome": "Go to Home",
+    "enterCode": "Type a code",
+    "validLead": "Join to see your payments, the building fund and what’s happening in the building.",
+    "rateLimitedTitle": "Too many invite links tried",
+    "rateLimitedBody": "To keep invites safe, wait {minutes, plural, one {a minute} other {# minutes}} before opening another one."
   }
 }

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { getAuth } from '@/app/lib/auth'
 import { logger } from '@/app/lib/logger'
 import { consume, type RateLimitRule } from '@/app/lib/rate-limit'
+import { clientIp } from '@/app/lib/utils/client-ip'
 import { safeNextPath, withLocalePrefix } from '@/app/lib/utils/redirect'
 import { sentToCookie } from '@/app/lib/utils/sent-to'
 import { redirect } from '@/i18n/navigation'
@@ -30,10 +31,6 @@ export type SignInState = {
 
 /** Bound by the page: actions cannot read the route's locale, and `next` comes from its URL. */
 export type SignInContext = { locale: string; next?: string }
-
-function clientIp(requestHeaders: Headers): string {
-  return requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-}
 
 /**
  * Emails a sign-in link. Every request that is valid and within the rate limits ends on

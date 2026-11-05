@@ -136,3 +136,20 @@ describe('proxy, session cache renewal', () => {
     )
   })
 })
+
+describe('proxy, join pages', () => {
+  it.each([
+    '/join',
+    '/join/ABCDE23456',
+    '/en/join/ABCDE23456',
+    '/sign-in?next=%2Fjoin%2FABCDE23456',
+  ])('sends no referrer from %s, whose URL may hold an invite code', async (path) => {
+    const response = await proxy(request(path, ''))
+    expect(response.headers.get('referrer-policy')).toBe('no-referrer')
+  })
+
+  it('leaves other pages to the default policy', async () => {
+    const response = await proxy(request('/sign-in', ''))
+    expect(response.headers.get('referrer-policy')).toBeNull()
+  })
+})

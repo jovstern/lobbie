@@ -1,16 +1,21 @@
 import { HomeModernIcon } from '@heroicons/react/24/outline'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { create } from '@/app/lib/actions/apartments'
+import { createAll } from '@/app/lib/actions/invites'
 import { requireRole } from '@/app/lib/authz'
 import { list } from '@/app/lib/data/apartments'
 import ApartmentCards from '@/app/ui/admin/apartment-cards'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentTable from '@/app/ui/admin/apartment-table'
 import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import InviteAll from '@/app/ui/admin/invite-all'
 
 const headingId = 'apartments-title'
 
-/** `/admin/apartments` for an admin: every apartment, to add, edit and remove (R8). */
+/**
+ * `/admin/apartments` for an admin: invites for every apartment at once (R9), and every
+ * apartment, to add, edit and remove (R8).
+ */
 export default async function ApartmentsAdmin() {
   // Admins only; anyone else gets the 404, before anything of the building is read.
   await requireRole('admin')
@@ -49,6 +54,12 @@ export default async function ApartmentsAdmin() {
         </div>
       ) : (
         <>
+          <InviteAll
+            missingAction={createAll.bind(null, locale, 'missing')}
+            allAction={createAll.bind(null, locale, 'all')}
+            apartmentCount={apartments.length}
+            activeCount={apartments.filter((apartment) => apartment.activeInvites > 0).length}
+          />
           <ApartmentTable apartments={apartments} />
           <ApartmentCards apartments={apartments} />
         </>

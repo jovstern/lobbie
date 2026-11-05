@@ -39,7 +39,11 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
             ApartmentRemove: messages.ApartmentRemove,
             BuildingForm: messages.BuildingForm,
             Common: messages.Common,
+            CopyButton: messages.CopyButton,
             ErrorPage: messages.ErrorPage,
+            InviteAdmin: messages.InviteAdmin,
+            InviteAll: messages.InviteAll,
+            JoinCodeForm: messages.JoinCodeForm,
             LanguageSwitch: messages.LanguageSwitch,
             SignInForm: messages.SignInForm,
           }}

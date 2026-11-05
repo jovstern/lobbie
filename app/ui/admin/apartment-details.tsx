@@ -6,6 +6,7 @@ import { requireRole } from '@/app/lib/authz'
 import { get } from '@/app/lib/data/apartments'
 import { formatMonth } from '@/app/lib/utils/dates'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
+import ApartmentInvite from '@/app/ui/admin/apartment-invite'
 import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
 import { Link } from '@/i18n/navigation'
 
@@ -14,8 +15,8 @@ const headingId = 'apartment-title'
 type Props = { params: Promise<{ id: string }> }
 
 /**
- * `/admin/apartments/[id]` for an admin: the apartment's header. Its residents and invite join
- * in the next tasks. Another building's apartment, or none, is a 404.
+ * `/admin/apartments/[id]` for an admin: the apartment's header and its invite. Its residents
+ * join in the next task. Another building's apartment, or none, is a 404.
  */
 export default async function ApartmentDetails({ params }: Props) {
   // Admins only; anyone else gets the 404, before anything of the building is read.
@@ -71,7 +72,9 @@ export default async function ApartmentDetails({ params }: Props) {
             />
           </header>
         }
-      />
+      >
+        <ApartmentInvite apartment={apartment} />
+      </ApartmentsAnnouncer>
     </div>
   )
 }

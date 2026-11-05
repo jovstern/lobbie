@@ -162,6 +162,14 @@ export function ApartmentsSkeleton() {
         </div>
         <div className={`${block} h-11 w-40`} />
       </div>
+      {/* "Invite the residents". */}
+      <div className={cardClassName}>
+        <div className="flex flex-col gap-2">
+          <div className={`${block} h-7 w-40`} />
+          <div className={`${block} h-6 w-96 max-w-full`} />
+        </div>
+        <div className={`${block} h-11 w-72 max-w-full`} />
+      </div>
       {/* Phones: one card per apartment. */}
       <div className="flex flex-col gap-3 md:hidden">
         {[0, 1, 2, 3].map((row) => (
@@ -204,7 +212,7 @@ export function ApartmentsSkeleton() {
   )
 }
 
-/** `/admin/apartments/[id]`: the back link and the apartment's header. */
+/** `/admin/apartments/[id]`: the back link, the apartment's header and its invite card. */
 export function ApartmentDetailsSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-4">
@@ -216,6 +224,26 @@ export function ApartmentDetailsSkeleton() {
         </div>
         <div className={`${block} h-11 w-28`} />
       </div>
+      <div className={clsx(cardClassName, 'mt-2 max-w-2xl')}>
+        <div className="flex flex-col gap-2">
+          <div className={`${block} h-7 w-28`} />
+          <div className={`${block} h-6 w-80 max-w-full`} />
+        </div>
+        <div className={`${block} h-6 w-72 max-w-full`} />
+        <div className={`${block} h-11 w-40`} />
+        <div className={`${block} h-10 w-full`} />
+      </div>
+    </div>
+  )
+}
+
+/** The invite card of `/join` and `/join/[code]`: a heading, a sentence and the action. */
+export function JoinInviteSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className={`${block} h-8 w-56 max-w-full`} />
+      <div className={`${block} h-6 w-full`} />
+      <div className={`${block} h-11 w-44`} />
     </div>
   )
 }

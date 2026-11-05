@@ -7,7 +7,8 @@ import { requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Apartment, ApartmentListItem } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
-import { apartmentResidents, apartments, feeRates, payments } from '@/app/lib/schema'
+import { isActiveInvite } from '@/app/lib/data/invites'
+import { apartmentResidents, apartments, feeRates, invites, payments } from '@/app/lib/schema'
 
 // Not cached: the counts change with writes outside this page (an invite redeemed, a resident
 // moved, a payment recorded), and a stale count would offer a removal the server then refuses.
@@ -25,6 +26,11 @@ export const blockerCounts = {
     SELECT cast(count(*) as integer) FROM ${apartmentResidents}
     WHERE ${eq(apartmentResidents.apartmentId, apartments.id)}
   )`,
+  // Only invites that still work: dead ones are deleted with the apartment.
+  activeInvites: sql<number>`(
+    SELECT cast(count(*) as integer) FROM ${invites}
+    WHERE ${and(eq(invites.apartmentId, apartments.id), eq(invites.buildingId, apartments.buildingId), isActiveInvite)}
+  )`,
   payments: sql<number>`(
     SELECT cast(count(*) as integer) FROM ${payments}
     WHERE ${and(eq(payments.apartmentId, apartments.id), eq(payments.buildingId, apartments.buildingId))}
@@ -35,6 +41,16 @@ export const blockerCounts = {
   )`,
 }
 
+/**
+ * By floor, then naturally by number: by the number's leading digits as a number (2, 2A, 10),
+ * apartments without any last; then by the text, byte by byte, so every database sorts alike.
+ */
+export const byFloorAndNumber = [
+  asc(apartments.floor),
+  sql`cast(substring(${apartments.number} from '^[0-9]+') as numeric) nulls last`,
+  sql`${apartments.number} collate "C"`,
+]
+
 const count = z.coerce.number().int().nonnegative()
 const listRow = z.object({
   id: z.string(),
@@ -42,6 +58,7 @@ const listRow = z.object({
   floor: z.number().int(),
   billingStartMonth: z.string().nullable(),
   residents: count,
+  activeInvites: count,
   payments: count,
   feeOverrides: count,
 })
@@ -63,13 +80,7 @@ export async function list(): Promise<ApartmentListItem[]> {
       })
       .from(apartments)
       .where(eq(apartments.buildingId, buildingId))
-      .orderBy(
-        asc(apartments.floor),
-        // Natural order: by the number's leading digits as a number (2, 2A, 10), apartments
-        // without any last; then by the text, byte by byte, so every database sorts alike.
-        sql`cast(substring(${apartments.number} from '^[0-9]+') as numeric) nulls last`,
-        sql`${apartments.number} collate "C"`,
-      )
+      .orderBy(...byFloorAndNumber)
     return z.array(listRow).parse(rows)
   } catch (err) {
     // Next's own signals (such as a prerender that ended) are not failures.

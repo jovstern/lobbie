@@ -92,6 +92,24 @@ export type Apartment = {
 /** An apartment in the admin's list, with what still points at it (see `blockersOf`). */
 export type ApartmentListItem = Apartment & {
   residents: number
+  activeInvites: number
   payments: number
   feeOverrides: number
+}
+
+/** An apartment's invite that still works, as the admin sees it; its code is never stored. */
+export type ActiveInvite = {
+  id: string
+  uses: number
+  maxUses: number
+  expiresAt: Date
+}
+
+/** A link made by "Create invites for all apartments", shown once and never stored. */
+export type CreatedInvite = {
+  apartmentId: string
+  apartmentNumber: string
+  /** Formatted as people read it: `ABCDE-23456`. */
+  code: string
+  link: string
 }

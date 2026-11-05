@@ -24,7 +24,7 @@ type Props = {
   headingId: string
   /** The page's header; the announcements appear right below it. */
   header: ReactNode
-  /** What the page shows below; the apartment page's sections join in the next tasks. */
+  /** What the page shows below its header. */
   children?: ReactNode
 }
 

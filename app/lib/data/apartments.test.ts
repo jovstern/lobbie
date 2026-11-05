@@ -7,6 +7,7 @@ import {
   apartments,
   buildings,
   feeRates,
+  invites,
   payments,
   user,
 } from '@/app/lib/schema'
@@ -101,6 +102,20 @@ beforeAll(async () => {
       createdBy: admin.id,
     },
   ])
+  // Only C's first invite still works: revoked, expired and used-up ones do not count.
+  const day = 24 * 60 * 60 * 1000
+  await db.insert(invites).values(
+    [{}, { revokedAt: new Date() }, { expiresAt: new Date(Date.now() - day) }, { uses: 6 }].map(
+      (state, i) => ({
+        buildingId,
+        apartmentId: apartment('C'),
+        codeHash: `hash-${i}`,
+        createdBy: admin.id,
+        expiresAt: new Date(Date.now() + day),
+        ...state,
+      }),
+    ),
+  )
 })
 
 describe('list', () => {
@@ -128,9 +143,11 @@ describe('list', () => {
       floor: -1,
       billingStartMonth: null,
       residents: 0,
+      activeInvites: 0,
       payments: 0,
       feeOverrides: 0,
     })
+    expect(byNumber.get('C')).toMatchObject({ residents: 0, activeInvites: 1 })
     expect(byNumber.get('1')).toMatchObject({ residents: 2, payments: 0, feeOverrides: 0 })
     expect(byNumber.get('2')).toMatchObject({
       billingStartMonth: '2026-03',

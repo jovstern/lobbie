@@ -68,3 +68,32 @@ export async function apartmentIdOf(number: string): Promise<string> {
     return z.uuid().parse(row?.id)
   })
 }
+
+/** Removes every invite of a demo-building apartment, by its number. */
+export async function deleteInvitesOf(number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM invites
+      WHERE apartment_id = (
+        SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+      )`,
+  )
+}
+
+/** Removes every invite of the demo building, as "Create invites for all" leaves them. */
+export async function deleteDemoInvites(): Promise<void> {
+  await withE2eSql((sql) => sql`DELETE FROM invites WHERE building_id = ${demoBuildingId}`)
+}
+
+/** Removes a person a test created, with their membership, apartments and sessions. */
+export async function deleteUser(email: string): Promise<void> {
+  await withE2eSql((sql) =>
+    sql.begin(async (tx) => {
+      const users = tx`SELECT id FROM "user" WHERE email = ${email}`
+      await tx`DELETE FROM apartment_residents WHERE user_id IN (${users})`
+      await tx`DELETE FROM building_members WHERE user_id IN (${users})`
+      // Sessions and accounts go with the user (ON DELETE CASCADE).
+      await tx`DELETE FROM "user" WHERE email = ${email}`
+    }),
+  )
+}

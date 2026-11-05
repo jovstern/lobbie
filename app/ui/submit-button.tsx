@@ -9,14 +9,21 @@ type Props = {
   /** Shown while the form is submitting, when the button is also disabled. */
   pendingLabel: string
   variant?: ButtonVariant
+  /** Also disabled while another form's action on the same state is running. */
+  disabled?: boolean
 }
 
 /** A form's submit button with its pending state; it must sit inside the `<form>`. */
-export default function SubmitButton({ children, pendingLabel, variant = 'primary' }: Props) {
+export default function SubmitButton({
+  children,
+  pendingLabel,
+  variant = 'primary',
+  disabled = false,
+}: Props) {
   const { pending } = useFormStatus()
 
   return (
-    <button type="submit" disabled={pending} className={buttonClassName(variant)}>
+    <button type="submit" disabled={pending || disabled} className={buttonClassName(variant)}>
       {pending ? pendingLabel : children}
     </button>
   )

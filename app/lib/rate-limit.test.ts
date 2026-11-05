@@ -2,7 +2,7 @@ import { count } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/app/lib/db'
 import { logger } from '@/app/lib/logger'
-import { consume } from '@/app/lib/rate-limit'
+import { consume, peek } from '@/app/lib/rate-limit'
 import { rateLimits } from '@/app/lib/schema'
 
 const testDb = await vi.hoisted(async () => {
@@ -110,5 +110,22 @@ describe('consume', () => {
       err: expect.any(Error),
     })
     deleteSpy.mockRestore()
+  })
+})
+
+describe('peek', () => {
+  it('counts nothing, and refuses once the limit is used up, until the window ends', async () => {
+    const key = 'join:ip:10.0.0.1'
+    expect(await peek(key, rule, { now })).toEqual({ ok: true })
+    for (let i = 0; i < 2; i++) await consume(key, rule, { now, random: never })
+    expect(await peek(key, rule, { now })).toEqual({ ok: true })
+    expect(await peek(key, rule, { now })).toEqual({ ok: true })
+
+    await consume(key, rule, { now, random: never })
+
+    expect(await peek(key, rule, { now })).toEqual({ ok: false, retryAfterSeconds: 600 })
+    expect(await peek(key, rule, { now: new Date('2026-11-02T10:15:00Z') })).toEqual({
+      ok: true,
+    })
   })
 })

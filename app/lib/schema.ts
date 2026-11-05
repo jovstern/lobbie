@@ -147,6 +147,36 @@ export const apartmentResidents = pgTable(
   ],
 )
 
+export const invites = pgTable(
+  'invites',
+  {
+    id: id(),
+    buildingId: uuid('building_id')
+      .notNull()
+      .references(() => buildings.id, { onDelete: 'restrict' }),
+    apartmentId: uuid('apartment_id').notNull(),
+    // SHA-256 of the code: the code itself is never stored (spec §3).
+    codeHash: text('code_hash').notNull().unique('invites_code_hash_unique'),
+    maxUses: integer('max_uses').notNull().default(6),
+    uses: integer('uses').notNull().default(0),
+    // Null once the admin who made it is deleted: the invite outlives its author.
+    createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [
+    foreignKey({
+      name: 'invites_apartment_building_fk',
+      columns: [t.apartmentId, t.buildingId],
+      foreignColumns: [apartments.id, apartments.buildingId],
+    }).onDelete('restrict'),
+    index('invites_apartment_id_idx').on(t.apartmentId),
+    check('invites_uses_within_max', sql`${t.uses} BETWEEN 0 AND ${t.maxUses}`),
+    check('invites_max_uses_positive', sql`${t.maxUses} > 0`),
+  ],
+)
+
 export const rateLimits = pgTable(
   'rate_limits',
   {

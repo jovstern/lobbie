@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { logger } from '@/app/lib/logger'
 
@@ -91,6 +92,32 @@ describe('logger', () => {
       },
     })
     expect(line).not.toHaveProperty('err.cause.cause.cause')
+  })
+
+  it('drops the parameters of a failed query, keeping its text and its cause', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const driver = new Error('duplicate key value violates unique constraint "user_email_key"')
+    const failed = new DrizzleQueryError(
+      'insert into "user" ("email", "phone") values ($1, $2)',
+      ['someone@example.com', '050-5550101'],
+      driver,
+    )
+
+    logger.error('save failed', { err: new Error('wrapped', { cause: failed }) })
+
+    const raw = String(spy.mock.calls.at(-1)?.[0])
+    expect(raw).not.toContain('someone@example.com')
+    expect(raw).not.toContain('050-5550101')
+    expect(raw).not.toContain('params:')
+    expect(lastLine(spy)).toMatchObject({
+      err: {
+        cause: {
+          message: 'Failed query: insert into "user" ("email", "phone") values ($1, $2)',
+          cause: { message: driver.message },
+        },
+      },
+    })
+    expect(raw).toContain('    at ')
   })
 
   it('serialises a non-Error cause', () => {

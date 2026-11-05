@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { appSections, isAppPage } from '@/app/lib/utils/app-sections'
+import { appSections, carriesInviteCode, isAppPage, isJoinPage } from '@/app/lib/utils/app-sections'
 
 const appRoutes = new URL('../../[locale]/(app)/', import.meta.url)
 
@@ -33,5 +33,33 @@ describe('isAppPage', () => {
     ['/moneybags', false],
   ] as const)('%s is an app page: %s', (path, expected) => {
     expect(isAppPage(path)).toBe(expected)
+  })
+})
+
+describe('isJoinPage', () => {
+  it.each([
+    ['/join', true],
+    ['/join/ABCDE23456', true],
+    ['/en/join', true],
+    ['/en/join/ABCDE23456', true],
+    ['/joiner', false],
+    ['/sign-in', false],
+    ['/en', false],
+  ] as const)('%s is a join page: %s', (path, expected) => {
+    expect(isJoinPage(path)).toBe(expected)
+  })
+})
+
+describe('carriesInviteCode', () => {
+  it.each([
+    ['/join/ABCDE23456', true],
+    ['/en/join', true],
+    ['/sign-in?next=%2Fjoin%2FABCDE23456', true],
+    ['/en/sign-in?next=%2Fen%2Fjoin%2FABCDE23456', true],
+    ['/sign-in?next=%2Fmoney', false],
+    ['/sign-in', false],
+    ['/money?next=%2Fjoin%2FABCDE23456', false],
+  ] as const)('%s may carry a code: %s', (path, expected) => {
+    expect(carriesInviteCode(new URL(path, 'http://localhost'))).toBe(expected)
   })
 })

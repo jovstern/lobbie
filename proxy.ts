@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import createMiddleware from 'next-intl/middleware'
 import { getAuth } from '@/app/lib/auth'
 import { logger } from '@/app/lib/logger'
-import { isAppPage } from '@/app/lib/utils/app-sections'
+import { carriesInviteCode, isAppPage } from '@/app/lib/utils/app-sections'
 import { requestPathHeader } from '@/app/lib/utils/redirect'
 import { needsSessionCacheRenewal } from '@/app/lib/utils/session-cache'
 import { localeInPath } from '@/i18n/locale'
@@ -95,7 +95,7 @@ function withCookies(response: NextResponse, setCookies: string[]): NextResponse
 
 // Every response carries the renewed cookies, redirects included, so the renewal is never
 // repeated on the next request.
-export default async function proxy(request: NextRequest) {
+async function route(request: NextRequest): Promise<NextResponse> {
   const renewed = await renewSessionCache(request)
   const savedLocale = redirectToSavedLocale(request)
   if (savedLocale) return withCookies(savedLocale, renewed)
@@ -105,6 +105,13 @@ export default async function proxy(request: NextRequest) {
   if (response.headers.has('location'))
     return withCookies(rememberLocale(request, response), renewed)
   return withCookies(rememberLocale(request, redirectToSignIn(forwarded) ?? response), renewed)
+}
+
+export default async function proxy(request: NextRequest) {
+  const response = await route(request)
+  // An invite's code is in the URL: no link followed from the page may carry it away.
+  if (carriesInviteCode(request.nextUrl)) response.headers.set('Referrer-Policy', 'no-referrer')
+  return response
 }
 
 export const config = {

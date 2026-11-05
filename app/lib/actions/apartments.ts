@@ -11,7 +11,7 @@ import { buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
-import { apartments } from '@/app/lib/schema'
+import { apartments, invites } from '@/app/lib/schema'
 import { blockersOf, describeBlockers } from '@/app/lib/utils/apartment-blockers'
 import { monthPattern } from '@/app/lib/utils/dates'
 import { typed, type Translate } from '@/app/lib/utils/form'
@@ -212,9 +212,10 @@ export type RemoveApartmentState = {
 type Removal = { kind: 'removed' } | { kind: 'missing' } | { kind: 'blocked'; reason: string }
 
 /**
- * Removes an apartment nothing points at (R8). Admins only. Residents, payments and fee
- * overrides block it, with the reason; the list says so first, and this checks again. The form
- * sends nothing but the bound id, so the form's state and data are not read.
+ * Removes an apartment nothing points at (R8). Admins only. Residents, an active invite,
+ * payments and fee overrides block it, with the reason; the list says so first, and this
+ * checks again. The form sends nothing but the bound id, so the form's state and data are not
+ * read.
  */
 export async function remove(locale: string, id: string): Promise<RemoveApartmentState> {
   const lang = resolveLocale(locale)
@@ -252,6 +253,11 @@ export async function remove(locale: string, id: string): Promise<RemoveApartmen
         }
       }
 
+      // Only dead invites are left (an active one blocks above); no one can use them, and
+      // their foreign key would otherwise keep the apartment forever.
+      await tx
+        .delete(invites)
+        .where(and(eq(invites.apartmentId, id), eq(invites.buildingId, member.buildingId)))
       await tx.delete(apartments).where(ofThisBuilding)
       return { kind: 'removed' }
     })

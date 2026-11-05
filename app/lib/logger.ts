@@ -16,9 +16,22 @@ type SerializedError = { name: string; message: string; stack?: string; cause?: 
 // Deep enough for a wrapped driver error; a cause chain cannot recurse forever.
 const maxCauseDepth = 3
 
+// Drizzle's failed-query error ends its message, and so its stack's first lines, with
+// `\nparams: <values>`: emails, phone numbers, hashes. Only the query text is kept; the driver's
+// error (the cause) says what went wrong.
+const queryParams = /\nparams: [\s\S]*?(?=\n {4}at |$)/
+
+function withoutParams(text: string): string {
+  return text.replace(queryParams, '')
+}
+
 function serializeError(err: unknown, depth = 1): SerializedError {
   if (!(err instanceof Error)) return { name: 'NonError', message: stringifyThrown(err) }
-  const serialized: SerializedError = { name: err.name, message: err.message, stack: err.stack }
+  const serialized: SerializedError = {
+    name: err.name,
+    message: withoutParams(err.message),
+    stack: err.stack === undefined ? undefined : withoutParams(err.stack),
+  }
   if (err.cause !== undefined && depth < maxCauseDepth) {
     serialized.cause = serializeError(err.cause, depth + 1)
   }
