@@ -280,8 +280,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 | `/schedule` | What happens this week | prev/next week (`?week=YYYY-MM-DD`, a Sunday) | empty week, cancelled/moved marked | `data/schedules.occurrences(range)` | phone day list; desktop 7 columns |
 | `/building` | Hub | open a section | cameras link only if any visible | `data/cameras.visibleCount` | link list; desktop shows the latest announcements beside it |
 | `/building/announcements` | Read posts | "Load more" (`?before=` cursor) | empty, pinned first | `data/announcements.feed` | single column, 65ch |
-| `/building/directory` | Who lives where | search (`?q=`, debounced) | no results, contact hidden | `data/directory.list` (never selects hidden contacts) | grouped by floor; desktop table |
-| `/building/committee` | Who runs the building | call / email | no committee yet, no published contact | `data/committee.list` | cards |
+| `/building/directory` | Who lives where | search (`?q=`, debounced) | no results, contact hidden | `data/directory.list` (never selects hidden contacts) | grouped by floor; cards, grid on desktop |
+| `/building/committee` | Who runs the building | call / email | no committee yet, no published contact | `data/directory.committee` | cards |
 | `/building/parking` | Who parks where | — | my spots first, guest spots, none yet | `data/parking.list` | grouped list; desktop grid |
 | `/building/cameras` | Live views | refresh a snapshot | none visible → 404, one failing → inline error with retry | `data/cameras.listVisible` (embed URLs only for allowed roles; snapshot URLs never selected) | 1 column phone, 2 columns desktop, 16:9 |
 | `/meeting` | Vote and see the result | mark each slot | no poll, open, closed, confirmed (+ calendar, minutes), two apartments (`?apartment=`) | `data/meeting.current`, `ranking`; `actions/meeting.vote` (save on change, `useOptimistic`) | slot cards; desktop table with tallies |

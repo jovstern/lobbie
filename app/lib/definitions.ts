@@ -141,3 +141,41 @@ export type Resident = {
   /** How many of the building's apartments they live in, this one included. */
   apartmentCount: number
 }
+
+/**
+ * Someone on the residents' directory (R11). Phone and email are null unless they chose to
+ * show them: the query never reads them otherwise.
+ */
+export type DirectoryResident = {
+  userId: string
+  name: string
+  isOwner: boolean
+  phone: string | null
+  email: string | null
+}
+
+/** An apartment on the directory, with the residents who match the search, by name. */
+export type DirectoryApartment = {
+  id: string
+  number: string
+  residents: DirectoryResident[]
+}
+
+/** One floor of the directory, its apartments in natural order. */
+export type DirectoryFloor = {
+  floor: number
+  apartments: DirectoryApartment[]
+}
+
+/**
+ * A committee member or admin as the building sees them (R12): the contact they publish for
+ * the role, never their personal one.
+ */
+export type CommitteeMember = {
+  userId: string
+  name: string
+  role: Exclude<Role, 'resident'>
+  committeeTitle: string | null
+  committeePhone: string | null
+  committeeEmail: string | null
+}

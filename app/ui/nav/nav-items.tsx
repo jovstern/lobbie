@@ -1,8 +1,10 @@
 import {
+  BuildingOffice2Icon as BuildingOutline,
   EllipsisHorizontalCircleIcon as MoreOutline,
   HomeIcon as HomeOutline,
 } from '@heroicons/react/24/outline'
 import {
+  BuildingOffice2Icon as BuildingSolid,
   EllipsisHorizontalCircleIcon as MoreSolid,
   HomeIcon as HomeSolid,
 } from '@heroicons/react/24/solid'
@@ -14,7 +16,7 @@ type NavItem = {
   sections: string[]
   /** On the tab bar, if more: pages reached from this tab, which the side nav lists itself. */
   tabSections?: string[]
-  label: 'home' | 'more'
+  label: 'home' | 'building' | 'more'
   /**
    * Read after the label by screen readers and search engines only, where the short label
    * alone would be too vague ("More" is one of Lighthouse's generic link texts).
@@ -24,11 +26,18 @@ type NavItem = {
   activeIcon: ReactNode
 }
 
-// Only pages that exist (spec §6, "Navigation"): Money, Schedule and Building join as their
-// milestones land. Profile is reached from More, so More stays current there; so is Admin on
-// phones, while the side nav has an Admin item of its own.
+// Only pages that exist (spec §6, "Navigation"): Money and Schedule join between Home and
+// Building as their milestones land. Profile is reached from More, so More stays current
+// there; so is Admin on phones, while the side nav has an Admin item of its own.
 export const navItems: NavItem[] = [
   { href: '/', sections: ['/'], label: 'home', icon: <HomeOutline />, activeIcon: <HomeSolid /> },
+  {
+    href: '/building',
+    sections: ['/building'],
+    label: 'building',
+    icon: <BuildingOutline />,
+    activeIcon: <BuildingSolid />,
+  },
   {
     href: '/more',
     sections: ['/more', '/profile'],

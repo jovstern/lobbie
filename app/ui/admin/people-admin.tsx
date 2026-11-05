@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { requireRole } from '@/app/lib/authz'
 import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import PeopleList from '@/app/ui/admin/people-list'
-import PeopleSearch from '@/app/ui/admin/people-search'
+import SearchField from '@/app/ui/search-field'
 import { PeopleListSkeleton } from '@/app/ui/skeletons'
 
 const headingId = 'people-title'
@@ -29,7 +29,7 @@ export default async function PeopleAdmin({ searchParams }: Props) {
           <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold">
             {t('title')}
           </h1>
-          <PeopleSearch query={query} />
+          <SearchField query={query} label={t('searchLabel')} hint={t('searchHint')} />
         </header>
       }
     >

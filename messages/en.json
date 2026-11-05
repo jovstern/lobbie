@@ -73,7 +73,8 @@
     "more": "More",
     "skipToContent": "Skip to content",
     "moreHidden": "options",
-    "admin": "Admin"
+    "admin": "Admin",
+    "building": "Building"
   },
   "LanguageSwitch": {
     "otherLanguage": "עברית"
@@ -395,9 +396,7 @@
     "emptyBody": "People join with an invite to their apartment. Create the invites on the apartments page.",
     "emptyLink": "Go to apartments",
     "noResultsTitle": "No one matches “{q}”",
-    "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search.",
-    "clearSearch": "Clear",
-    "clearSearchLabel": "Clear the search"
+    "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search."
   },
   "PersonRole": {
     "edit": "Change role",
@@ -459,5 +458,44 @@
     "saveFailed": "We couldn’t save the change. Please try again.",
     "removeFailed": "We couldn’t remove the resident. Please try again.",
     "lastAdmin": "This is the building’s only admin, and this is their last apartment. Make someone else an admin first."
+  },
+  "Search": {
+    "clear": "Clear",
+    "clearLabel": "Clear the search"
+  },
+  "BuildingHub": {
+    "title": "Building",
+    "directory": "Directory",
+    "directoryBody": "Who lives in each apartment, and how to reach the neighbours who share their details.",
+    "committee": "Committee",
+    "committeeBody": "Who runs the building, and how to reach them.",
+    "back": "Back to Building"
+  },
+  "Directory": {
+    "title": "Directory",
+    "lead": "Phone numbers and emails appear only for neighbours who chose to share them.",
+    "searchLabel": "Search the directory",
+    "searchHint": "A name, or an apartment number.",
+    "floor": "{floor, plural, =0 {Ground floor} other {Floor #}}",
+    "apartment": "Apartment {number}",
+    "owner": "Owner",
+    "tenant": "Tenant",
+    "emptyTitle": "No one has joined yet",
+    "emptyBody": "Neighbours appear here once they join with the invite to their apartment.",
+    "noResultsTitle": "No one matches “{q}”",
+    "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search.",
+    "yourApartment": "Your apartment",
+    "notJoined": "Not in Lobbie yet"
+  },
+  "Committee": {
+    "title": "Committee",
+    "lead": "Who runs the building. Each member chooses the contact they publish for the role.",
+    "emptyTitle": "No committee yet",
+    "emptyBody": "Committee members appear here once the admin names them.",
+    "noContact": "No contact published"
+  },
+  "Contact": {
+    "phone": "Phone:",
+    "email": "Email:"
   }
 }

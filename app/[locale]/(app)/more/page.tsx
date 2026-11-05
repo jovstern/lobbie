@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import SignOutButton from '@/app/ui/auth/sign-out-button'
+import MemberGate from '@/app/ui/member-gate'
 import LanguageSwitch from '@/app/ui/nav/language-switch'
 import LanguageSwitchLink from '@/app/ui/nav/language-switch-link'
 import MoreAdminLink from '@/app/ui/nav/more-admin-link'
@@ -21,6 +22,10 @@ export default async function MorePage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">{t('title')}</h1>
+      {/* Members only: the check streams in and renders nothing. */}
+      <Suspense fallback={null}>
+        <MemberGate />
+      </Suspense>
       <ul className="rounded-card border-border bg-surface-raised shadow-card divide-border flex flex-col divide-y border p-2">
         <MoreLink href="/profile" icon={<UserCircleIcon />}>
           {t('profile')}

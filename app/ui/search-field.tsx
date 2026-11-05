@@ -14,15 +14,18 @@ const fieldId = 'q'
 type Props = {
   /** The search the page shows, from the URL. */
   query: string
+  label: string
+  /** What can be searched for, read with the label. */
+  hint: string
 }
 
 /**
- * The people search: what is typed goes to `?q=` after a pause. "Clear" sits beside the field,
+ * A list's search: what is typed goes to `?q=` after a pause. "Clear" sits beside the field,
  * outside the results that reload, so focus stays here. The field follows the URL when back
  * or forward changes it, but never undoes typing that is still on its way.
  */
-export default function PeopleSearch({ query }: Props) {
-  const t = useTranslations('People')
+export default function SearchField({ query, label, hint }: Props) {
+  const t = useTranslations('Search')
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const { replace } = useRouter()
@@ -66,8 +69,8 @@ export default function PeopleSearch({ query }: Props) {
         <TextField
           name={fieldId}
           type="search"
-          label={t('searchLabel')}
-          hint={t('searchHint')}
+          label={label}
+          hint={hint}
           value={value}
           onChange={(event) => {
             setValue(event.target.value)
@@ -82,11 +85,11 @@ export default function PeopleSearch({ query }: Props) {
         <button
           type="button"
           onClick={clear}
-          aria-label={t('clearSearchLabel')}
+          aria-label={t('clearLabel')}
           className={`${buttonClassName('secondary')} mt-7 shrink-0`}
         >
           <XMarkIcon aria-hidden className="size-5" />
-          {t('clearSearch')}
+          {t('clear')}
         </button>
       ) : null}
     </div>

@@ -187,7 +187,7 @@ test('a search with no results, then Clear: everyone again, focus on the field',
     }),
   ).toBeVisible()
 
-  await main.getByRole('button', { name: text.People.clearSearchLabel, exact: true }).click()
+  await main.getByRole('button', { name: text.Search.clearLabel, exact: true }).click()
 
   await expect(page).toHaveURL('/admin/people')
   const field = main.getByLabel(text.People.searchLabel, { exact: true })

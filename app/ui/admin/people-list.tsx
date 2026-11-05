@@ -5,10 +5,8 @@ import { list } from '@/app/lib/data/members'
 import PeopleCards from '@/app/ui/admin/people-cards'
 import PeopleTable from '@/app/ui/admin/people-table'
 import { buttonClassName } from '@/app/ui/button-styles'
+import EmptyState from '@/app/ui/empty-state'
 import { Link } from '@/i18n/navigation'
-
-const emptyClassName =
-  'rounded-card border-border bg-surface-raised flex max-w-xl flex-col items-start gap-3 border p-6'
 
 /** The people a search finds, or everyone: a table from tablet width, cards on phones. */
 export default async function PeopleList({ query }: { query: string }) {
@@ -21,25 +19,22 @@ export default async function PeopleList({ query }: { query: string }) {
 
   if (people.length === 0 && searching) {
     return (
-      <div className={emptyClassName}>
-        <MagnifyingGlassIcon aria-hidden className="text-text-muted size-8" />
-        <h2 className="text-lg font-semibold">{t('noResultsTitle', { q: query.trim() })}</h2>
-        {/* "Clear" is beside the search field, which keeps focus where the typing is. */}
-        <p className="text-text-muted">{t('noResultsBody')}</p>
-      </div>
+      // "Clear" is beside the search field, which keeps focus where the typing is.
+      <EmptyState
+        icon={MagnifyingGlassIcon}
+        title={t('noResultsTitle', { q: query.trim() })}
+        body={t('noResultsBody')}
+      />
     )
   }
 
   if (people.length === 0) {
     return (
-      <div className={emptyClassName}>
-        <UsersIcon aria-hidden className="text-text-muted size-8" />
-        <h2 className="text-lg font-semibold">{t('emptyTitle')}</h2>
-        <p className="text-text-muted">{t('emptyBody')}</p>
+      <EmptyState icon={UsersIcon} title={t('emptyTitle')} body={t('emptyBody')}>
         <Link href="/admin/apartments" className={buttonClassName('primary')}>
           {t('emptyLink')}
         </Link>
-      </div>
+      </EmptyState>
     )
   }
 

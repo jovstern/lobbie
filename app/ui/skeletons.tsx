@@ -324,3 +324,67 @@ export function PeopleSkeleton() {
     </div>
   )
 }
+
+/** The directory's floors: a heading each, then apartment cards with their residents. */
+export function DirectoryListSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-8">
+      {[0, 1].map((floor) => (
+        <div key={floor} className="flex flex-col gap-3">
+          <div className={`${block} h-7 w-28`} />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {[0, 1, 2].map((apartment) => (
+              <div
+                key={apartment}
+                className="rounded-card border-border bg-surface-raised flex flex-col gap-3 border p-4"
+              >
+                <div className={`${block} h-6 w-24`} />
+                {[0, 1].map((resident) => (
+                  <div key={resident} className="flex flex-col gap-1">
+                    <div className={`${block} h-6 w-40`} />
+                    {/* Some residents share a contact and some do not. */}
+                    {resident === 0 ? <div className={`${block} h-11 w-36`} /> : null}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** `/building/directory` below its header: the search field and the floors. */
+export function DirectorySkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <div className="flex max-w-md flex-col gap-2">
+        <div className={`${block} h-5 w-36`} />
+        <div className={`${block} h-11`} />
+        <div className={`${block} h-5 w-48`} />
+      </div>
+      <DirectoryListSkeleton />
+    </div>
+  )
+}
+
+/** `/building/committee` below its header: a card per member. */
+export function CommitteeSkeleton() {
+  return (
+    <div aria-hidden className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {[0, 1, 2].map((member) => (
+        <div
+          key={member}
+          className="rounded-card border-border bg-surface-raised flex flex-col gap-3 border p-4"
+        >
+          <div className="flex flex-col gap-1">
+            <div className={`${block} h-7 w-36`} />
+            <div className={`${block} h-6 w-20`} />
+          </div>
+          <div className={`${block} h-11 w-44`} />
+        </div>
+      ))}
+    </div>
+  )
+}

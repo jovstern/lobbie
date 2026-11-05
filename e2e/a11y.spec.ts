@@ -163,6 +163,41 @@ for (const locale of ['he', 'en'] as const) {
       await expectNoViolations(page)
     })
 
+    test('Building', async ({ page }) => {
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/building`)
+      await expect(
+        page.getByRole('heading', {
+          level: 1,
+          name: messages[locale].BuildingHub.title,
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Building: directory', async ({ page }) => {
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/building/directory`)
+      // Once the floors have streamed in, so axe checks them rather than the skeleton.
+      await expect(
+        page.getByRole('main').getByRole('heading', {
+          level: 2,
+          name: translator(locale)('Directory.floor', { floor: 1 }),
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Building: committee', async ({ page }) => {
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/building/committee`)
+      await expect(
+        page.getByRole('main').getByRole('heading', { level: 2, name: 'דוד כהן', exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
     test('Join: an invite, signed out', async ({ page }) => {
       // An unknown code: the card, its message and its link, with nothing to clean up.
       await page.goto(`${prefix}/join/ABCDE23456`)
