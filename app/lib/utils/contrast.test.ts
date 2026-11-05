@@ -32,6 +32,12 @@ describe('design tokens meet WCAG AA in both themes', () => {
     expect(contrastRatio(palette[theme][text], palette[theme][surface])).toBeGreaterThanOrEqual(4.5)
   })
 
+  it.each(themes)('%s: on-accent on danger (the danger button) is at least 4.5:1', (theme) => {
+    expect(
+      contrastRatio(palette[theme]['on-accent'], palette[theme].danger),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
   it.each(themes)('%s: on-accent on accent is at least 4.5:1', (theme) => {
     expect(
       contrastRatio(palette[theme]['on-accent'], palette[theme].accent),

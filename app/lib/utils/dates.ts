@@ -43,3 +43,6 @@ export function formatDate(instant: Date, timeZone: string, locale: Locale): str
     instant,
   )
 }
+
+/** A month as the app stores and sends it: `YYYY-MM`. */
+export const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/

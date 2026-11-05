@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { useSessionOf } from './helpers/auth'
-import { messages } from './helpers/copy'
+import { messages, translator } from './helpers/copy'
 
 // WCAG 2.2 AA (spec §8): zero violations on every page, in both languages.
 const wcag = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -86,6 +86,38 @@ for (const locale of ['he', 'en'] as const) {
       ).toBeVisible()
       // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
       await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: apartments, and the add dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/apartments`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: text.AdminApartments.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await page
+        .getByRole('main')
+        .getByRole('button', { name: text.ApartmentForm.open, exact: true })
+        .click()
+      await expect(
+        page.getByRole('dialog', { name: text.ApartmentForm.addTitle, exact: true }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: one apartment', async ({ page }) => {
+      const apartment = translator(locale)('AdminApartments.apartmentTitle', { number: '1' })
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/apartments`)
+      await page.getByRole('main').getByRole('link', { name: apartment, exact: true }).click()
+      await expect(
+        page.getByRole('heading', { level: 1, name: apartment, exact: true }),
+      ).toBeVisible()
       await expectNoViolations(page)
     })
 

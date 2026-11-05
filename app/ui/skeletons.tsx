@@ -80,6 +80,19 @@ export function BuildingNameSkeleton() {
   return <div aria-hidden className={`${block} h-6 w-36`} />
 }
 
+/**
+ * Where the language link cannot render yet: its own box (padding, icon, gap) around a block
+ * as wide as "English", the longer of the two names, so nothing moves when it streams in.
+ */
+export function LanguageSwitchSkeleton() {
+  return (
+    <div aria-hidden className="inline-flex min-h-11 items-center gap-2 px-3">
+      <div className={`${block} size-5`} />
+      <div className={`${block} h-5 w-14`} />
+    </div>
+  )
+}
+
 export function ProfileSkeleton() {
   return (
     <div aria-hidden className={cardClassName}>
@@ -133,6 +146,75 @@ export function BuildingSettingsSkeleton() {
           </div>
           <div className={`${block} h-24`} />
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** `/admin/apartments`: the header with its button, then cards on phones or a table from md. */
+export function ApartmentsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <div className={`${block} h-10 w-32`} />
+          <div className={`${block} h-6 w-44`} />
+        </div>
+        <div className={`${block} h-11 w-40`} />
+      </div>
+      {/* Phones: one card per apartment. */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {[0, 1, 2, 3].map((row) => (
+          <div
+            key={row}
+            className="rounded-card border-border bg-surface-raised flex flex-col gap-3 border p-4"
+          >
+            <div className={`${block} h-7 w-32`} />
+            <div className={`${block} h-5 w-56 max-w-full`} />
+            <div className="flex gap-2">
+              <div className={`${block} h-11 w-24`} />
+              <div className={`${block} h-11 w-24`} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* From tablet width: the table, its header row and a row per apartment. */}
+      <div className="rounded-card border-border bg-surface-raised divide-border hidden flex-col divide-y border md:flex">
+        {[0, 1, 2, 3, 4].map((row) => (
+          <div
+            key={row}
+            className="grid grid-cols-[1fr_1fr_1.5fr_1fr_2fr] items-center gap-4 px-4 py-3"
+          >
+            <div className={`${block} ${row === 0 ? 'h-5' : 'h-6'} w-12`} />
+            <div className={`${block} h-5 w-8`} />
+            <div className={`${block} h-5 w-28`} />
+            <div className={`${block} h-5 w-8`} />
+            {row === 0 ? (
+              <div />
+            ) : (
+              <div className="flex gap-2">
+                <div className={`${block} h-11 w-24`} />
+                <div className={`${block} h-11 w-24`} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** `/admin/apartments/[id]`: the back link and the apartment's header. */
+export function ApartmentDetailsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className={`${block} h-11 w-36`} />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <div className={`${block} h-10 w-40`} />
+          <div className={`${block} h-6 w-64 max-w-full`} />
+        </div>
+        <div className={`${block} h-11 w-28`} />
       </div>
     </div>
   )

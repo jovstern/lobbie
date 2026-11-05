@@ -1,11 +1,11 @@
 'use client'
 
-import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import { useLocale, useTranslations } from 'next-intl'
 import { useActionState, useEffect, useRef } from 'react'
 import type { BuildingFormState } from '@/app/lib/actions/buildings'
 import { formatMonth } from '@/app/lib/utils/dates'
-import { buttonClassName } from '@/app/ui/button-styles'
+import BillingChangeWarning from '@/app/ui/admin/billing-change-warning'
 import { focusFirstError } from '@/app/ui/focus-first-error'
 import SubmitButton from '@/app/ui/submit-button'
 import TextField from '@/app/ui/text-field'
@@ -100,35 +100,18 @@ export default function BuildingForm({ action, confirmedAction, saved }: Props) 
         pattern="\d{4}-(0[1-9]|1[0-2])"
         required
       />
-      <div aria-live="polite" aria-atomic="true">
-        {change ? (
-          <div
-            ref={warningRef}
-            tabIndex={-1}
-            className="rounded-control border-warning-fill bg-surface flex flex-col gap-3 border p-4"
-          >
-            <p className="text-warning flex items-center gap-2 font-semibold">
-              <ExclamationTriangleIcon aria-hidden className="size-5 shrink-0" />
-              {t('confirmTitle')}
-            </p>
-            <p>
-              {t('confirmBody', {
-                from: formatMonth(change.from, locale),
-                to: formatMonth(change.to, locale),
-              })}
-            </p>
-            <div>
-              <button
-                type="submit"
-                formAction={(formData) => dispatch({ formData, confirmed: true })}
-                className={buttonClassName('secondary')}
-              >
-                {t('saveAnyway')}
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
+      {change ? (
+        <BillingChangeWarning
+          ref={warningRef}
+          title={t('confirmTitle')}
+          body={t('confirmBody', {
+            from: formatMonth(change.from, locale),
+            to: formatMonth(change.to, locale),
+          })}
+          onConfirm={(formData) => dispatch({ formData, confirmed: true })}
+          label={t('saveAnyway')}
+        />
+      ) : null}
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton pendingLabel={t('saving')}>{t('save')}</SubmitButton>
         <div aria-live="polite" aria-atomic="true">

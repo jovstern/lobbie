@@ -2,15 +2,24 @@ import postgres from 'postgres'
 import { z } from 'zod'
 import { demoBuildingId } from '@/scripts/demo-building'
 
+/** Runs `fn` with a one-connection client to the e2e test database, closed afterwards. */
+export async function withE2eSql<T>(fn: (sql: postgres.Sql) => Promise<T>): Promise<T> {
+  const url = process.env.E2E_DATABASE_URL
+  if (!url) throw new Error('E2E_DATABASE_URL is not set.')
+  const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} })
+  try {
+    return await fn(sql)
+  } finally {
+    await sql.end()
+  }
+}
+
 /**
  * The demo building's fund, computed straight from the test database: an oracle independent of
  * the app's own query. The seed is relative to today, so the figure is never hard-coded.
  */
 export async function demoBuildingBalanceAgorot(): Promise<number> {
-  const url = process.env.E2E_DATABASE_URL
-  if (!url) throw new Error('E2E_DATABASE_URL is not set.')
-  const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} })
-  try {
+  return withE2eSql(async (sql) => {
     const [row] = await sql`
       SELECT (
         b.opening_balance_agorot
@@ -23,19 +32,39 @@ export async function demoBuildingBalanceAgorot(): Promise<number> {
       FROM buildings b
       WHERE b.id = ${demoBuildingId}`
     return z.coerce.number().int().parse(row?.total)
-  } finally {
-    await sql.end()
-  }
+  })
 }
 
 /** Removes the balance adjustments a test recorded, found by their reason. */
 export async function deleteAdjustmentsWithReason(reason: string): Promise<void> {
-  const url = process.env.E2E_DATABASE_URL
-  if (!url) throw new Error('E2E_DATABASE_URL is not set.')
-  const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} })
-  try {
-    await sql`DELETE FROM balance_adjustments WHERE reason = ${reason}`
-  } finally {
-    await sql.end()
-  }
+  await withE2eSql((sql) => sql`DELETE FROM balance_adjustments WHERE reason = ${reason}`)
+}
+
+/** Removes a demo-building apartment a test added, by its number; nothing points at it. */
+export async function deleteApartmentNumbered(number: string): Promise<void> {
+  await withE2eSql(
+    (sql) =>
+      sql`DELETE FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}`,
+  )
+}
+
+/** How many people live in a demo-building apartment, read straight from the test database. */
+export async function residentCountOf(number: string): Promise<number> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT count(*)::int AS residents
+      FROM apartment_residents r
+      JOIN apartments a ON a.id = r.apartment_id
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number}`
+    return z.number().int().parse(row?.residents)
+  })
+}
+
+/** The id of a demo-building apartment, by its number. */
+export async function apartmentIdOf(number: string): Promise<string> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}`
+    return z.uuid().parse(row?.id)
+  })
 }

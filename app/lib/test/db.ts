@@ -21,9 +21,14 @@ const migrationsFolder = new URL('../../../drizzle', import.meta.url).pathname
  *
  * See `app/lib/test/db.test.ts`.
  */
-export async function createTestDb(): Promise<{ db: Db; close: () => Promise<void> }> {
+export async function createTestDb(): Promise<{
+  db: Db
+  /** The PGlite instance itself, for a test that counts the queries a function sends. */
+  client: PGlite
+  close: () => Promise<void>
+}> {
   const client = new PGlite()
   const db = drizzle({ client, schema })
   await migrate(db, { migrationsFolder })
-  return { db, close: () => client.close() }
+  return { db, client, close: () => client.close() }
 }

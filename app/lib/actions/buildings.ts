@@ -10,21 +10,10 @@ import { buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import { logger } from '@/app/lib/logger'
 import { balanceAdjustments, buildings } from '@/app/lib/schema'
+import { monthPattern } from '@/app/lib/utils/dates'
+import { typed, type Translate } from '@/app/lib/utils/form'
 import { parseShekelsToAgorot } from '@/app/lib/utils/money'
 import { resolveLocale } from '@/i18n/locale'
-import type messages from '@/messages/he.json'
-
-type Translate<Namespace extends keyof typeof messages> = (
-  key: keyof (typeof messages)[Namespace],
-) => string
-
-const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
-
-/** What a form field held when it was sent, so an error never loses the person's typing. */
-function typed(formData: FormData, name: string): string {
-  const value = formData.get(name)
-  return typeof value === 'string' ? value : ''
-}
 
 // --- Building details ------------------------------------------------------------------
 

@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import BuildingName from '@/app/ui/nav/building-name'
 import LanguageSwitch from '@/app/ui/nav/language-switch'
 import LanguageSwitchLink from '@/app/ui/nav/language-switch-link'
-import { BuildingNameSkeleton } from '@/app/ui/skeletons'
+import { BuildingNameSkeleton, LanguageSwitchSkeleton } from '@/app/ui/skeletons'
 
 export default function TopBar() {
   return (
@@ -11,8 +11,12 @@ export default function TopBar() {
         <Suspense fallback={<BuildingNameSkeleton />}>
           <BuildingName />
         </Suspense>
-        <Suspense fallback={<LanguageSwitchLink />}>
-          <LanguageSwitch />
+        {/* The link needs the pathname, which a page with a dynamic segment only knows at
+            request time; there the outer placeholder stands in until it streams. */}
+        <Suspense fallback={<LanguageSwitchSkeleton />}>
+          <Suspense fallback={<LanguageSwitchLink />}>
+            <LanguageSwitch />
+          </Suspense>
         </Suspense>
       </div>
     </header>

@@ -1,0 +1,101 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { NextIntlClientProvider } from 'next-intl'
+import { describe, expect, it, vi } from 'vitest'
+import type { RemoveApartmentState } from '@/app/lib/actions/apartments'
+import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import RemoveApartmentDialog from '@/app/ui/admin/remove-apartment-dialog'
+import type { RemoveApartmentAction } from '@/app/ui/admin/remove-apartment-form'
+import en from '@/messages/en.json'
+
+const copy = en.ApartmentRemove
+const reason = 'Move or remove its 2 residents first.'
+
+function renderRemove(
+  action: RemoveApartmentAction = vi.fn(async () => ({})),
+  blockedReason: string | null = null,
+) {
+  render(
+    <NextIntlClientProvider locale="en" messages={{ ApartmentRemove: copy }}>
+      <ApartmentsAnnouncer
+        headingId="heading"
+        header={
+          <h1 id="heading" tabIndex={-1}>
+            Apartments
+          </h1>
+        }
+      >
+        <RemoveApartmentDialog
+          action={action}
+          number="7"
+          blockedReason={blockedReason}
+          reasonId="reason-7"
+        />
+      </ApartmentsAnnouncer>
+    </NextIntlClientProvider>,
+  )
+  return screen.getByRole('button', { name: 'Remove apartment 7' })
+}
+
+describe('RemoveApartmentDialog', () => {
+  it('is disabled while blocked, with the reason as its description, and stays focusable', async () => {
+    const user = userEvent.setup()
+    const action = vi.fn(async () => ({}))
+    const button = renderRemove(action, reason)
+
+    expect(button).toHaveAttribute('aria-disabled', 'true')
+    expect(button).toHaveAccessibleDescription(reason)
+    expect(screen.getByText(reason)).toBeVisible()
+
+    await user.tab()
+    expect(button).toHaveFocus()
+    await user.keyboard('{Enter}')
+    await user.click(button)
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(action).not.toHaveBeenCalled()
+  })
+
+  it('asks first, with Cancel focused, and Escape returns focus to the button', async () => {
+    const user = userEvent.setup()
+    const button = renderRemove()
+
+    await user.click(button)
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Remove apartment 7?' })
+    expect(dialog).toHaveAccessibleDescription(copy.description)
+    expect(screen.getByRole('button', { name: copy.cancel })).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(button).toHaveFocus()
+  })
+
+  it('shows why the server refused, and the next opening starts clean', async () => {
+    const user = userEvent.setup()
+    const refused: RemoveApartmentState = { message: `It can’t be removed yet. ${reason}` }
+    const button = renderRemove(vi.fn(async () => refused))
+    await user.click(button)
+
+    await user.click(screen.getByRole('button', { name: copy.confirm }))
+
+    expect(await screen.findByText(refused.message ?? '')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: copy.cancel }))
+    await user.click(button)
+    expect(screen.queryByText(refused.message ?? '')).not.toBeInTheDocument()
+  })
+
+  it('once removed, closes, announces it and moves focus to the heading', async () => {
+    const user = userEvent.setup()
+    const action = vi.fn(async () => ({ removed: true, message: null }))
+    renderRemove(action)
+    await user.click(screen.getByRole('button', { name: 'Remove apartment 7' }))
+
+    await user.click(screen.getByRole('button', { name: copy.confirm }))
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    expect(action).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('status')).toHaveTextContent('Apartment 7 removed')
+    expect(screen.getByRole('heading', { name: 'Apartments' })).toHaveFocus()
+  })
+})

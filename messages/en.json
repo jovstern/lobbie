@@ -128,7 +128,10 @@
     "lead": "Manage the building and its money.",
     "buildingLink": "Building details",
     "buildingLinkBody": "Name, address, quorum and billing, and corrections to the fund.",
-    "noToolsYet": "The committee's tools, such as payments and announcements, will appear here as they're added."
+    "noToolsYet": "The committee's tools, such as payments and announcements, will appear here as they're added.",
+    "apartments": "Apartments",
+    "apartmentsLink": "Apartments",
+    "apartmentsLinkBody": "Add, edit and remove apartments, and set when each starts paying."
   },
   "AdminBuilding": {
     "title": "Building details",
@@ -187,5 +190,76 @@
     "amount": "Enter an amount above zero, such as 250 or 1,200.50.",
     "reason": "Write a reason of 3 to 200 characters.",
     "addFailed": "We couldn’t add the adjustment. Please try again."
+  },
+  "AdminApartments": {
+    "title": "Apartments",
+    "count": "{count, plural, one {One apartment} other {# apartments}}, by floor",
+    "tableLabel": "Apartments",
+    "number": "Apartment",
+    "floor": "Floor",
+    "billingStart": "Billing starts",
+    "residents": "Residents",
+    "actions": "Actions",
+    "buildingDefault": "Building default",
+    "floorValue": "{floor, plural, =0 {Ground floor} other {Floor #}}",
+    "residentCount": "{count, plural, =0 {No residents} one {One resident} other {# residents}}",
+    "emptyTitle": "No apartments yet",
+    "emptyBody": "Add each apartment with its number and floor. Then you can invite the people who live there.",
+    "apartmentTitle": "Apartment {number}",
+    "back": "Back to apartments"
+  },
+  "ApartmentForm": {
+    "open": "Add apartment",
+    "addTitle": "Add an apartment",
+    "addDescription": "Its residents join later, with an invite link.",
+    "edit": "Edit",
+    "editLabel": "Edit apartment {number}",
+    "editTitle": "Edit apartment {number}",
+    "editDescription": "The number and floor are how residents and the committee find it.",
+    "number": "Apartment number",
+    "numberHint": "Up to 10 characters, for example 7 or 12A.",
+    "floor": "Floor",
+    "floorHint": "0 is the ground floor; below it, -1 and down.",
+    "billingStartMonth": "Billing starts",
+    "billingStartHint": "Leave it empty to use the building’s month. Without a month picker, type it as YYYY-MM, for example 2026-01.",
+    "add": "Add apartment",
+    "adding": "Adding…",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "added": "Apartment {number} added",
+    "saved": "Apartment {number} saved",
+    "confirmTitle": "Change when this apartment’s billing starts?",
+    "confirmBody": "Billing would start {to} instead of {from}. This changes what the apartment owes, past months included.",
+    "inMonth": "in {month}",
+    "inBuildingMonth": "in the building’s month",
+    "saveAnyway": "Save anyway"
+  },
+  "ApartmentRemove": {
+    "remove": "Remove",
+    "removeLabel": "Remove apartment {number}",
+    "title": "Remove apartment {number}?",
+    "description": "No one lives in it and it has no payments, so nothing else changes. This can’t be undone.",
+    "confirm": "Remove apartment",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removed": "Apartment {number} removed"
+  },
+  "ApartmentErrors": {
+    "number": "Enter a number of 1 to 10 characters.",
+    "floor": "Enter a whole number from -5 to 200.",
+    "billingStartMonth": "Choose a month, such as 2026-01, or leave it empty.",
+    "duplicate": "Apartment {number} already exists.",
+    "notFound": "This apartment no longer exists. Reload the page to see the current list.",
+    "saveFailed": "We couldn’t save the apartment. Please try again.",
+    "removeFailed": "We couldn’t remove the apartment. Please try again.",
+    "blocked": "It can’t be removed yet.",
+    "hasHistory": "It can’t be removed: other records still point to it."
+  },
+  "ApartmentBlockers": {
+    "residents": "Move or remove its {count, plural, one {resident} other {# residents}} first.",
+    "payments": "It has payment history, which is kept.",
+    "feeOverrides": "It has its own fee history, which is kept."
   }
 }

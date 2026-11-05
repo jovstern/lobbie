@@ -80,3 +80,18 @@ export type BalanceAdjustment = {
   recordedByName: string
   createdAt: Date
 }
+
+/** An apartment as the admin edits it (R8); no billing start means the building's. */
+export type Apartment = {
+  id: string
+  number: string
+  floor: number
+  billingStartMonth: string | null
+}
+
+/** An apartment in the admin's list, with what still points at it (see `blockersOf`). */
+export type ApartmentListItem = Apartment & {
+  residents: number
+  payments: number
+  feeOverrides: number
+}

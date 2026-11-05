@@ -35,6 +35,8 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
         <NextIntlClientProvider
           messages={{
             AdjustmentForm: messages.AdjustmentForm,
+            ApartmentForm: messages.ApartmentForm,
+            ApartmentRemove: messages.ApartmentRemove,
             BuildingForm: messages.BuildingForm,
             Common: messages.Common,
             ErrorPage: messages.ErrorPage,
