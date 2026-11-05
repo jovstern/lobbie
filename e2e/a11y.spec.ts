@@ -122,6 +122,47 @@ for (const locale of ['he', 'en'] as const) {
       await expectNoViolations(page)
     })
 
+    test('Admin: people, and the role dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/people`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: text.People.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      const name = 'מיכל אברהם'
+      await page
+        .getByRole('main')
+        .getByRole('button', {
+          name: translator(locale)('PersonRole.editLabel', { name }),
+          exact: true,
+        })
+        .click()
+      await expect(
+        page.getByRole('dialog', {
+          name: translator(locale)('PersonRole.title', { name }),
+          exact: true,
+        }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: people, a search with no results', async ({ page }) => {
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/people?q=nobody-here`)
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: translator(locale)('People.noResultsTitle', { q: 'nobody-here' }),
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
     test('Join: an invite, signed out', async ({ page }) => {
       // An unknown code: the card, its message and its link, with nothing to clean up.
       await page.goto(`${prefix}/join/ABCDE23456`)

@@ -12,10 +12,10 @@ type Announcer = {
 
 const AnnouncerContext = createContext<Announcer | null>(null)
 
-/** The announcer of the apartments page the component is on; it must sit inside one. */
+/** The announcer of the admin page the component is on; it must sit inside one. */
 export function useAnnouncer(): Announcer {
   const announcer = use(AnnouncerContext)
-  if (!announcer) throw new Error('useAnnouncer must be used inside <ApartmentsAnnouncer>')
+  if (!announcer) throw new Error('useAnnouncer must be used inside <AdminAnnouncer>')
   return announcer
 }
 
@@ -29,11 +29,12 @@ type Props = {
 }
 
 /**
- * One status region for the apartment pages' dialogs. Adding or removing an apartment changes
- * the list, so the button a dialog opened from may be gone when it closes; the announcement
- * and the focus then need a place that stays. Scoped to these pages, not the app.
+ * One status region for an admin page's dialogs (the apartments pages, people). Adding or
+ * removing a row changes the list, so the button a dialog opened from may be gone when it
+ * closes; the announcement and the focus then need a place that stays. Scoped to each page,
+ * not the app.
  */
-export default function ApartmentsAnnouncer({ headingId, header, children }: Props) {
+export default function AdminAnnouncer({ headingId, header, children }: Props) {
   // Keyed by a count, so the same message twice is announced twice.
   const [announcement, setAnnouncement] = useState<{ message: string; id: number } | null>(null)
 

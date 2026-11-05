@@ -5,10 +5,10 @@ import { cache } from 'react'
 import { z } from 'zod'
 import { requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
-import type { Apartment, ApartmentListItem } from '@/app/lib/definitions'
+import type { Apartment, ApartmentListItem, Resident } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
 import { isActiveInvite } from '@/app/lib/data/invites'
-import { apartmentResidents, apartments, feeRates, invites, payments } from '@/app/lib/schema'
+import { apartmentResidents, apartments, feeRates, invites, payments, user } from '@/app/lib/schema'
 
 // Not cached: the counts change with writes outside this page (an invite redeemed, a resident
 // moved, a payment recorded), and a stale count would offer a removal the server then refuses.
@@ -42,14 +42,16 @@ export const blockerCounts = {
 }
 
 /**
- * By floor, then naturally by number: by the number's leading digits as a number (2, 2A, 10),
- * apartments without any last; then by the text, byte by byte, so every database sorts alike.
+ * Naturally by number: by the number's leading digits as a number (2, 2A, 10), apartments
+ * without any last; then by the text, byte by byte, so every database sorts alike.
  */
-export const byFloorAndNumber = [
-  asc(apartments.floor),
+export const byNumber = [
   sql`cast(substring(${apartments.number} from '^[0-9]+') as numeric) nulls last`,
   sql`${apartments.number} collate "C"`,
 ]
+
+/** By floor, then naturally by number (see `byNumber`). */
+export const byFloorAndNumber = [asc(apartments.floor), ...byNumber]
 
 const count = z.coerce.number().int().nonnegative()
 const listRow = z.object({
@@ -121,3 +123,59 @@ export const get = cache(async (id: string): Promise<Apartment | null> => {
     throw new Error('Failed to load the apartment')
   }
 })
+
+const residentRow = z.object({
+  userId: z.string(),
+  name: z.string(),
+  email: z.string(),
+  isOwner: z.boolean(),
+  apartmentCount: count,
+})
+
+/**
+ * The people who live in one apartment of the admin's building, by name, each with how many of
+ * the building's apartments they live in (removing their last one takes them out of the
+ * building). Name and email only: no contact settings. Admins only; another building's
+ * apartment, or a malformed id, has no one.
+ */
+export async function residentsOf(apartmentId: string): Promise<Resident[]> {
+  const { buildingId } = await requireRole('admin')
+  if (!z.uuid().safeParse(apartmentId).success) return []
+  try {
+    const rows = await db
+      .select({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        isOwner: apartmentResidents.isOwner,
+        // The inner tables are aliased, so the bare outer column is the row's own resident.
+        apartmentCount: sql<number>`(
+          SELECT cast(count(*) as integer)
+          FROM apartment_residents mine
+          JOIN apartments home ON home.id = mine.apartment_id
+          WHERE mine.user_id = ${apartmentResidents.userId} AND home.building_id = ${buildingId}
+        )`,
+      })
+      .from(apartmentResidents)
+      .innerJoin(
+        apartments,
+        and(
+          eq(apartments.id, apartmentResidents.apartmentId),
+          eq(apartments.buildingId, buildingId),
+        ),
+      )
+      .innerJoin(user, eq(user.id, apartmentResidents.userId))
+      .where(eq(apartmentResidents.apartmentId, apartmentId))
+      .orderBy(sql`lower(${user.name})`, user.id)
+    return z.array(residentRow).parse(rows)
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load the residents', {
+      area: 'data/apartments',
+      buildingId,
+      apartmentId,
+      err,
+    })
+    throw new Error('Failed to load the residents')
+  }
+}

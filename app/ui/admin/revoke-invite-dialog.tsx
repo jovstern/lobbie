@@ -3,11 +3,11 @@
 import { NoSymbolIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
 import { AlertDialog } from 'radix-ui'
-import { useActionState, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { RevokeInviteState } from '@/app/lib/actions/invites'
-import { useAnnouncer } from '@/app/ui/admin/apartments-announcer'
+import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
+import ConfirmForm from '@/app/ui/admin/confirm-form'
 import { buttonClassName } from '@/app/ui/button-styles'
-import SubmitButton from '@/app/ui/submit-button'
 
 type Props = {
   /** `revoke` with the locale and the invite's id bound. */
@@ -25,16 +25,6 @@ export default function RevokeInviteDialog({ action, number }: Props) {
   const [open, setOpen] = useState(false)
   // Read when the dialog closes, to choose where focus goes; not shown, so not state.
   const revoked = useRef(false)
-  const initialState: RevokeInviteState = {}
-  const [state, formAction] = useActionState(async () => {
-    const next = await action()
-    if (next.revoked) {
-      revoked.current = true
-      setOpen(false)
-      announce(t('revoked'))
-    }
-    return next
-  }, initialState)
 
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
@@ -64,19 +54,22 @@ export default function RevokeInviteDialog({ action, number }: Props) {
               {t('revokeBody')}
             </AlertDialog.Description>
           </div>
-          <form action={formAction} className="flex flex-col gap-5">
-            <div aria-live="polite" aria-atomic="true">
-              {state.message ? <p className="text-danger text-sm">{state.message}</p> : null}
-            </div>
-            <div className="flex flex-wrap justify-end gap-3">
+          <ConfirmForm
+            action={action}
+            isDone={(state) => state.revoked === true}
+            onDone={() => {
+              revoked.current = true
+              setOpen(false)
+              announce(t('revoked'))
+            }}
+            confirmLabel={t('revokeConfirm')}
+            pendingLabel={t('revoking')}
+            cancel={
               <AlertDialog.Cancel type="button" className={buttonClassName('secondary')}>
                 {t('cancel')}
               </AlertDialog.Cancel>
-              <SubmitButton variant="danger" pendingLabel={t('revoking')}>
-                {t('revokeConfirm')}
-              </SubmitButton>
-            </div>
-          </form>
+            }
+          />
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>

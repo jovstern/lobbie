@@ -132,7 +132,10 @@
     "noToolsYet": "The committee's tools, such as payments and announcements, will appear here as they're added.",
     "apartments": "Apartments",
     "apartmentsLink": "Apartments",
-    "apartmentsLinkBody": "Add, edit and remove apartments, and set when each starts paying."
+    "apartmentsLinkBody": "Add, edit and remove apartments, and set when each starts paying.",
+    "people": "People",
+    "peopleLink": "People",
+    "peopleLinkBody": "Roles, committee titles, and who lives in the building."
   },
   "AdminBuilding": {
     "title": "Building details",
@@ -368,5 +371,93 @@
     "validLead": "Join to see your payments, the building fund and what’s happening in the building.",
     "rateLimitedTitle": "Too many invite links tried",
     "rateLimitedBody": "To keep invites safe, wait {minutes, plural, one {a minute} other {# minutes}} before opening another one."
+  },
+  "Roles": {
+    "resident": "Resident",
+    "committee": "Committee",
+    "admin": "Admin"
+  },
+  "People": {
+    "title": "People",
+    "count": "{count, plural, one {One person} other {# people}} in the building",
+    "searchLabel": "Search people",
+    "searchHint": "A name, or an apartment number.",
+    "tableLabel": "People in the building",
+    "name": "Name",
+    "email": "Email",
+    "apartments": "Apartments",
+    "role": "Role",
+    "actions": "Actions",
+    "you": "You",
+    "noApartment": "No apartment",
+    "apartmentLabel": "Apartment {number}",
+    "emptyTitle": "No one has joined yet",
+    "emptyBody": "People join with an invite to their apartment. Create the invites on the apartments page.",
+    "emptyLink": "Go to apartments",
+    "noResultsTitle": "No one matches “{q}”",
+    "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search.",
+    "clearSearch": "Clear",
+    "clearSearchLabel": "Clear the search"
+  },
+  "PersonRole": {
+    "edit": "Change role",
+    "editLabel": "Change the role of {name}",
+    "title": "Role of {name}",
+    "description": "Committee members and admins open the admin section. Only admins manage the building and its people.",
+    "role": "Role",
+    "residentHint": "Sees the building and their own payments.",
+    "committeeHint": "Also opens the admin section.",
+    "adminHint": "Also manages the building, its apartments and its people.",
+    "committeeTitle": "Committee title",
+    "committeeTitleHint": "Optional, up to 40 characters, such as Chair or Treasurer.",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "saved": "{name}’s role is saved",
+    "selfDemoteWarning": "You will lose the admin pages and go to Home as soon as you save."
+  },
+  "PersonRemove": {
+    "remove": "Remove",
+    "removeLabel": "Remove {name} from the building",
+    "title": "Remove {name} from the building?",
+    "description": "This removes {name} from all their apartments and from the building, and they lose access to it at once. Their account remains: a new invite brings them back.",
+    "confirm": "Remove from building",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removed": "{name} was removed from the building",
+    "selfDescription": "This removes you from all your apartments and from the building. You will lose access to this building at once. Your account remains: a new invite brings you back."
+  },
+  "MemberErrors": {
+    "role": "Choose a role.",
+    "committeeTitle": "Use up to 40 characters.",
+    "notFound": "This person is no longer in the building. Reload the page to see the current list.",
+    "lastAdminDemote": "This is the building’s only admin. Make someone else an admin first.",
+    "lastAdminRemove": "This is the building’s only admin, so they can’t be removed. Make someone else an admin first.",
+    "saveFailed": "We couldn’t save the role. Please try again.",
+    "removeFailed": "We couldn’t remove this person. Please try again."
+  },
+  "Residents": {
+    "title": "Residents",
+    "empty": "No one lives here yet. Create an invite above.",
+    "you": "You",
+    "ownership": "{name} lives here as",
+    "owner": "Owner",
+    "tenant": "Tenant",
+    "remove": "Remove",
+    "removeLabel": "Remove {name} from apartment {number}",
+    "removeTitle": "Remove {name} from apartment {number}?",
+    "stays": "{name} stays in the building, in their other apartments.",
+    "leaves": "{name} leaves the building too: they’ll lose access. Their account remains, and a new invite brings them back.",
+    "confirm": "Remove from apartment",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removed": "{name} no longer lives in apartment {number}"
+  },
+  "ResidentErrors": {
+    "notFound": "This person no longer lives in this apartment. Reload the page to see the current list.",
+    "saveFailed": "We couldn’t save the change. Please try again.",
+    "removeFailed": "We couldn’t remove the resident. Please try again.",
+    "lastAdmin": "This is the building’s only admin, and this is their last apartment. Make someone else an admin first."
   }
 }

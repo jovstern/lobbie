@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
 import { describe, expect, it, vi } from 'vitest'
 import type { CreateInviteState } from '@/app/lib/actions/invites'
-import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import InviteControls from '@/app/ui/admin/invite-controls'
 import en from '@/messages/en.json'
 
@@ -22,7 +22,7 @@ const created: CreateInviteState = {
 function controls(activeInviteId: string | null, createAction = vi.fn(async () => created)) {
   return (
     <NextIntlClientProvider locale="en" messages={{ InviteAdmin: copy, CopyButton: en.CopyButton }}>
-      <ApartmentsAnnouncer
+      <AdminAnnouncer
         headingId="heading"
         header={
           <h1 id="heading" tabIndex={-1}>
@@ -36,7 +36,7 @@ function controls(activeInviteId: string | null, createAction = vi.fn(async () =
           number="7"
           activeInviteId={activeInviteId}
         />
-      </ApartmentsAnnouncer>
+      </AdminAnnouncer>
     </NextIntlClientProvider>
   )
 }

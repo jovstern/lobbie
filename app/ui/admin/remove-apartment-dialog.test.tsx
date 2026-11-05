@@ -3,21 +3,20 @@ import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
 import { describe, expect, it, vi } from 'vitest'
 import type { RemoveApartmentState } from '@/app/lib/actions/apartments'
-import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import RemoveApartmentDialog from '@/app/ui/admin/remove-apartment-dialog'
-import type { RemoveApartmentAction } from '@/app/ui/admin/remove-apartment-form'
 import en from '@/messages/en.json'
 
 const copy = en.ApartmentRemove
 const reason = 'Move or remove its 2 residents first.'
 
 function renderRemove(
-  action: RemoveApartmentAction = vi.fn(async () => ({})),
+  action: () => Promise<RemoveApartmentState> = vi.fn(async () => ({})),
   blockedReason: string | null = null,
 ) {
   render(
     <NextIntlClientProvider locale="en" messages={{ ApartmentRemove: copy }}>
-      <ApartmentsAnnouncer
+      <AdminAnnouncer
         headingId="heading"
         header={
           <h1 id="heading" tabIndex={-1}>
@@ -31,7 +30,7 @@ function renderRemove(
           blockedReason={blockedReason}
           reasonId="reason-7"
         />
-      </ApartmentsAnnouncer>
+      </AdminAnnouncer>
     </NextIntlClientProvider>,
   )
   return screen.getByRole('button', { name: 'Remove apartment 7' })

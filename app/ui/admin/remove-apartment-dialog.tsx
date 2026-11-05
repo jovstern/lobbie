@@ -5,15 +5,14 @@ import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
 import { AlertDialog } from 'radix-ui'
 import { useRef, useState } from 'react'
-import { useAnnouncer } from '@/app/ui/admin/apartments-announcer'
-import RemoveApartmentForm, {
-  type RemoveApartmentAction,
-} from '@/app/ui/admin/remove-apartment-form'
+import type { RemoveApartmentState } from '@/app/lib/actions/apartments'
+import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
+import ConfirmForm from '@/app/ui/admin/confirm-form'
 import { buttonClassName } from '@/app/ui/button-styles'
 
 type Props = {
   /** `remove` with the locale and the apartment's id bound. */
-  action: RemoveApartmentAction
+  action: () => Promise<RemoveApartmentState>
   number: string
   /** Why it cannot be removed yet, or null when it can. */
   blockedReason: string | null
@@ -86,13 +85,16 @@ export default function RemoveApartmentDialog({ action, number, blockedReason, r
             </AlertDialog.Description>
           </div>
           {/* Unmounted on close, so a refusal's message does not greet the next opening. */}
-          <RemoveApartmentForm
+          <ConfirmForm
             action={action}
-            onRemoved={() => {
+            isDone={(state) => state.removed === true}
+            onDone={() => {
               removed.current = true
               setOpen(false)
               announce(t('removed', { number }))
             }}
+            confirmLabel={t('confirm')}
+            pendingLabel={t('removing')}
             cancel={
               <AlertDialog.Cancel type="button" className={buttonClassName('secondary')}>
                 {t('cancel')}

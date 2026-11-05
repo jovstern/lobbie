@@ -233,6 +233,22 @@ export function ApartmentDetailsSkeleton() {
         <div className={`${block} h-11 w-40`} />
         <div className={`${block} h-10 w-full`} />
       </div>
+      {/* Residents: one row each, with the owner/tenant choice and Remove. */}
+      <div className={clsx(cardClassName, 'max-w-2xl')}>
+        <div className={`${block} h-7 w-28`} />
+        {[0, 1].map((row) => (
+          <div key={row} className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <div className={`${block} h-6 w-36`} />
+              <div className={`${block} h-5 w-48`} />
+            </div>
+            <div className="flex gap-3">
+              <div className={`${block} h-11 w-40`} />
+              <div className={`${block} h-11 w-24`} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -244,6 +260,67 @@ export function JoinInviteSkeleton() {
       <div className={`${block} h-8 w-56 max-w-full`} />
       <div className={`${block} h-6 w-full`} />
       <div className={`${block} h-11 w-44`} />
+    </div>
+  )
+}
+
+/** The people list of `/admin/people`: its count, then cards on phones or a table from md. */
+export function PeopleListSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-3">
+      <div className={`${block} h-6 w-48`} />
+      {/* Phones: one card per person. */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {[0, 1, 2].map((row) => (
+          <div
+            key={row}
+            className="rounded-card border-border bg-surface-raised flex flex-col gap-3 border p-4"
+          >
+            <div className={`${block} h-7 w-40`} />
+            <div className={`${block} h-5 w-56 max-w-full`} />
+            <div className={`${block} h-11 w-24`} />
+            <div className="flex gap-2">
+              <div className={`${block} h-11 w-36`} />
+              <div className={`${block} h-11 w-24`} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* From tablet width: the table, its header row and a row per person. */}
+      <div className="rounded-card border-border bg-surface-raised divide-border hidden flex-col divide-y border md:flex">
+        {[0, 1, 2, 3, 4].map((row) => (
+          <div key={row} className="grid grid-cols-[2fr_1fr_1fr_2fr] items-center gap-4 px-4 py-3">
+            <div className={`${block} ${row === 0 ? 'h-5' : 'h-10'} w-40`} />
+            <div className={`${block} h-5 w-16`} />
+            <div className={`${block} h-5 w-20`} />
+            {row === 0 ? (
+              <div />
+            ) : (
+              <div className="flex gap-2">
+                <div className={`${block} h-11 w-36`} />
+                <div className={`${block} h-11 w-24`} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** `/admin/people`: the heading, the search field and the list. */
+export function PeopleSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        <div className={`${block} h-10 w-28`} />
+        <div className="flex max-w-md flex-col gap-2">
+          <div className={`${block} h-5 w-28`} />
+          <div className={`${block} h-11`} />
+          <div className={`${block} h-5 w-48`} />
+        </div>
+      </div>
+      <PeopleListSkeleton />
     </div>
   )
 }

@@ -97,3 +97,53 @@ export async function deleteUser(email: string): Promise<void> {
     }),
   )
 }
+
+/** Puts a demo-building member back to a resident without a title, as the seed has them. */
+export async function resetToResident(email: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE building_members SET role = 'resident', committee_title = NULL
+      WHERE building_id = ${demoBuildingId}
+        AND user_id = (SELECT id FROM "user" WHERE email = ${email})`,
+  )
+}
+
+/** Sets whether someone owns a demo-building apartment, by their email and its number. */
+export async function setOwner(email: string, number: string, isOwner: boolean): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE apartment_residents SET is_owner = ${isOwner}
+      WHERE user_id = (SELECT id FROM "user" WHERE email = ${email})
+        AND apartment_id = (
+          SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+        )`,
+  )
+}
+
+/** Someone new living in a demo-building apartment, for a test that removes them. */
+export async function addResident(email: string, name: string, number: string): Promise<void> {
+  await withE2eSql((sql) =>
+    sql.begin(async (tx) => {
+      const [person] = await tx`
+        INSERT INTO "user" (id, name, email, email_verified, created_at, updated_at)
+        VALUES (gen_random_uuid(), ${name}, ${email}, true, now(), now())
+        RETURNING id`
+      await tx`
+        INSERT INTO building_members (user_id, building_id) VALUES (${person.id}, ${demoBuildingId})`
+      await tx`
+        INSERT INTO apartment_residents (user_id, apartment_id)
+        SELECT ${person.id}, id FROM apartments
+        WHERE building_id = ${demoBuildingId} AND number = ${number}`
+    }),
+  )
+}
+
+/** Whether someone is still a member of a building, read straight from the test database. */
+export async function isMember(email: string): Promise<boolean> {
+  return withE2eSql(async (sql) => {
+    const rows = await sql`
+      SELECT 1 FROM building_members
+      WHERE user_id = (SELECT id FROM "user" WHERE email = ${email})`
+    return rows.length > 0
+  })
+}

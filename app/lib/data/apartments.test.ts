@@ -1,3 +1,4 @@
+import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
@@ -11,7 +12,7 @@ import {
   payments,
   user,
 } from '@/app/lib/schema'
-import { get, list } from './apartments'
+import { get, list, residentsOf } from './apartments'
 
 const testDb = await vi.hoisted(async () => {
   const { createTestDb } = await import('@/app/lib/test/db')
@@ -205,6 +206,72 @@ describe('get', () => {
     try {
       await expect(get(ids.get('2') ?? '')).rejects.toThrow('404')
       expect(query).not.toHaveBeenCalled()
+    } finally {
+      query.mockRestore()
+    }
+  })
+})
+
+describe('residentsOf', () => {
+  it('is the apartment’s residents by name, each with how many apartments they live in', async () => {
+    signInAsAdminOf(buildingId)
+    const [admin] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, 'admin@test.example'))
+    // The admin also lives in 2A, and owns 1.
+    await db
+      .insert(apartmentResidents)
+      .values({ userId: admin.id, apartmentId: ids.get('2A') ?? '' })
+    await db
+      .update(apartmentResidents)
+      .set({ isOwner: true })
+      .where(
+        and(
+          eq(apartmentResidents.userId, admin.id),
+          eq(apartmentResidents.apartmentId, ids.get('1') ?? ''),
+        ),
+      )
+
+    expect(await residentsOf(ids.get('1') ?? '')).toEqual([
+      {
+        userId: admin.id,
+        name: 'Admin',
+        email: 'admin@test.example',
+        isOwner: true,
+        apartmentCount: 2,
+      },
+      {
+        userId: expect.any(String),
+        name: 'Neighbour',
+        email: 'neighbour@test.example',
+        isOwner: false,
+        apartmentCount: 1,
+      },
+    ])
+    expect(requireRole).toHaveBeenCalledWith('admin')
+  })
+
+  it('is nobody for an empty apartment', async () => {
+    signInAsAdminOf(buildingId)
+
+    expect(await residentsOf(ids.get('B1') ?? '')).toEqual([])
+  })
+
+  it('is nobody for another building’s apartment, or a malformed id', async () => {
+    signInAsAdminOf(otherBuildingId)
+
+    expect(await residentsOf(ids.get('1') ?? '')).toEqual([])
+    expect(await residentsOf('not-a-uuid')).toEqual([])
+  })
+
+  it('sends one query', async () => {
+    signInAsAdminOf(buildingId)
+    const query = vi.spyOn(testDb.client, 'query')
+
+    try {
+      await residentsOf(ids.get('1') ?? '')
+      expect(query).toHaveBeenCalledTimes(1)
     } finally {
       query.mockRestore()
     }

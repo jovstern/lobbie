@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ApartmentFormState } from '@/app/lib/actions/apartments'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import type { ApartmentAction } from '@/app/ui/admin/apartment-form'
-import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import en from '@/messages/en.json'
 
 const copy = en.ApartmentForm
@@ -26,7 +26,7 @@ function renderDialog({
 }: Options = {}) {
   render(
     <NextIntlClientProvider locale="en" messages={{ ApartmentForm: copy }}>
-      <ApartmentsAnnouncer
+      <AdminAnnouncer
         headingId="heading"
         header={
           <h1 id="heading" tabIndex={-1}>
@@ -40,7 +40,7 @@ function renderDialog({
           saved={editing ? saved : undefined}
           focusHeadingAfterSave={focusHeadingAfterSave}
         />
-      </ApartmentsAnnouncer>
+      </AdminAnnouncer>
     </NextIntlClientProvider>,
   )
   return screen.getByRole('button', { name: editing ? 'Edit apartment 7' : copy.open })

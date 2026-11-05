@@ -72,7 +72,7 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `resend` (M7) | `app/lib/mail.ts` | Production magic-link email |
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |
-| `ApartmentsAnnouncer` (page-scoped React context) | `app/ui/admin/apartments-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success. No app-level use. |
+| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages and `/admin/people`, each its own instance. No app-level use. |
 
 **Route Handlers.** Each one is called by something other than this app's own forms:
 - `/api/auth/[...all]`: the magic link in the email.

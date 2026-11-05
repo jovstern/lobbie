@@ -7,7 +7,8 @@ import { get } from '@/app/lib/data/apartments'
 import { formatMonth } from '@/app/lib/utils/dates'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentInvite from '@/app/ui/admin/apartment-invite'
-import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import ApartmentResidents from '@/app/ui/admin/apartment-residents'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import { Link } from '@/i18n/navigation'
 
 const headingId = 'apartment-title'
@@ -15,8 +16,8 @@ const headingId = 'apartment-title'
 type Props = { params: Promise<{ id: string }> }
 
 /**
- * `/admin/apartments/[id]` for an admin: the apartment's header and its invite. Its residents
- * join in the next task. Another building's apartment, or none, is a 404.
+ * `/admin/apartments/[id]` for an admin: the apartment's header, its invite, then its residents.
+ * Another building's apartment, or none, is a 404.
  */
 export default async function ApartmentDetails({ params }: Props) {
   // Admins only; anyone else gets the 404, before anything of the building is read.
@@ -38,7 +39,7 @@ export default async function ApartmentDetails({ params }: Props) {
         <ArrowLeftIcon aria-hidden className="size-5 rtl:-scale-x-100" />
         {t('back')}
       </Link>
-      <ApartmentsAnnouncer
+      <AdminAnnouncer
         headingId={headingId}
         header={
           <header className="flex flex-wrap items-start justify-between gap-4">
@@ -74,7 +75,8 @@ export default async function ApartmentDetails({ params }: Props) {
         }
       >
         <ApartmentInvite apartment={apartment} />
-      </ApartmentsAnnouncer>
+        <ApartmentResidents apartment={apartment} />
+      </AdminAnnouncer>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { PencilSquareIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outli
 import { useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
 import { useRef, useState } from 'react'
-import { useAnnouncer } from '@/app/ui/admin/apartments-announcer'
+import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
 import ApartmentForm, {
   type ApartmentAction,
   type ApartmentValues,

@@ -7,7 +7,7 @@ import { list } from '@/app/lib/data/apartments'
 import ApartmentCards from '@/app/ui/admin/apartment-cards'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentTable from '@/app/ui/admin/apartment-table'
-import ApartmentsAnnouncer from '@/app/ui/admin/apartments-announcer'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import InviteAll from '@/app/ui/admin/invite-all'
 
 const headingId = 'apartments-title'
@@ -28,7 +28,7 @@ export default async function ApartmentsAdmin() {
   const isEmpty = apartments.length === 0
 
   return (
-    <ApartmentsAnnouncer
+    <AdminAnnouncer
       headingId={headingId}
       header={
         <header className="flex flex-wrap items-end justify-between gap-4">
@@ -64,6 +64,6 @@ export default async function ApartmentsAdmin() {
           <ApartmentCards apartments={apartments} />
         </>
       )}
-    </ApartmentsAnnouncer>
+    </AdminAnnouncer>
   )
 }

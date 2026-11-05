@@ -113,3 +113,31 @@ export type CreatedInvite = {
   code: string
   link: string
 }
+
+/** One of a person's apartments, as a link on the admin's lists. */
+export type ApartmentRef = { id: string; number: string }
+
+/**
+ * A member of the building as the admin manages them (R10): no contact settings, which the
+ * admin does not need here.
+ */
+export type Person = {
+  userId: string
+  name: string
+  email: string
+  role: Role
+  /** Committee and admin only; null for everyone else. */
+  committeeTitle: string | null
+  /** In natural order (2 before 10). */
+  apartments: ApartmentRef[]
+}
+
+/** Someone who lives in an apartment, as its admin page lists them (R10). */
+export type Resident = {
+  userId: string
+  name: string
+  email: string
+  isOwner: boolean
+  /** How many of the building's apartments they live in, this one included. */
+  apartmentCount: number
+}

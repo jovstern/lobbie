@@ -1,4 +1,9 @@
-import { BuildingOffice2Icon, ChevronRightIcon, HomeModernIcon } from '@heroicons/react/24/outline'
+import {
+  BuildingOffice2Icon,
+  ChevronRightIcon,
+  HomeModernIcon,
+  UsersIcon,
+} from '@heroicons/react/24/outline'
 import { getTranslations } from 'next-intl/server'
 import type { ComponentType, SVGProps } from 'react'
 import { requireRole } from '@/app/lib/authz'
@@ -9,8 +14,8 @@ import { Link } from '@/i18n/navigation'
 type OverviewLink = {
   href: string
   id: string
-  label: 'buildingLink' | 'apartmentsLink'
-  body: 'buildingLinkBody' | 'apartmentsLinkBody'
+  label: 'buildingLink' | 'apartmentsLink' | 'peopleLink'
+  body: 'buildingLinkBody' | 'apartmentsLinkBody' | 'peopleLinkBody'
   icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
@@ -29,6 +34,13 @@ const adminLinks: OverviewLink[] = [
     label: 'apartmentsLink',
     body: 'apartmentsLinkBody',
     icon: HomeModernIcon,
+  },
+  {
+    href: '/admin/people',
+    id: 'admin-people-link',
+    label: 'peopleLink',
+    body: 'peopleLinkBody',
+    icon: UsersIcon,
   },
 ]
 
