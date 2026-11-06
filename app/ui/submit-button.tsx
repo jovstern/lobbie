@@ -1,5 +1,6 @@
 'use client'
 
+import clsx from 'clsx'
 import type { ReactNode } from 'react'
 import { useFormStatus } from 'react-dom'
 import { buttonClassName, type ButtonVariant } from '@/app/ui/button-styles'
@@ -11,6 +12,8 @@ type Props = {
   variant?: ButtonVariant
   /** Also disabled while another form's action on the same state is running. */
   disabled?: boolean
+  /** Layout only, such as full width on phones. */
+  className?: string
 }
 
 /** A form's submit button with its pending state; it must sit inside the `<form>`. */
@@ -19,11 +22,16 @@ export default function SubmitButton({
   pendingLabel,
   variant = 'primary',
   disabled = false,
+  className,
 }: Props) {
   const { pending } = useFormStatus()
 
   return (
-    <button type="submit" disabled={pending || disabled} className={buttonClassName(variant)}>
+    <button
+      type="submit"
+      disabled={pending || disabled}
+      className={clsx(buttonClassName(variant), className)}
+    >
       {pending ? pendingLabel : children}
     </button>
   )

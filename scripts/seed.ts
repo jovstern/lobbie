@@ -179,6 +179,13 @@ const people: Person[] = [
     isOwner: false,
     role: 'resident',
   },
+]
+
+/**
+ * The e2e suite's own people, one per e2e apartment: write tests change them, never the demo
+ * residents. Seeded only with `e2e` (the reset of the test database), never into dev.
+ */
+const e2ePeople: Person[] = [
   {
     email: 'e2e1@example.com',
     name: 'בודק אחד',
@@ -263,6 +270,11 @@ type SeedOptions = {
    * Off by default, so the seeded admin can try every screen.
    */
   demo?: boolean
+  /**
+   * Adds the e2e fixtures: apartments `e2e-1..3` and their people `e2e1..3@example.com`
+   * (`--e2e`). Only `scripts/reset-test-db.ts` asks for them; dev gets none.
+   */
+  e2e?: boolean
 }
 
 /**
@@ -274,8 +286,9 @@ type SeedOptions = {
  */
 export async function seed(
   db: Db,
-  { now = new Date(), demo: isDemo = false }: SeedOptions = {},
+  { now = new Date(), demo: isDemo = false, e2e = false }: SeedOptions = {},
 ): Promise<void> {
+  const seeded = e2e ? [...people, ...e2ePeople] : people
   const today = todayIn(timeZone, now)
   const currentMonth = today.slice(0, 7)
   const todayDay = Number(today.slice(8))
@@ -313,12 +326,14 @@ export async function seed(
         billingStartMonth: null,
       })),
       // e2e apartments owe only the current month, so write tests start from a known state.
-      ...[1, 2, 3].map((n) => ({
-        buildingId,
-        number: `e2e-${n}`,
-        floor: 0,
-        billingStartMonth: currentMonth,
-      })),
+      ...(e2e
+        ? [1, 2, 3].map((n) => ({
+            buildingId,
+            number: `e2e-${n}`,
+            floor: 0,
+            billingStartMonth: currentMonth,
+          }))
+        : []),
     ]
     const savedApartments = await tx
       .insert(apartments)
@@ -341,7 +356,7 @@ export async function seed(
     await tx
       .insert(user)
       .values(
-        people.map((p) => ({ name: p.name, email: p.email, phone: p.phone, emailVerified: true })),
+        seeded.map((p) => ({ name: p.name, email: p.email, phone: p.phone, emailVerified: true })),
       )
       .onConflictDoUpdate({
         target: user.email,
@@ -354,7 +369,7 @@ export async function seed(
       .where(
         inArray(
           user.email,
-          people.map((p) => p.email),
+          seeded.map((p) => p.email),
         ),
       )
     const userId = new Map(savedUsers.map((u) => [u.email, u.id]))
@@ -367,7 +382,7 @@ export async function seed(
     const savedMembers = await tx
       .insert(buildingMembers)
       .values(
-        people.map((p) => ({
+        seeded.map((p) => ({
           userId: idOf(userId, p.email),
           buildingId,
           role: p.role,
@@ -395,7 +410,7 @@ export async function seed(
     await tx
       .insert(apartmentResidents)
       .values(
-        people
+        seeded
           .filter((p) => demoMembers.has(idOf(userId, p.email)))
           .map((p) => ({
             userId: idOf(userId, p.email),
@@ -480,7 +495,10 @@ if (isEntryPoint(import.meta.url)) {
   void runScript('db:seed', async () => {
     const { db, close } = createDbClient(requireEnv('DATABASE_URL'))
     try {
-      await seed(db, { demo: process.argv.includes('--demo') })
+      await seed(db, {
+        demo: process.argv.includes('--demo'),
+        e2e: process.argv.includes('--e2e'),
+      })
       // Building rows, fee rates and balances are cached for hours ('use cache'), and the
       // seed writes behind the app's back, so no tag is updated.
       logger.info('db:seed: restart any running server to drop its cached building data')

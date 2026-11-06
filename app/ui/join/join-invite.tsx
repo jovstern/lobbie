@@ -4,7 +4,7 @@ import { redeem } from '@/app/lib/actions/invites'
 import { getMembership } from '@/app/lib/authz'
 import { previewForVisitor } from '@/app/lib/data/invites'
 import { normalizeInviteCode } from '@/app/lib/utils/invite-code'
-import { joinView, type JoinMembership } from '@/app/lib/utils/join-view'
+import { joinView, type JoinMembership, type JoinView } from '@/app/lib/utils/join-view'
 import { withLocalePrefix } from '@/app/lib/utils/redirect'
 import JoinInviteView from '@/app/ui/join/join-invite-view'
 
@@ -34,18 +34,20 @@ export default async function JoinInvite({ params }: Props) {
         }
       : membership
 
-  // Back here after the magic link, in this language.
-  const next = withLocalePrefix(`/join/${code}`, locale)
+  const view: JoinView =
+    lookup.kind === 'rate-limited'
+      ? { kind: 'rate-limited', minutes: Math.ceil(lookup.retryAfterSeconds / 60) }
+      : joinView(lookup.invite, who)
+  // Back here after the magic link, in this language. Sign-in names the apartment, which this
+  // page already shows to whoever holds the link.
+  const signInQuery = new URLSearchParams({ next: withLocalePrefix(`/join/${code}`, locale) })
+  if (view.kind === 'sign-in') signInQuery.set('apartment', view.apartmentNumber)
 
   return (
     <JoinInviteView
-      view={
-        lookup.kind === 'rate-limited'
-          ? { kind: 'rate-limited', minutes: Math.ceil(lookup.retryAfterSeconds / 60) }
-          : joinView(lookup.invite, who)
-      }
+      view={view}
       redeemAction={redeem.bind(null, { locale, code })}
-      signInHref={`/sign-in?${new URLSearchParams({ next })}`}
+      signInHref={`/sign-in?${signInQuery}`}
     />
   )
 }

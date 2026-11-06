@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { update } from '@/app/lib/actions/apartments'
 import { requireRole } from '@/app/lib/authz'
 import { get } from '@/app/lib/data/apartments'
+import { get as getBuilding } from '@/app/lib/data/buildings'
 import { formatMonth } from '@/app/lib/utils/dates'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentInvite from '@/app/ui/admin/apartment-invite'
@@ -23,8 +24,9 @@ export default async function ApartmentDetails({ params }: Props) {
   // Admins only; anyone else gets the 404, before anything of the building is read.
   await requireRole('admin')
   const { id } = await params
-  const [apartment, t, locale] = await Promise.all([
+  const [apartment, building, t, locale] = await Promise.all([
     get(id),
+    getBuilding(),
     getTranslations('AdminApartments'),
     getLocale(),
   ])
@@ -57,7 +59,9 @@ export default async function ApartmentDetails({ params }: Props) {
                   <dd>
                     {apartment.billingStartMonth
                       ? formatMonth(apartment.billingStartMonth, locale)
-                      : t('buildingDefault')}
+                      : t('buildingDefault', {
+                          month: formatMonth(building.billingStartMonth, locale),
+                        })}
                   </dd>
                 </div>
               </dl>

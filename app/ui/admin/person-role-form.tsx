@@ -61,7 +61,7 @@ export default function PersonRoleForm({ action, saved, isSelf, onSaved, cancel 
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
       <fieldset aria-describedby="role-error" className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">{t('role')}</legend>
         <div className="flex flex-col gap-2">

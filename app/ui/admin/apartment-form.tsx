@@ -69,6 +69,8 @@ export default function ApartmentForm({ action, confirmedAction, saved, onSaved,
   return (
     <form
       ref={formRef}
+      // The server checks every field and says how to fix it, in place of the browser.
+      noValidate
       action={(formData) => dispatch({ formData, confirmed: false })}
       className="flex flex-col gap-5"
     >

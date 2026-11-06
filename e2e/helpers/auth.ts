@@ -16,7 +16,7 @@
  *
  * Everyone else who signs in is created by the test for its project (and locale, where it
  * loops over them) and removed afterwards, so each such address signs in once: profile-*,
- * more-*, leaving-*, signout-*, demo-*, invitee-*, join-a11y-*.
+ * more-*, leaving-*, signout-*, demo-*, invitee-*, join-a11y-*, locks-*.
  */
 import { randomInt } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'

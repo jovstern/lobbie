@@ -63,7 +63,7 @@ const statusesOf = async (numbers: string[]) =>
   statusForUser(await residentOf(numbers.map(idOf)), now)
 
 beforeAll(async () => {
-  await seed(db, { now })
+  await seed(db, { now, e2e: true })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
   buildingId = demo.id
   const rows = await db

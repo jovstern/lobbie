@@ -4,14 +4,16 @@
     "description": "Your building's payments, balance, announcements and schedules, in one place for residents and the committee."
   },
   "Common": {
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "saved": "Saved"
   },
   "NotFound": {
     "title": "Page not found",
     "description": "The link may be wrong, or the page may have moved."
   },
   "Home": {
-    "title": "Home"
+    "title": "Home",
+    "joined": "You joined apartment {number}. Welcome to the building!"
   },
   "Auth": {
     "appName": "Lobbie",
@@ -25,7 +27,8 @@
     "heading": "Sign in to Lobbie",
     "lead": "Enter your email and we'll send you a link to sign in. No password needed.",
     "expired": "That sign-in link has expired or was already used. Enter your email to get a new one.",
-    "signInFailed": "We couldn't sign you in. Please try again."
+    "signInFailed": "We couldn't sign you in. Please try again.",
+    "joiningApartment": "After signing in, you’ll come back to join apartment {number}."
   },
   "SignInForm": {
     "emailLabel": "Email",
@@ -130,7 +133,9 @@
     "emailHint": "You sign in with this address, so it can’t be changed here.",
     "save": "Save",
     "saving": "Saving…",
-    "saved": "Saved"
+    "saved": "Saved",
+    "welcomeTitle": "What should neighbours call you?",
+    "welcomeLead": "You’ve joined the building. Add your name, so neighbours and the committee know who you are."
   },
   "CommitteeContactForm": {
     "phone": "Committee phone",
@@ -175,7 +180,8 @@
     "apartmentsLinkBody": "Add, edit and remove apartments, and set when each starts paying.",
     "people": "People",
     "peopleLink": "People",
-    "peopleLinkBody": "Roles, committee titles, and who lives in the building."
+    "peopleLinkBody": "Roles, committee titles, and who lives in the building.",
+    "noToolsTitle": "Nothing to manage here yet"
   },
   "AdminBuilding": {
     "title": "Building details",
@@ -243,13 +249,18 @@
     "billingStart": "Billing starts",
     "residents": "Residents",
     "actions": "Actions",
-    "buildingDefault": "Building default",
+    "buildingDefault": "Same as the building ({month})",
     "floorValue": "{floor, plural, =0 {Ground floor} other {Floor #}}",
     "residentCount": "{count, plural, =0 {No residents} one {One resident} other {# residents}}",
     "emptyTitle": "No apartments yet",
     "emptyBody": "Add each apartment with its number and floor. Then you can invite the people who live there.",
     "apartmentTitle": "Apartment {number}",
-    "back": "Back to apartments"
+    "back": "Back to apartments",
+    "invite": "Invite",
+    "inviteActive": "Active, until {date}",
+    "inviteJoined": "{count, plural, one {Joined: one resident} other {Joined: # residents}}",
+    "inviteUsedUp": "All places used",
+    "inviteNone": "None yet"
   },
   "ApartmentForm": {
     "open": "Add apartment",
@@ -287,7 +298,9 @@
     "confirm": "Remove apartment",
     "removing": "Removing…",
     "cancel": "Cancel",
-    "removed": "Apartment {number} removed"
+    "removed": "Apartment {number} removed",
+    "blockedTitle": "Apartment {number} can’t be removed yet",
+    "blockedClose": "OK"
   },
   "ApartmentErrors": {
     "number": "Enter a number of 1 to 10 characters.",
@@ -304,7 +317,11 @@
     "residents": "Move or remove its {count, plural, one {resident} other {# residents}} first.",
     "payments": "It has payment history, which is kept.",
     "feeOverrides": "It has its own fee history, which is kept.",
-    "activeInvites": "It has an active invite. Revoke it first."
+    "activeInvites": "It has an active invite. Revoke it first.",
+    "residentsShort": "Has residents",
+    "activeInvitesShort": "Active invite",
+    "paymentsShort": "Has payments",
+    "feeOverridesShort": "Has its own fee"
   },
   "InviteErrors": {
     "apartmentNotFound": "This apartment no longer exists. Reload the page to see the current list.",
@@ -344,12 +361,13 @@
     "newLead": "Copy it now: it won’t be shown again.",
     "link": "Link",
     "code": "Code",
-    "copyLink": "Copy link"
+    "copyLink": "Copy link",
+    "revokeCancel": "Keep invite"
   },
   "InviteAll": {
-    "open": "Create invites for all apartments",
+    "open": "Invite every apartment",
     "creating": "Creating invites…",
-    "dialogTitle": "Create invites for all apartments?",
+    "dialogTitle": "Invite every apartment?",
     "dialogBody": "{active, plural, one {One apartment already has} other {# apartments already have}} an active invite, whose link was shown only when it was created.",
     "missingOnly": "{count, plural, one {Only the one without an invite} other {Only the # without an invite}}",
     "replaceAll": "{count, plural, one {Replace it too} other {Replace all # invites}}",
@@ -365,7 +383,9 @@
     "sectionTitle": "Invite the residents",
     "sectionLead": "Create a link for each apartment and send it to the people who live there, for example in the building’s WhatsApp group.",
     "listLabel": "New invite links",
-    "copyLink": "Copy link"
+    "copyLink": "Copy link",
+    "done": "Done, I copied them",
+    "close": "Close"
   },
   "CopyButton": {
     "copied": "Copied",
@@ -525,14 +545,16 @@
     "noResultsTitle": "No one matches “{q}”",
     "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search.",
     "yourApartment": "Your apartment",
-    "notJoined": "Not in Lobbie yet"
+    "notJoined": "Not in Lobbie yet",
+    "unnamed": "A neighbour who hasn’t added a name"
   },
   "Committee": {
     "title": "Committee",
     "lead": "Who runs the building. Each member chooses the contact they publish for the role.",
     "emptyTitle": "No committee yet",
     "emptyBody": "Committee members appear here once the admin names them.",
-    "noContact": "No contact published"
+    "noContact": "No contact published",
+    "unnamed": "A member who hasn’t added a name"
   },
   "Contact": {
     "phone": "Phone:",

@@ -12,7 +12,7 @@ type Action = (state: SettingState, formData: FormData) => Promise<SettingState>
 
 function renderSwitch(action: Action, { showContact = false, hasPhone = true } = {}) {
   return render(
-    <NextIntlClientProvider locale="en" messages={{ ContactVisibility: copy }}>
+    <NextIntlClientProvider locale="en" messages={{ ContactVisibility: copy, Common: en.Common }}>
       <ContactVisibility action={action} showContact={showContact} hasPhone={hasPhone} />
     </NextIntlClientProvider>,
   )
@@ -89,12 +89,22 @@ describe('ContactVisibility', () => {
     await user.click(screen.getByRole('switch', { name: copy.label }))
     // The server's refresh: the saved value is now "on".
     rerender(
-      <NextIntlClientProvider locale="en" messages={{ ContactVisibility: copy }}>
+      <NextIntlClientProvider locale="en" messages={{ ContactVisibility: copy, Common: en.Common }}>
         <ContactVisibility action={action} showContact hasPhone />
       </NextIntlClientProvider>,
     )
 
     await waitFor(() => expect(screen.getByRole('switch', { name: copy.label })).toBeChecked())
     expect(screen.queryByText(en.ProfileErrors.saveFailed)).not.toBeInTheDocument()
+  })
+
+  it('says "Saved" once the change is saved', async () => {
+    const user = userEvent.setup()
+    renderSwitch(vi.fn<Action>(async () => ({ message: null })))
+
+    await user.click(screen.getByRole('switch', { name: copy.label }))
+
+    const saved = await screen.findByText(en.Common.saved)
+    expect(saved.closest('[aria-live="polite"]')).not.toBeNull()
   })
 })

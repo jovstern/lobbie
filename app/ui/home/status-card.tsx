@@ -30,6 +30,15 @@ export function preloadStatuses() {
   loadStatuses().catch(() => {})
 }
 
+/**
+ * The number of one of the signed-in person's own apartments, or null for any other id: the
+ * same read as the card's, so asking costs nothing more.
+ */
+export async function ownApartmentNumber(apartmentId: string): Promise<string | null> {
+  const { statuses } = await loadStatuses()
+  return statuses.get(apartmentId)?.number ?? null
+}
+
 /** The member's own apartments only: the query starts from their user id, never the URL. */
 export default async function StatusCard() {
   const [{ timeZone }, { now, statuses }] = await Promise.all([requireMember(), loadStatuses()])

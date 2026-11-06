@@ -1,3 +1,6 @@
+import { isJoinPage } from '@/app/lib/utils/app-sections'
+import { safeNextPath } from '@/app/lib/utils/redirect'
+
 /** Whether an invite can still be used, and if not, why. */
 export type InviteStatus = 'valid' | 'expired' | 'full' | 'revoked'
 
@@ -54,4 +57,21 @@ export function joinView(preview: InvitePreview | null, membership: JoinMembersh
   if (preview.status !== 'valid') return { kind: preview.status }
   if (membership.status === 'signed-out') return { kind: 'sign-in', buildingName, apartmentNumber }
   return { kind: 'valid', buildingName, apartmentNumber }
+}
+
+// An apartment number as the admin types one (1 to 10 characters): letters, digits, and the
+// separators numbers use (12A, 3-B, 4/1).
+const apartmentNumber = /^[\p{L}\p{N}][\p{L}\p{N}\-/ ]{0,9}$/u
+
+/**
+ * The apartment sign-in names when it is on its way back to an invite (`?next=/join/<code>`
+ * with `apartment=<number>`, which the invite page adds), or null. The number is only words for
+ * the page, already shown to whoever holds the link; anything that is not a join path or not
+ * an apartment number is dropped.
+ */
+export function joiningApartment(next: unknown, apartment: unknown): string | null {
+  if (typeof next !== 'string' || typeof apartment !== 'string') return null
+  const path = safeNextPath(next, '')
+  if (path === '' || !isJoinPage(path.split(/[?#]/, 1)[0]) || path.endsWith('/join')) return null
+  return apartmentNumber.test(apartment) ? apartment : null
 }

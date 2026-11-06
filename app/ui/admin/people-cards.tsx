@@ -22,13 +22,8 @@ export default async function PeopleCards({ people, selfId }: Props) {
           key={person.userId}
           className="rounded-card border-border bg-surface-raised shadow-card flex flex-col gap-3 border p-4"
         >
-          <PersonName
-            name={person.name}
-            email={person.email}
-            isSelf={person.userId === selfId}
-            asHeading
-          />
-          <dl className="flex flex-col gap-2">
+          <PersonName person={person} isSelf={person.userId === selfId} asHeading />
+          <dl className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <dt className="text-text-muted text-sm">{t('apartments')}</dt>
               <dd>

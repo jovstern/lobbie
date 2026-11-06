@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import type { ReactNode } from 'react'
+import LinkPending from '@/app/ui/nav/link-pending'
 import { Link } from '@/i18n/navigation'
 
 export type NavLinkProps = {
@@ -34,7 +35,7 @@ export default function NavLinkAnchor({
       href={href}
       aria-current={isCurrent ? 'page' : undefined}
       className={clsx(
-        'text-text-muted hover:bg-surface hover:text-text active:bg-border aria-[current=page]:text-accent flex items-center font-medium transition-[background-color,border-color,color]',
+        'text-text-muted hover:bg-surface hover:text-text active:bg-border aria-[current=page]:text-accent relative flex items-center font-medium transition-[background-color,border-color,color]',
         variant === 'side' && 'aria-[current=page]:bg-surface',
         variants[variant],
       )}
@@ -43,6 +44,9 @@ export default function NavLinkAnchor({
         {isCurrent ? activeIcon : icon}
       </span>
       {children}
+      <LinkPending
+        className={variant === 'tab' ? 'end-3 top-1.5' : 'end-3 top-1/2 -translate-y-1/2'}
+      />
     </Link>
   )
 }

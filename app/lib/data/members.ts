@@ -80,8 +80,8 @@ const personRow = z.object({
 
 /**
  * Everyone in the admin's building (R10), by name, each with their apartments in natural order,
- * in one query. `q` narrows it to names containing it or to the people of the apartment it
- * names. Name and email only: no contact settings. Admins only; anyone else gets a 404.
+ * in one query. `q` narrows it to names or emails containing it (someone who joined without
+ * a name is known by their email) or to the people of the apartment it names. Name and email only: no contact settings. Admins only; anyone else gets a 404.
  */
 export async function list(q: string): Promise<Person[]> {
   const { buildingId } = await requireRole('admin')
@@ -118,11 +118,13 @@ export async function list(q: string): Promise<Person[]> {
         term
           ? or(
               ilike(user.name, term.contains),
+              ilike(user.email, term.contains),
               sql`bool_or(lower(${apartments.number}) = lower(${term.text}))`,
             )
           : undefined,
       )
-      .orderBy(sql`lower(${user.name})`, user.id)
+      // By the name as shown: someone without one sorts by their email (see `displayName`).
+      .orderBy(sql`lower(coalesce(nullif(trim(${user.name}), ''), ${user.email}))`, user.id)
     return z.array(personRow).parse(rows)
   } catch (err) {
     unstable_rethrow(err)

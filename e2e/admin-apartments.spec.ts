@@ -119,24 +119,36 @@ test('removing an apartment people live in is blocked, and says why', async ({ p
   const remove = page
     .getByRole('main')
     .getByRole('button', { name: t('ApartmentRemove.removeLabel', { number: '1' }), exact: true })
+  const summary = text.ApartmentBlockers.residentsShort
   const reason = t('ApartmentBlockers.residents', { count: residents })
 
-  await expect(remove).toHaveAttribute('aria-disabled', 'true')
-  await expect(remove).toHaveAccessibleDescription(new RegExp(escapeRegExp(reason)))
-  // Shown beside this apartment's button: other apartments may have the same reason.
-  const reasonId = await remove.getAttribute('aria-describedby')
-  const shown = page.locator(`[id="${reasonId}"]`)
+  // A few words beside this apartment's button (others may say the same), as its description.
+  await expect(remove).toHaveAccessibleDescription(new RegExp(escapeRegExp(summary)))
+  const summaryId = await remove.getAttribute('aria-describedby')
+  const shown = page.locator(`[id="${summaryId}"]`)
   await expect(shown).toBeVisible()
-  await expect(shown).toContainText(reason)
+  await expect(shown).toContainText(summary)
 
-  // aria-disabled keeps it in the tab order (Playwright's click waits for it to be enabled):
-  // pressed from the keyboard, it opens nothing.
+  // From the keyboard it opens the full reason, and nothing that removes.
   await remove.focus()
+  await expect(remove).toBeFocused()
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('alertdialog')).toHaveCount(0)
+  const why = page.getByRole('dialog', {
+    name: t('ApartmentRemove.blockedTitle', { number: '1' }),
+    exact: true,
+  })
+  await expect(why).toContainText(reason)
+  await expect(
+    why.getByRole('button', { name: text.ApartmentRemove.confirm, exact: true }),
+  ).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(why).toBeHidden()
+  await expect(remove).toBeFocused()
 })
 
-test('a committee member gets the 404 at the apartments pages', async ({ page }) => {
+test('a committee member gets the 404, under a neutral title, at every admin-only page', async ({
+  page,
+}) => {
   const apartmentId = await apartmentIdOf('1')
   await useSessionOf(page, committee)
 
@@ -145,10 +157,22 @@ test('a committee member gets the 404 at the apartments pages', async ({ page })
     page.getByRole('main').getByRole('link', { name: text.Admin.apartmentsLink, exact: true }),
   ).toHaveCount(0)
 
-  for (const path of ['/admin/apartments', `/admin/apartments/${apartmentId}`]) {
+  const pages = [
+    { path: '/admin/building', title: text.AdminBuilding.title },
+    { path: '/admin/apartments', title: text.AdminApartments.title },
+    {
+      path: `/admin/apartments/${apartmentId}`,
+      title: t('AdminApartments.apartmentTitle', { number: '1' }),
+    },
+    { path: '/admin/people', title: text.People.title },
+  ]
+  for (const { path, title } of pages) {
     await page.goto(path)
     await expect(
       page.getByRole('heading', { level: 1, name: text.NotFound.title, exact: true }),
     ).toBeVisible()
+    // The tab names nothing of the page it hides. The status cannot be 404: with Cache
+    // Components the session is read inside <Suspense>, after the shell (and the 200) has gone.
+    await expect(page).not.toHaveTitle(new RegExp(escapeRegExp(title)))
   }
 })

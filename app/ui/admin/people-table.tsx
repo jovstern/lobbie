@@ -15,7 +15,7 @@ type Props = {
 export default async function PeopleTable({ people, selfId }: Props) {
   const t = await getTranslations('People')
   const header = 'text-text-muted px-4 py-3 text-start text-sm font-medium'
-  const cell = 'px-4 py-3 align-top'
+  const cell = 'px-4 py-3 align-middle'
 
   return (
     <div className="rounded-card border-border bg-surface-raised shadow-card hidden overflow-x-auto border md:block">
@@ -41,11 +41,7 @@ export default async function PeopleTable({ people, selfId }: Props) {
           {people.map((person) => (
             <tr key={person.userId}>
               <th scope="row" className={`${cell} text-start font-normal`}>
-                <PersonName
-                  name={person.name}
-                  email={person.email}
-                  isSelf={person.userId === selfId}
-                />
+                <PersonName person={person} isSelf={person.userId === selfId} />
               </th>
               <td className={cell}>
                 <ApartmentChips apartments={person.apartments} />

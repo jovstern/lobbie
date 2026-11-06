@@ -147,6 +147,8 @@ describe('list', () => {
       activeInvites: 0,
       payments: 0,
       feeOverrides: 0,
+      activeInviteExpiresAt: null,
+      usedUpInvites: 0,
     })
     expect(byNumber.get('C')).toMatchObject({ residents: 0, activeInvites: 1 })
     expect(byNumber.get('1')).toMatchObject({ residents: 2, payments: 0, feeOverrides: 0 })
@@ -158,6 +160,17 @@ describe('list', () => {
     })
     expect(byNumber.get('10')).toMatchObject({ residents: 0, payments: 0, feeOverrides: 1 })
     expect(requireRole).toHaveBeenCalledWith('admin')
+  })
+
+  it('says when the active invite expires, and counts used-up invites but not revoked ones', async () => {
+    signInAsAdminOf(buildingId)
+    const c = (await list()).find((apartment) => apartment.number === 'C')
+
+    // Of C's four invites, one works (tomorrow), one is used up; revoked and expired ones are
+    // neither.
+    expect(c?.activeInviteExpiresAt).toBeInstanceOf(Date)
+    expect(c?.activeInviteExpiresAt?.getTime()).toBeGreaterThan(Date.now())
+    expect(c?.usedUpInvites).toBe(1)
   })
 
   it('sends one query for every apartment and its counts', async () => {

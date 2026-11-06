@@ -1,8 +1,10 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { startTransition, useActionState, useOptimistic } from 'react'
+import { startTransition, useOptimistic } from 'react'
 import type { OwnershipState } from '@/app/lib/actions/residents'
+import { useSaveOnChange } from '@/app/ui/save-on-change'
+import SaveStatus from '@/app/ui/save-status'
 
 type Props = {
   /** `setOwnership` with the locale, the person and the apartment bound. */
@@ -21,12 +23,12 @@ const choices = [
 
 /**
  * Owner or tenant, saved as soon as it changes (the save-on-change pattern): the new choice
- * shows at once, and a failed save falls back to the saved one and says why.
+ * shows at once, "Saved" follows, and a failed save falls back to the saved one and says why.
  */
 export default function OwnershipToggle({ action, isOwner, name, userId }: Props) {
   const t = useTranslations('ResidentsClient')
-  const initialState: OwnershipState = {}
-  const [state, dispatch, isPending] = useActionState(action, initialState)
+  const [state, dispatch, isPending] = useSaveOnChange(action)
+  const statusId = `ownership-status-${userId}`
   const [shownIsOwner, setShownIsOwner] = useOptimistic(isOwner)
 
   function choose(next: boolean) {
@@ -40,7 +42,7 @@ export default function OwnershipToggle({ action, isOwner, name, userId }: Props
 
   return (
     <div className="flex flex-col gap-1">
-      <fieldset aria-busy={isPending}>
+      <fieldset aria-busy={isPending} aria-describedby={statusId}>
         <legend className="sr-only">{t('ownership', { name })}</legend>
         <div className="rounded-control border-text-muted bg-surface inline-flex border p-0.5">
           {choices.map((choice) => (
@@ -61,9 +63,7 @@ export default function OwnershipToggle({ action, isOwner, name, userId }: Props
           ))}
         </div>
       </fieldset>
-      <div aria-live="polite" aria-atomic="true">
-        {state.message ? <p className="text-danger max-w-xs text-sm">{state.message}</p> : null}
-      </div>
+      <SaveStatus id={statusId} message={state.message} savedId={state.savedId} />
     </div>
   )
 }

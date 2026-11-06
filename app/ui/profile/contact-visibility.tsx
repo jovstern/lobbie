@@ -1,8 +1,10 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { startTransition, useActionState, useOptimistic } from 'react'
+import { startTransition, useOptimistic } from 'react'
 import type { SettingState } from '@/app/lib/actions/users'
+import { useSaveOnChange } from '@/app/ui/save-on-change'
+import SaveStatus from '@/app/ui/save-status'
 
 type Props = {
   /** `setShowContact` with the page's locale bound. */
@@ -15,13 +17,12 @@ type Props = {
 
 /**
  * Whether neighbours see the member's phone and email in the directory, saved as soon as it
- * changes (the save-on-change pattern): the new state shows at once, and a failed save falls
- * back to the saved one and says why.
+ * changes (the save-on-change pattern): the new state shows at once, "Saved" follows, and a
+ * failed save falls back to the saved one and says why.
  */
 export default function ContactVisibility({ action, showContact, hasPhone }: Props) {
   const t = useTranslations('ContactVisibility')
-  const initialState: SettingState = {}
-  const [state, dispatch, isPending] = useActionState(action, initialState)
+  const [state, dispatch, isPending] = useSaveOnChange(action)
   const [shown, setShown] = useOptimistic(showContact)
 
   function change(next: boolean) {
@@ -63,9 +64,7 @@ export default function ContactVisibility({ action, showContact, hasPhone }: Pro
         <p>{t('hint')}</p>
         {hasPhone ? null : <p>{t('noPhoneHint')}</p>}
       </div>
-      <div id="show-contact-status" aria-live="polite" aria-atomic="true">
-        {state.message ? <p className="text-danger text-sm">{state.message}</p> : null}
-      </div>
+      <SaveStatus id="show-contact-status" message={state.message} savedId={state.savedId} />
     </div>
   )
 }

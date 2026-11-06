@@ -12,7 +12,7 @@ type Action = (state: OwnershipState, formData: FormData) => Promise<OwnershipSt
 
 function renderToggle(action: Action, isOwner = true) {
   return render(
-    <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy }}>
+    <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy, Common: en.Common }}>
       <OwnershipToggle action={action} isOwner={isOwner} name="Ana" userId="user-1" />
     </NextIntlClientProvider>,
   )
@@ -75,12 +75,25 @@ describe('OwnershipToggle', () => {
     await user.click(screen.getByRole('radio', { name: copy.tenant }))
     // The server's refresh: the saved value is now "tenant".
     rerender(
-      <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy }}>
+      <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy, Common: en.Common }}>
         <OwnershipToggle action={action} isOwner={false} name="Ana" userId="user-1" />
       </NextIntlClientProvider>,
     )
 
     await waitFor(() => expect(screen.getByRole('radio', { name: copy.tenant })).toBeChecked())
     expect(screen.queryByText(en.ResidentErrors.saveFailed)).not.toBeInTheDocument()
+  })
+
+  it('says "Saved" after each save that worked, in the group’s live description', async () => {
+    const user = userEvent.setup()
+    renderToggle(vi.fn<Action>(async () => ({ message: null })))
+
+    await user.click(screen.getByRole('radio', { name: copy.tenant }))
+
+    const saved = await screen.findByText(en.Common.saved)
+    expect(saved.closest('[aria-live="polite"]')).not.toBeNull()
+    expect(screen.getByRole('group', { name: 'Ana lives here as' })).toHaveAccessibleDescription(
+      en.Common.saved,
+    )
   })
 })

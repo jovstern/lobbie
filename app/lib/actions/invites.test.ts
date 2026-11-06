@@ -83,10 +83,10 @@ async function signInAs(email: string) {
 
 let people = 0
 /** Someone new, signed in, in no building yet. */
-async function newcomer() {
+async function newcomer({ name = `Newcomer ${people + 1}` }: { name?: string } = {}) {
   people += 1
   const email = `newcomer${people}@example.com`
-  await db.insert(user).values({ name: `Newcomer ${people}`, email, emailVerified: true })
+  await db.insert(user).values({ name, email, emailVerified: true })
   return signInAs(email)
 }
 
@@ -144,7 +144,7 @@ function form(fields: Record<string, string>) {
 
 beforeAll(async () => {
   vi.stubEnv('BETTER_AUTH_URL', `${appUrl}/some/path`)
-  await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
+  await seed(db, { now: new Date('2026-11-02T10:00:00Z'), e2e: true })
   const [admin] = await db.select().from(user).where(eq(user.email, 'admin@example.com'))
   adminId = admin.id
   const [other] = await db
@@ -400,8 +400,23 @@ describe('redeem', () => {
     expect(member).toMatchObject({ buildingId: demoBuildingId, role: 'resident' })
     expect(homes).toEqual([{ apartmentId: apartment.id, isOwner: false }])
     expect((await inviteRow(row.id)).uses).toBe(1)
-    expect(redirect).toHaveBeenCalledWith({ href: '/', locale: 'en' })
+    // Home welcomes them to the apartment they joined, once.
+    expect(redirect).toHaveBeenCalledWith({ href: `/?joined=${apartment.id}`, locale: 'en' })
   })
+
+  it.each(['', '   '])(
+    'asks someone with no name (%j) for it on their profile, once joined',
+    async (name) => {
+      const apartment = await freshApartment()
+      const { code } = await inviteFor(apartment)
+      const visitor = await newcomer({ name })
+
+      await redeem({ locale: 'he', code })
+
+      expect((await membershipOf(visitor.id)).homes).toHaveLength(1)
+      expect(redirect).toHaveBeenCalledWith({ href: '/profile?welcome=1', locale: 'he' })
+    },
+  )
 
   it.each([
     ['expired', { expiresAt: new Date(Date.now() - 1000) }],

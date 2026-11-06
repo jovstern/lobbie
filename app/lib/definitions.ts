@@ -96,6 +96,10 @@ export type ApartmentListItem = Apartment & {
   activeInvites: number
   payments: number
   feeOverrides: number
+  /** When its active invite stops working, or null when it has none. */
+  activeInviteExpiresAt: Date | null
+  /** Its invites whose every place was taken (revoked ones not counted). */
+  usedUpInvites: number
 }
 
 /** An apartment's invite that still works, as the admin sees it; its code is never stored. */
@@ -149,7 +153,11 @@ export type Resident = {
  */
 export type DirectoryResident = {
   userId: string
-  name: string
+  /**
+   * Null when they have not given one yet. The page then shows their email if they share it,
+   * and otherwise a neutral label: the directory never shows an email its owner keeps hidden.
+   */
+  name: string | null
   isOwner: boolean
   phone: string | null
   email: string | null
@@ -174,7 +182,11 @@ export type DirectoryFloor = {
  */
 export type CommitteeMember = {
   userId: string
-  name: string
+  /**
+   * Null when they have not given one yet: the page then shows the email they publish for the
+   * role, never their personal one.
+   */
+  name: string | null
   role: Exclude<Role, 'resident'>
   committeeTitle: string | null
   committeePhone: string | null

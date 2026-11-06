@@ -9,10 +9,11 @@ import en from '@/messages/en.json'
 
 const copy = en.ApartmentRemove
 const reason = 'Move or remove its 2 residents first.'
+const blocked = { summary: 'Has residents', reason }
 
 function renderRemove(
   action: () => Promise<RemoveApartmentState> = vi.fn(async () => ({})),
-  blockedReason: string | null = null,
+  blockedBy: { summary: string; reason: string } | null = null,
 ) {
   render(
     <NextIntlClientProvider locale="en" messages={{ ApartmentRemove: copy }}>
@@ -24,12 +25,7 @@ function renderRemove(
           </h1>
         }
       >
-        <RemoveApartmentDialog
-          action={action}
-          number="7"
-          blockedReason={blockedReason}
-          reasonId="reason-7"
-        />
+        <RemoveApartmentDialog action={action} number="7" blocked={blockedBy} reasonId="reason-7" />
       </AdminAnnouncer>
     </NextIntlClientProvider>,
   )
@@ -37,21 +33,24 @@ function renderRemove(
 }
 
 describe('RemoveApartmentDialog', () => {
-  it('is disabled while blocked, with the reason as its description, and stays focusable', async () => {
+  it('while blocked, says so in a few words, and opens the full reason instead of asking', async () => {
     const user = userEvent.setup()
     const action = vi.fn(async () => ({}))
-    const button = renderRemove(action, reason)
+    const button = renderRemove(action, blocked)
 
-    expect(button).toHaveAttribute('aria-disabled', 'true')
-    expect(button).toHaveAccessibleDescription(reason)
-    expect(screen.getByText(reason)).toBeVisible()
+    expect(button).toHaveAccessibleDescription('Has residents')
+    expect(screen.getByText('Has residents')).toBeVisible()
 
     await user.tab()
     expect(button).toHaveFocus()
     await user.keyboard('{Enter}')
-    await user.click(button)
 
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Apartment 7 can’t be removed yet' })
+    expect(dialog).toHaveAccessibleDescription(reason)
+    expect(screen.queryByRole('button', { name: copy.confirm })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: copy.blockedClose }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(button).toHaveFocus()
     expect(action).not.toHaveBeenCalled()
   })
 

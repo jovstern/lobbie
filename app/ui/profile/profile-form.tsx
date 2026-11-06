@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircleIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, HandRaisedIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
 import { useActionState, useEffect, useRef } from 'react'
 import type { ProfileFormState } from '@/app/lib/actions/users'
@@ -17,12 +17,14 @@ type Props = {
   saved: Values
   /** The sign-in address: shown, not edited. */
   email: string
+  /** Just joined without a name: a short prompt asks for it, and the name field has focus. */
+  askForName?: boolean
 }
 
 const fieldOrder = ['name', 'phone'] as const
 
 /** The member's own name and phone (R13). Saving stays on the page and says so. */
-export default function ProfileForm({ action, saved, email }: Props) {
+export default function ProfileForm({ action, saved, email, askForName = false }: Props) {
   const t = useTranslations('ProfileForm')
   const initialState: ProfileFormState = {}
   const [state, formAction] = useActionState(action, initialState)
@@ -36,10 +38,21 @@ export default function ProfileForm({ action, saved, email }: Props) {
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
+      {askForName ? (
+        <div className="rounded-control border-accent bg-surface flex items-start gap-3 border p-4">
+          <HandRaisedIcon aria-hidden className="text-accent mt-0.5 size-6 shrink-0" />
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold">{t('welcomeTitle')}</p>
+            <p className="text-text-muted text-sm">{t('welcomeLead')}</p>
+          </div>
+        </div>
+      ) : null}
       <TextField
         name="name"
         label={t('name')}
+        // Typing the name is the one thing left to do after joining.
+        autoFocus={askForName}
         defaultValue={values.name}
         errors={state.errors?.name}
         required

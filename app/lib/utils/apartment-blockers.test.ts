@@ -2,7 +2,7 @@ import { createTranslator } from 'next-intl'
 import { describe, expect, it } from 'vitest'
 import en from '@/messages/en.json'
 import he from '@/messages/he.json'
-import { blockersOf, describeBlockers } from './apartment-blockers'
+import { blockersOf, describeBlockers, summarizeBlockers } from './apartment-blockers'
 
 describe('blockersOf', () => {
   it.each([
@@ -54,5 +54,18 @@ describe('describeBlockers', () => {
     ).toBe(
       `Move or remove its 3 residents first. ${en.ApartmentBlockers.payments} ${en.ApartmentBlockers.feeOverrides}`,
     )
+  })
+})
+
+describe('summarizeBlockers', () => {
+  const tEn = createTranslator({ locale: 'en', messages: en, namespace: 'ApartmentBlockers' })
+  const tHe = createTranslator({ locale: 'he', messages: he, namespace: 'ApartmentBlockers' })
+
+  it('names each blocker in a few words, in order', () => {
+    expect(summarizeBlockers(tEn, [{ kind: 'residents', count: 2 }])).toBe('Has residents')
+    expect(summarizeBlockers(tEn, [{ kind: 'activeInvites' }, { kind: 'payments' }])).toBe(
+      'Active invite · Has payments',
+    )
+    expect(summarizeBlockers(tHe, [{ kind: 'feeOverrides' }])).toBe('יש לה דמי ועד משלה')
   })
 })

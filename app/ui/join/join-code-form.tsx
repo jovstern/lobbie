@@ -27,7 +27,7 @@ export default function JoinCodeForm({ action }: Props) {
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-4">
       <TextField
         name="code"
         label={t('label')}
@@ -39,6 +39,8 @@ export default function JoinCodeForm({ action }: Props) {
         autoComplete="off"
         autoCapitalize="characters"
         spellCheck={false}
+        // Typing the code is the one thing this page is for.
+        autoFocus
         maxLength={20}
         required
       />

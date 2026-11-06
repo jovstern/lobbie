@@ -3,12 +3,14 @@ import {
   ChevronRightIcon,
   HomeModernIcon,
   UsersIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
 import { getTranslations } from 'next-intl/server'
 import type { ComponentType, SVGProps } from 'react'
 import { requireRole } from '@/app/lib/authz'
 import { hasRole } from '@/app/lib/utils/roles'
 import { cardClassName } from '@/app/ui/card'
+import EmptyState from '@/app/ui/empty-state'
 import { Link } from '@/i18n/navigation'
 
 type OverviewLink = {
@@ -64,14 +66,14 @@ export default async function AdminOverview() {
             // covers the card, so the whole card is the target, and the card shows the focus.
             <li
               key={href}
-              className={`${cardClassName} hover:border-text-muted has-focus-visible:outline-accent relative h-full transition-[border-color] has-focus-visible:outline-2 has-focus-visible:outline-offset-2`}
+              className={`${cardClassName} hover:border-text-muted has-active:bg-surface has-focus-visible:outline-accent relative h-full transition-[background-color,border-color] has-focus-visible:outline-2 has-focus-visible:outline-offset-2`}
             >
               <span className="flex items-center gap-3">
                 <Icon aria-hidden className="text-accent size-6 shrink-0" />
                 <Link
                   href={href}
                   aria-describedby={`${id}-body`}
-                  className="rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
+                  className="after:rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
                 >
                   {t(label)}
                 </Link>
@@ -87,9 +89,7 @@ export default async function AdminOverview() {
           ))}
         </ul>
       ) : (
-        <p className="rounded-card bg-surface-raised border-border max-w-xl border p-6">
-          {t('noToolsYet')}
-        </p>
+        <EmptyState icon={WrenchScrewdriverIcon} title={t('noToolsTitle')} body={t('noToolsYet')} />
       )}
     </div>
   )

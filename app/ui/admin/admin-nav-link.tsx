@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import LinkPending from '@/app/ui/nav/link-pending'
 import { Link, usePathname } from '@/i18n/navigation'
 
 type Props = {
@@ -17,9 +18,10 @@ export default function AdminNavLink({ href, children }: Props) {
     <Link
       href={href}
       aria-current={isCurrent ? 'page' : undefined}
-      className="text-text-muted hover:text-text aria-[current=page]:border-accent aria-[current=page]:text-accent -mb-px flex min-h-11 items-center border-b-2 border-transparent px-1 font-medium whitespace-nowrap transition-[border-color,color]"
+      className="text-text-muted hover:text-text aria-[current=page]:border-accent aria-[current=page]:text-accent relative -mb-px flex min-h-11 items-center border-b-2 border-transparent px-1 font-medium whitespace-nowrap transition-[border-color,color]"
     >
       {children}
+      <LinkPending className="-end-1 top-2" />
     </Link>
   )
 }

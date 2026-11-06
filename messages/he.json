@@ -4,14 +4,16 @@
     "description": "תשלומים, יתרה, הודעות ולוחות זמנים של הבניין, במקום אחד לדיירים ולוועד הבית."
   },
   "Common": {
-    "backHome": "חזרה לדף הבית"
+    "backHome": "חזרה לדף הבית",
+    "saved": "נשמר"
   },
   "NotFound": {
     "title": "הדף לא נמצא",
     "description": "ייתכן שהקישור שגוי או שהדף הועבר למקום אחר."
   },
   "Home": {
-    "title": "בית"
+    "title": "בית",
+    "joined": "הצטרפת לדירה {number}. ברוכים הבאים לבניין!"
   },
   "Auth": {
     "appName": "לובי",
@@ -25,7 +27,8 @@
     "heading": "כניסה ללובי",
     "lead": "כתבו את כתובת האימייל שלכם ונשלח לכם קישור כניסה. בלי סיסמה.",
     "expired": "קישור הכניסה פג תוקף או שכבר השתמשו בו. כתבו את האימייל שלכם כדי לקבל קישור חדש.",
-    "signInFailed": "לא הצלחנו להכניס אתכם. נסו שוב."
+    "signInFailed": "לא הצלחנו להכניס אתכם. נסו שוב.",
+    "joiningApartment": "אחרי הכניסה תחזרו להזמנה כדי להצטרף לדירה {number}."
   },
   "SignInForm": {
     "emailLabel": "אימייל",
@@ -130,7 +133,9 @@
     "emailHint": "בכתובת הזו נכנסים ללובי, ולכן אי אפשר לשנות אותה כאן.",
     "save": "שמירה",
     "saving": "שומרים…",
-    "saved": "נשמר"
+    "saved": "נשמר",
+    "welcomeTitle": "איך השכנים יקראו לך?",
+    "welcomeLead": "ההצטרפות לבניין הושלמה. הוסיפו שם, כדי שהשכנים והוועד יידעו מי אתם."
   },
   "CommitteeContactForm": {
     "phone": "טלפון לוועד",
@@ -175,7 +180,8 @@
     "apartmentsLinkBody": "הוספה, עריכה והסרה של דירות, וממתי כל דירה מתחילה לשלם.",
     "people": "אנשים",
     "peopleLink": "אנשים",
-    "peopleLinkBody": "תפקידים, תוארים בוועד ומי גר בבניין."
+    "peopleLinkBody": "תפקידים, תוארים בוועד ומי גר בבניין.",
+    "noToolsTitle": "עוד אין כאן מה לנהל"
   },
   "AdminBuilding": {
     "title": "פרטי הבניין",
@@ -243,13 +249,18 @@
     "billingStart": "החיוב מתחיל",
     "residents": "דיירים",
     "actions": "פעולות",
-    "buildingDefault": "כמו בבניין",
+    "buildingDefault": "כמו בבניין ({month})",
     "floorValue": "{floor, plural, =0 {קומת קרקע} other {קומה #}}",
     "residentCount": "{count, plural, =0 {אין דיירים} one {דייר אחד} other {# דיירים}}",
     "emptyTitle": "עוד אין דירות",
     "emptyBody": "הוסיפו כל דירה עם המספר והקומה שלה. אחר כך תוכלו להזמין את מי שגר בה.",
     "apartmentTitle": "דירה {number}",
-    "back": "חזרה לדירות"
+    "back": "חזרה לדירות",
+    "invite": "הזמנה",
+    "inviteActive": "פעילה, עד {date}",
+    "inviteJoined": "{count, plural, one {הצטרף דייר אחד} other {הצטרפו # דיירים}}",
+    "inviteUsedUp": "כל המקומות נוצלו",
+    "inviteNone": "עוד אין"
   },
   "ApartmentForm": {
     "open": "הוספת דירה",
@@ -287,7 +298,9 @@
     "confirm": "הסרת הדירה",
     "removing": "מסירים…",
     "cancel": "ביטול",
-    "removed": "דירה {number} הוסרה"
+    "removed": "דירה {number} הוסרה",
+    "blockedTitle": "עדיין אי אפשר להסיר את דירה {number}",
+    "blockedClose": "הבנתי"
   },
   "ApartmentErrors": {
     "number": "צריך מספר באורך 1 עד 10 תווים.",
@@ -304,7 +317,11 @@
     "residents": "קודם צריך להעביר או להסיר {count, plural, one {את הדייר שלה} other {את # הדיירים שלה}}.",
     "payments": "יש לה היסטוריית תשלומים, והיא נשמרת.",
     "feeOverrides": "יש לה היסטוריה של דמי ועד משלה, והיא נשמרת.",
-    "activeInvites": "יש לה הזמנה פעילה. קודם צריך לבטל אותה."
+    "activeInvites": "יש לה הזמנה פעילה. קודם צריך לבטל אותה.",
+    "residentsShort": "יש בה דיירים",
+    "activeInvitesShort": "יש לה הזמנה פעילה",
+    "paymentsShort": "יש לה תשלומים",
+    "feeOverridesShort": "יש לה דמי ועד משלה"
   },
   "InviteErrors": {
     "apartmentNotFound": "הדירה הזו כבר לא קיימת. טענו את הדף מחדש כדי לראות את הרשימה העדכנית.",
@@ -344,12 +361,13 @@
     "newLead": "העתיקו אותו עכשיו: הוא לא יוצג שוב.",
     "link": "קישור",
     "code": "קוד",
-    "copyLink": "העתקת הקישור"
+    "copyLink": "העתקת הקישור",
+    "revokeCancel": "השארת ההזמנה"
   },
   "InviteAll": {
-    "open": "יצירת הזמנות לכל הדירות",
+    "open": "הזמנה לכל הדירות",
     "creating": "יוצרים הזמנות…",
-    "dialogTitle": "ליצור הזמנות לכל הדירות?",
+    "dialogTitle": "להזמין את כל הדירות?",
     "dialogBody": "{active, plural, one {לדירה אחת כבר יש} other {ל־# דירות כבר יש}} הזמנה פעילה, והקישור שלה הוצג רק כשנוצרה.",
     "missingOnly": "{count, plural, one {רק לדירה שאין לה הזמנה} other {רק ל־# הדירות שאין להן הזמנה}}",
     "replaceAll": "{count, plural, one {להחליף גם אותה} other {להחליף את כל # ההזמנות}}",
@@ -361,11 +379,13 @@
     "copyAll": "העתקת הכול",
     "line": "דירה {number}: {link}",
     "apartment": "דירה {number}",
-    "copyLinkLabel": "העתקת הקישור של דירה {number}",
+    "copyLinkLabel": "העתקת הקישור לדירה {number}",
     "sectionTitle": "הזמנת הדיירים",
     "sectionLead": "צרו קישור לכל דירה ושלחו אותו למי שגר בה, למשל בקבוצת הוואטסאפ של הבניין.",
     "listLabel": "קישורי הזמנה חדשים",
-    "copyLink": "העתקת הקישור"
+    "copyLink": "העתקת הקישור",
+    "done": "סיימתי, העתקתי אותם",
+    "close": "סגירה"
   },
   "CopyButton": {
     "copied": "הועתק",
@@ -427,7 +447,7 @@
     "apartments": "דירות",
     "role": "תפקיד",
     "actions": "פעולות",
-    "you": "את/ה",
+    "you": "אני",
     "noApartment": "אין דירה",
     "apartmentLabel": "דירה {number}",
     "emptyTitle": "עוד אף אחד לא הצטרף",
@@ -477,7 +497,7 @@
   "Residents": {
     "title": "דיירים",
     "empty": "עוד אף אחד לא גר כאן. צרו הזמנה למעלה.",
-    "you": "את/ה"
+    "you": "אני"
   },
   "ResidentsClient": {
     "ownership": "{name} גר/ה כאן בתור",
@@ -525,14 +545,16 @@
     "noResultsTitle": "אין אף אחד שמתאים ל־\"{q}\"",
     "noResultsBody": "נסו חלק משם, מספר דירה מדויק, או נקו את החיפוש.",
     "yourApartment": "הדירה שלך",
-    "notJoined": "עוד לא בלובי"
+    "notJoined": "עוד לא בלובי",
+    "unnamed": "שכן/ה שעוד לא הוסיפו שם"
   },
   "Committee": {
     "title": "ועד הבית",
     "lead": "מי מנהל את הבניין. כל חבר ועד בוחר אילו פרטי קשר לפרסם לתפקיד.",
     "emptyTitle": "עוד אין ועד",
     "emptyBody": "חברי הוועד יופיעו כאן אחרי שהמנהל ימנה אותם.",
-    "noContact": "לא פורסמו פרטי קשר"
+    "noContact": "לא פורסמו פרטי קשר",
+    "unnamed": "חבר/ת ועד שעוד לא הוסיפו שם"
   },
   "Contact": {
     "phone": "טלפון:",

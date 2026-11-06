@@ -1,7 +1,8 @@
-import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
+import { ExclamationCircleIcon, HomeModernIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { getTranslations } from 'next-intl/server'
 import { requestMagicLink } from '@/app/lib/actions/auth'
+import { joiningApartment } from '@/app/lib/utils/join-view'
 import SignInForm from '@/app/ui/auth/sign-in-form'
 import type { Locale } from '@/i18n/routing'
 
@@ -15,8 +16,8 @@ function single(value: string | string[] | undefined): string | undefined {
 }
 
 /**
- * The part of sign-in that depends on the URL: the failed-link notice, `next`, and whether
- * the field takes focus. After signing out or a failed sign-in, typing is the next step; an
+ * The part of sign-in that depends on the URL: the failed-link notice, `next`, the apartment an
+ * invite brings them back to, and whether the field takes focus. After signing out or a failed sign-in, typing is the next step; an
  * expired link's notice is read first, so focus stays at the top.
  */
 export default async function SignInSection({ searchParams, locale }: Props) {
@@ -28,6 +29,7 @@ export default async function SignInSection({ searchParams, locale }: Props) {
   const expired = error === 'INVALID_TOKEN'
   const action = requestMagicLink.bind(null, { locale, next: single(params.next) })
   const signedOut = single(params.signedOut) === '1'
+  const joining = joiningApartment(params.next, params.apartment)
 
   return (
     <>
@@ -43,7 +45,18 @@ export default async function SignInSection({ searchParams, locale }: Props) {
           {expired ? t('expired') : t('signInFailed')}
         </p>
       )}
-      <SignInForm action={action} autoFocus={signedOut || (error !== undefined && !expired)} />
+      {joining === null ? null : (
+        <p className="rounded-control border-border bg-surface flex items-start gap-2 border p-3 text-sm">
+          <HomeModernIcon aria-hidden className="text-accent size-5 shrink-0" />
+          {t('joiningApartment', { number: joining })}
+        </p>
+      )}
+      <SignInForm
+        action={action}
+        // Typing the email is the next step when signing out, after a failed sign-in, and on
+        // the way to an invite; an expired link's notice is read first.
+        autoFocus={signedOut || joining !== null || (error !== undefined && !expired)}
+      />
     </>
   )
 }

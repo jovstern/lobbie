@@ -53,6 +53,8 @@ export default function BuildingForm({ action, confirmedAction, saved }: Props) 
   return (
     <form
       ref={formRef}
+      // The server checks every field and says how to fix it, in place of the browser.
+      noValidate
       action={(formData) => dispatch({ formData, confirmed: false })}
       className="flex flex-col gap-5"
     >
@@ -85,6 +87,7 @@ export default function BuildingForm({ action, confirmedAction, saved }: Props) 
         min={1}
         max={100}
         step={1}
+        suffix="%"
         required
       />
       <TextField

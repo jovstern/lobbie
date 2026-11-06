@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'danger-outline'
 
 // The outline colour is not transitioned, so the focus ring appears at once instead of
 // fading in from the text colour.
@@ -15,6 +15,9 @@ const variants: Record<ButtonVariant, string> = {
     'border border-text-muted bg-surface-raised text-text hover:bg-surface active:bg-border',
   // For the confirming button of a destructive action; on-accent text meets AA on it too.
   danger: 'bg-danger text-on-accent hover:bg-danger-strong active:bg-danger-strong',
+  // A destructive choice offered beside a safer, recommended one, which keeps the fill.
+  'danger-outline':
+    'border border-danger bg-surface-raised text-danger hover:bg-surface active:bg-border',
 }
 
 /** The classes of a button, or of a link that looks like one. */

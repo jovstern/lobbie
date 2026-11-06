@@ -9,14 +9,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title') }
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: PageProps<'/[locale]/profile'>) {
   const t = await getTranslations('Profile')
 
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">{t('title')}</h1>
       <Suspense fallback={<ProfileSkeleton />}>
-        <ProfileSettings />
+        <ProfileSettings searchParams={searchParams} />
       </Suspense>
     </div>
   )

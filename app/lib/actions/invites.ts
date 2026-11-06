@@ -21,6 +21,7 @@ import {
   invites,
 } from '@/app/lib/schema'
 import { getSession } from '@/app/lib/session'
+import { hasGivenName } from '@/app/lib/utils/display-name'
 import { typed } from '@/app/lib/utils/form'
 import {
   formatInviteCode,
@@ -327,7 +328,8 @@ export type RedeemContext = { locale: string; code: string }
 export type RedeemState = { message?: string | null }
 
 type Redemption =
-  | { kind: 'joined' | 'already-member' | 'other-building' | 'demo' }
+  | { kind: 'joined'; apartmentId: string }
+  | { kind: 'already-member' | 'other-building' | 'demo' }
   | { kind: 'refused'; status: Exclude<InviteStatus, 'valid'> | 'invalid' }
 
 /** Ends the transaction without writing anything, with the reason. */
@@ -345,7 +347,8 @@ class RedemptionRefused extends Error {
  * guarded `UPDATE`, so two people cannot both take the last one; then the membership (resident)
  * and the apartment. One building per user: a member of another building is refused and the
  * use given back. Someone already in the apartment goes home without using one. Rate-limited
- * (see join-limits).
+ * (see join-limits). Someone who has not given a name yet is asked for it on their profile;
+ * everyone else lands on Home, which welcomes them to the apartment once.
  */
 export async function redeem(context: RedeemContext): Promise<RedeemState> {
   const locale = resolveLocale(context.locale)
@@ -369,6 +372,25 @@ export async function redeem(context: RedeemContext): Promise<RedeemState> {
     }
 
     redemption = await db.transaction(async (tx): Promise<Redemption> => {
+      // Locks in the same order as creating an invite and removing an apartment: the apartment
+      // first, then its invite. Taking the invite's row lock first (the UPDATE below) and the
+      // apartment's key lock later (the new resident's foreign key) would deadlock against a
+      // removal that holds the apartment (FOR UPDATE) and waits to delete this invite. KEY SHARE
+      // is all the foreign key needs: it waits for a removal, never for an invite being created
+      // (NO KEY UPDATE) or another redemption.
+      const [target] = await tx
+        .select({ apartmentId: invites.apartmentId })
+        .from(invites)
+        .where(eq(invites.codeHash, codeHash))
+      if (!target) return { kind: 'refused', status: 'invalid' }
+      const [apartment] = await tx
+        .select({ id: apartments.id })
+        .from(apartments)
+        .where(eq(apartments.id, target.apartmentId))
+        .for('key share')
+      // Removed meanwhile, its invites with it.
+      if (!apartment) return { kind: 'refused', status: 'invalid' }
+
       const [taken] = await tx
         .update(invites)
         .set({ uses: sql`${invites.uses} + 1` })
@@ -408,7 +430,7 @@ export async function redeem(context: RedeemContext): Promise<RedeemState> {
         .onConflictDoNothing()
         .returning({ userId: apartmentResidents.userId })
       if (joined.length === 0) throw new RedemptionRefused({ kind: 'already-member' })
-      return { kind: 'joined' }
+      return { kind: 'joined', apartmentId: taken.apartmentId }
     })
     // A code that names no invite may be a guess: it counts against the address.
     if (redemption.kind === 'refused' && redemption.status === 'invalid') await joinMiss()
@@ -429,9 +451,15 @@ export async function redeem(context: RedeemContext): Promise<RedeemState> {
   }
 
   switch (redemption.kind) {
+    // The membership is read uncached on every request (authz), so the next page sees it.
     case 'joined':
+      return redirect({
+        href: hasGivenName(session.user)
+          ? `/?${new URLSearchParams({ joined: redemption.apartmentId })}`
+          : '/profile?welcome=1',
+        locale,
+      })
     case 'already-member':
-      // The membership is read uncached on every request (authz), so Home sees it at once.
       return redirect({ href: '/', locale })
     case 'other-building':
       return { message: t('otherBuilding') }

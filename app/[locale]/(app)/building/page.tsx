@@ -48,7 +48,7 @@ export default async function BuildingPage() {
               <Link
                 href={href}
                 aria-describedby={`${label}-body`}
-                className="rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
+                className="after:rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
               >
                 {t(label)}
               </Link>

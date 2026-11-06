@@ -33,7 +33,7 @@ export default function CommitteeContactForm({ action, saved }: Props) {
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
       <p className="text-text-muted text-sm">{t('hint')}</p>
       <TextField
         name="committeePhone"

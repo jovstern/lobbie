@@ -53,7 +53,16 @@ export default function DirectoryFloors({ floors, myApartmentIds }: Props) {
                           className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
                         >
                           <p className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">{resident.name}</span>
+                            <span className="font-medium wrap-anywhere">
+                              {/* Someone without a name: their email when they share it,
+                                  never one they keep hidden. */}
+                              {resident.name ??
+                                (resident.email ? (
+                                  <bdi dir="ltr">{resident.email}</bdi>
+                                ) : (
+                                  t('unnamed')
+                                ))}
+                            </span>
                             <span className="text-text-muted text-sm">
                               {resident.isOwner ? t('owner') : t('tenant')}
                             </span>

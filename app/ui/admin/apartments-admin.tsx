@@ -4,6 +4,7 @@ import { create } from '@/app/lib/actions/apartments'
 import { createAll } from '@/app/lib/actions/invites'
 import { requireRole } from '@/app/lib/authz'
 import { list } from '@/app/lib/data/apartments'
+import { get as getBuilding } from '@/app/lib/data/buildings'
 import ApartmentCards from '@/app/ui/admin/apartment-cards'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentTable from '@/app/ui/admin/apartment-table'
@@ -19,9 +20,10 @@ const headingId = 'apartments-title'
  */
 export default async function ApartmentsAdmin() {
   // Admins only; anyone else gets the 404, before anything of the building is read.
-  await requireRole('admin')
-  const [apartments, t, locale] = await Promise.all([
+  const { timeZone } = await requireRole('admin')
+  const [apartments, building, t, locale] = await Promise.all([
     list(),
+    getBuilding(),
     getTranslations('AdminApartments'),
     getLocale(),
   ])
@@ -42,7 +44,8 @@ export default async function ApartmentsAdmin() {
               <p className="text-text-muted">{t('count', { count: apartments.length })}</p>
             )}
           </div>
-          {isEmpty ? null : <ApartmentDialog action={addAction} variant="primary" />}
+          {/* Secondary: inviting the building is the page's main action once it has apartments. */}
+          {isEmpty ? null : <ApartmentDialog action={addAction} />}
         </header>
       }
     >
@@ -58,8 +61,16 @@ export default async function ApartmentsAdmin() {
             apartmentCount={apartments.length}
             activeCount={apartments.filter((apartment) => apartment.activeInvites > 0).length}
           />
-          <ApartmentTable apartments={apartments} />
-          <ApartmentCards apartments={apartments} />
+          <ApartmentTable
+            apartments={apartments}
+            buildingMonth={building.billingStartMonth}
+            timeZone={timeZone}
+          />
+          <ApartmentCards
+            apartments={apartments}
+            buildingMonth={building.billingStartMonth}
+            timeZone={timeZone}
+          />
         </>
       )}
     </AdminAnnouncer>

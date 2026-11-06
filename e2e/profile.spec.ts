@@ -22,18 +22,19 @@ test('choosing English on the profile opens it in English, and the choice persis
     await signIn(page, person)
     await page.goto('/profile')
     const choice = (name: string) =>
-      page.getByRole('main').getByRole('radio', { name, exact: true })
-    await expect(choice(messages.he.LanguageChoice.he)).toBeChecked()
+      page.getByRole('main').getByRole('button', { name, exact: true })
+    await expect(choice(messages.he.LanguageChoice.he)).toHaveAttribute('aria-pressed', 'true')
 
-    // The radio itself is visually hidden; its label is what people press.
-    await page.getByRole('main').getByText(messages.he.LanguageChoice.en, { exact: true }).click()
+    await choice(messages.he.LanguageChoice.en).click()
 
-    // Back at the language section, in English, with focus on the choice. (The hash and the
-    // focus are confirmed once e2e can run against the test database again.)
+    // Back at the language section, in English, with focus on the choice, which says it saved.
     await expect(page).toHaveURL('/en/profile#language')
     await expect(choice(messages.en.LanguageChoice.en)).toBeFocused()
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-    await expect(choice(messages.en.LanguageChoice.en)).toBeChecked()
+    await expect(choice(messages.en.LanguageChoice.en)).toHaveAttribute('aria-pressed', 'true')
+    await expect(
+      page.getByRole('main').getByText(messages.en.Common.saved, { exact: true }),
+    ).toBeVisible()
     expect(await savedLocaleOf(person)).toBe('en')
     const cookies = await context.cookies()
     expect(cookies.find((cookie) => cookie.name === 'NEXT_LOCALE')?.value).toBe('en')
@@ -42,10 +43,13 @@ test('choosing English on the profile opens it in English, and the choice persis
     await page.goto('/')
     await expect(page).toHaveURL('/en')
 
-    // And back to Hebrew, from the keyboard.
+    // And back to Hebrew, from the keyboard: an arrow key changes nothing, Enter does.
     await page.goto('/en/profile')
     await choice(messages.en.LanguageChoice.en).focus()
     await page.keyboard.press('ArrowLeft')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await choice(messages.en.LanguageChoice.he).focus()
+    await page.keyboard.press('Enter')
     await expect(page).toHaveURL('/profile#language')
     await expect(page.locator('html')).toHaveAttribute('lang', 'he')
     expect(await savedLocaleOf(person)).toBe('he')

@@ -44,13 +44,30 @@ test('the admin invites e2e-1 and someone new joins from the link', async ({
       }),
     ).toBeVisible()
     await visitor.getByRole('link', { name: text.JoinInvite.signIn, exact: true }).click()
-    await expect(visitor).toHaveURL(`/sign-in?next=${encodeURIComponent(`/join/${code}`)}`)
+    await expect(visitor).toHaveURL(
+      `/sign-in?${new URLSearchParams({ next: `/join/${code}`, apartment: 'e2e-1' })}`,
+    )
+    // Sign-in says where it leads back to, and the email is ready to type.
+    await expect(
+      visitor.getByText(t('SignIn.joiningApartment', { number: 'e2e-1' }), { exact: true }),
+    ).toBeVisible()
+    await expect(visitor.getByLabel(text.SignInForm.emailLabel)).toBeFocused()
     await signIn(visitor, newcomer, { landing: `/join/${code}` })
 
     await visitor
       .getByRole('button', { name: t('JoinInvite.join', { number: 'e2e-1' }), exact: true })
       .click()
-    await expect(visitor).toHaveURL('/')
+    // Someone new has no name yet: the profile asks for it, with the field ready.
+    await expect(visitor).toHaveURL('/profile?welcome=1')
+    const main = visitor.getByRole('main')
+    await expect(main.getByText(text.ProfileForm.welcomeTitle, { exact: true })).toBeVisible()
+    const name = main.getByLabel(text.ProfileForm.name, { exact: true })
+    await expect(name).toBeFocused()
+    await name.fill('מצטרף חדש')
+    await main.getByRole('button', { name: text.ProfileForm.save, exact: true }).click()
+    await expect(main.getByText(text.ProfileForm.saved, { exact: true })).toBeVisible()
+
+    await visitor.goto('/')
     const status = visitor.getByRole('region', { name: text.StatusCard.title, exact: true })
     // e2e-1 owes only the current month.
     await expect(status.getByText(text.StatusCard.due, { exact: true })).toBeVisible()
@@ -64,7 +81,7 @@ test('the admin invites e2e-1 and someone new joins from the link', async ({
   }
 })
 
-test('"Create invites for all" lists a link for every apartment', async ({ page }) => {
+test('"Invite every apartment" lists a link for every apartment', async ({ page }) => {
   await useSessionOf(page, admin)
   try {
     await page.goto('/admin/apartments')
@@ -85,6 +102,25 @@ test('"Create invites for all" lists a link for every apartment', async ({ page 
     await expect(
       main.getByRole('button', { name: text.InviteAll.copyAll, exact: true }),
     ).toBeVisible()
+    // The button gives way to the links while they are shown.
+    await expect(main.getByRole('button', { name: text.InviteAll.open, exact: true })).toHaveCount(
+      0,
+    )
+
+    // Opening an apartment and coming back keeps the links, until the admin is done with them.
+    await main
+      .getByRole('link', {
+        name: t('AdminApartments.apartmentTitle', { number: 'e2e-2' }),
+        exact: true,
+      })
+      .click()
+    await page.getByRole('link', { name: text.AdminApartments.back, exact: true }).click()
+    await expect(page).toHaveURL('/admin/apartments')
+    await expect(row).toContainText(joinLink)
+
+    await main.getByRole('button', { name: text.InviteAll.done, exact: true }).click()
+    await expect(list).toBeHidden()
+    await expect(main.getByRole('button', { name: text.InviteAll.open, exact: true })).toBeFocused()
   } finally {
     await deleteDemoInvites()
   }

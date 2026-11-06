@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from 'next-intl/server'
 import { remove, update } from '@/app/lib/actions/apartments'
 import type { ApartmentListItem } from '@/app/lib/definitions'
-import { blockersOf, describeBlockers } from '@/app/lib/utils/apartment-blockers'
+import { blockersOf, describeBlockers, summarizeBlockers } from '@/app/lib/utils/apartment-blockers'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import RemoveApartmentDialog from '@/app/ui/admin/remove-apartment-dialog'
 
@@ -30,7 +30,14 @@ export default async function ApartmentRowActions({ apartment, layout }: Props) 
       <RemoveApartmentDialog
         action={remove.bind(null, locale, apartment.id)}
         number={apartment.number}
-        blockedReason={blockers.length > 0 ? describeBlockers(tBlockers, blockers) : null}
+        blocked={
+          blockers.length > 0
+            ? {
+                summary: summarizeBlockers(tBlockers, blockers),
+                reason: describeBlockers(tBlockers, blockers),
+              }
+            : null
+        }
         reasonId={`remove-reason-${layout}-${apartment.id}`}
       />
     </div>

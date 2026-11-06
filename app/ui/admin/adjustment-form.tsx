@@ -47,7 +47,7 @@ export default function AdjustmentForm({ action, onAdded, cancel }: Props) {
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-5">
+    <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
       <fieldset aria-describedby="direction-error" className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">{t('direction')}</legend>
         <div className="grid grid-cols-2 gap-2">

@@ -1,9 +1,8 @@
 'use client'
 
 import { TrashIcon } from '@heroicons/react/24/outline'
-import clsx from 'clsx'
 import { useTranslations } from 'next-intl'
-import { AlertDialog } from 'radix-ui'
+import { AlertDialog, Dialog } from 'radix-ui'
 import { useRef, useState } from 'react'
 import type { RemoveApartmentState } from '@/app/lib/actions/apartments'
 import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
@@ -14,46 +13,66 @@ type Props = {
   /** `remove` with the locale and the apartment's id bound. */
   action: () => Promise<RemoveApartmentState>
   number: string
-  /** Why it cannot be removed yet, or null when it can. */
-  blockedReason: string | null
-  /** Unique on the page: the reason's id, which the button points to. */
+  /** What stops the removal: a few words for the row, the full reason for the dialog. */
+  blocked: { summary: string; reason: string } | null
+  /** Unique on the page: the summary's id, which the button points to. */
   reasonId: string
 }
 
+const contentClassName =
+  'rounded-card border-border bg-surface-raised shadow-card data-[state=open]:animate-dialog-in fixed inset-x-4 top-1/2 z-40 mx-auto flex max-h-[calc(100dvh-2rem)] max-w-md -translate-y-1/2 flex-col gap-5 overflow-y-auto border p-6'
+
 /**
- * A row's "Remove". While something still points at the apartment, the button stays focusable
- * but does nothing, and its description (also shown beside it) says why; otherwise it asks in
+ * A row's "Remove". While something still points at the apartment, a short line beside it says
+ * what, and the button opens a dialog with the full reason and what to do; otherwise it asks in
  * an AlertDialog, whose Cancel has the focus.
  */
-export default function RemoveApartmentDialog({ action, number, blockedReason, reasonId }: Props) {
+export default function RemoveApartmentDialog({ action, number, blocked, reasonId }: Props) {
   const t = useTranslations('ApartmentRemove')
   const { announce, focusHeading } = useAnnouncer()
   const [open, setOpen] = useState(false)
   // Read when the dialog closes: the row, and the button with it, leave the page.
   const removed = useRef(false)
   const label = t('removeLabel', { number })
+  const trigger = (
+    <>
+      <TrashIcon aria-hidden className="size-5" />
+      {t('remove')}
+    </>
+  )
 
-  if (blockedReason) {
+  if (blocked) {
     return (
       <div className="flex flex-col items-start gap-1">
-        {/* aria-disabled, not disabled: a disabled button leaves the tab order, and its reason
-            with it. */}
-        <button
-          type="button"
-          aria-disabled
-          aria-label={label}
-          aria-describedby={reasonId}
-          className={clsx(
-            buttonClassName('secondary'),
-            // Nothing to press: no hover or press feedback, only the dimmed look.
-            'aria-disabled:hover:bg-surface-raised aria-disabled:active:bg-surface-raised aria-disabled:cursor-not-allowed aria-disabled:opacity-70',
-          )}
-        >
-          <TrashIcon aria-hidden className="size-5" />
-          {t('remove')}
-        </button>
+        <Dialog.Root>
+          <Dialog.Trigger
+            aria-label={label}
+            aria-describedby={reasonId}
+            className={buttonClassName('secondary')}
+          >
+            {trigger}
+          </Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Overlay className="bg-scrim data-[state=open]:animate-fade-in fixed inset-0 z-30" />
+            <Dialog.Content className={contentClassName}>
+              <div className="flex flex-col gap-1">
+                <Dialog.Title className="text-xl font-semibold">
+                  {t('blockedTitle', { number })}
+                </Dialog.Title>
+                <Dialog.Description className="text-text-muted">
+                  {blocked.reason}
+                </Dialog.Description>
+              </div>
+              <div className="flex justify-end">
+                <Dialog.Close className={buttonClassName('primary')}>
+                  {t('blockedClose')}
+                </Dialog.Close>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
         <p id={reasonId} className="text-text-muted max-w-xs text-sm">
-          {blockedReason}
+          {blocked.summary}
         </p>
       </div>
     )
@@ -62,8 +81,7 @@ export default function RemoveApartmentDialog({ action, number, blockedReason, r
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
       <AlertDialog.Trigger aria-label={label} className={buttonClassName('secondary')}>
-        <TrashIcon aria-hidden className="size-5" />
-        {t('remove')}
+        {trigger}
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="bg-scrim data-[state=open]:animate-fade-in fixed inset-0 z-30" />
@@ -74,7 +92,7 @@ export default function RemoveApartmentDialog({ action, number, blockedReason, r
               focusHeading()
             }
           }}
-          className="rounded-card border-border bg-surface-raised shadow-card data-[state=open]:animate-dialog-in fixed inset-x-4 top-1/2 z-40 mx-auto flex max-h-[calc(100dvh-2rem)] max-w-md -translate-y-1/2 flex-col gap-5 overflow-y-auto border p-6"
+          className={contentClassName}
         >
           <div className="flex flex-col gap-1">
             <AlertDialog.Title className="text-xl font-semibold">

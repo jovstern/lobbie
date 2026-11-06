@@ -37,3 +37,10 @@ export function describeBlockers(t: TranslateBlocker, blockers: Blocker[]): stri
     )
     .join(' ')
 }
+
+type TranslateShortBlocker = (key: `${Blocker['kind']}Short`) => string
+
+/** The blockers in a few words each, for the line beside the list's "Remove". */
+export function summarizeBlockers(t: TranslateShortBlocker, blockers: Blocker[]): string {
+  return blockers.map((blocker) => t(`${blocker.kind}Short`)).join(' · ')
+}

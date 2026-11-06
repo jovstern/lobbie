@@ -65,8 +65,9 @@ export default function RevokeInviteDialog({ action, number }: Props) {
             confirmLabel={t('revokeConfirm')}
             pendingLabel={t('revoking')}
             cancel={
+              // Not "Cancel": in Hebrew both buttons would start with ביטול ("revoke" too).
               <AlertDialog.Cancel type="button" className={buttonClassName('secondary')}>
-                {t('cancel')}
+                {t('revokeCancel')}
               </AlertDialog.Cancel>
             }
           />

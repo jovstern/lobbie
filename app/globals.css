@@ -104,6 +104,15 @@
 @layer base {
   :root {
     color-scheme: light dark;
+    /* The phone tab bar (h-14, fixed) covers the bottom of the page: whatever focus or a link
+       scrolls to stops above it. From lg up there is no tab bar. */
+    scroll-padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+
+  @media (width >= theme(--breakpoint-lg)) {
+    :root {
+      scroll-padding-bottom: 0;
+    }
   }
 
   body {

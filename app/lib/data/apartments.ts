@@ -53,6 +53,22 @@ export const byNumber = [
 /** By floor, then naturally by number (see `byNumber`). */
 export const byFloorAndNumber = [asc(apartments.floor), ...byNumber]
 
+/**
+ * How the apartment's invites stand, for the list's invite column (see `inviteStanding`): when
+ * its active invite expires, and how many of its invites were used up (not revoked).
+ */
+const inviteColumns = {
+  activeInviteExpiresAt: sql<Date | null>`(
+    SELECT max(${invites.expiresAt}) FROM ${invites}
+    WHERE ${and(eq(invites.apartmentId, apartments.id), eq(invites.buildingId, apartments.buildingId), isActiveInvite)}
+  )`,
+  usedUpInvites: sql<number>`(
+    SELECT cast(count(*) as integer) FROM ${invites}
+    WHERE ${and(eq(invites.apartmentId, apartments.id), eq(invites.buildingId, apartments.buildingId))}
+      AND ${invites.revokedAt} IS NULL AND ${invites.uses} >= ${invites.maxUses}
+  )`,
+}
+
 const count = z.coerce.number().int().nonnegative()
 const listRow = z.object({
   id: z.string(),
@@ -63,10 +79,13 @@ const listRow = z.object({
   activeInvites: count,
   payments: count,
   feeOverrides: count,
+  activeInviteExpiresAt: z.coerce.date().nullable(),
+  usedUpInvites: count,
 })
 
 /**
- * Every apartment of the admin's building with its blocker counts, in one query, by floor and
+ * Every apartment of the admin's building with its blocker counts and how its invites stand,
+ * in one query, by floor and
  * then naturally by number (2, 2A, 10). Admins only: anyone else gets a 404.
  */
 export async function list(): Promise<ApartmentListItem[]> {
@@ -79,6 +98,7 @@ export async function list(): Promise<ApartmentListItem[]> {
         floor: apartments.floor,
         billingStartMonth: apartments.billingStartMonth,
         ...blockerCounts,
+        ...inviteColumns,
       })
       .from(apartments)
       .where(eq(apartments.buildingId, buildingId))

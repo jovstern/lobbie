@@ -2,15 +2,25 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { getLocale, getTranslations } from 'next-intl/server'
 import type { ApartmentListItem } from '@/app/lib/definitions'
 import { formatMonth } from '@/app/lib/utils/dates'
+import { inviteStanding } from '@/app/lib/utils/invite-standing'
 import ApartmentRowActions from '@/app/ui/admin/apartment-row-actions'
+import InviteStandingText from '@/app/ui/admin/invite-standing-text'
 import { Link } from '@/i18n/navigation'
 
-/** The apartments as cards, on phones; wider screens get `ApartmentTable`. */
-export default async function ApartmentCards({ apartments }: { apartments: ApartmentListItem[] }) {
+type Props = {
+  apartments: ApartmentListItem[]
+  /** The building's billing start, which an apartment without its own follows. */
+  buildingMonth: string
+  /** The building's time zone, for the invites' expiry dates. */
+  timeZone: string
+}
+
+/** The apartments as cards, on phones and tablets; wide screens get `ApartmentTable`. */
+export default async function ApartmentCards({ apartments, buildingMonth, timeZone }: Props) {
   const [t, locale] = await Promise.all([getTranslations('AdminApartments'), getLocale()])
 
   return (
-    <ul className="flex flex-col gap-3 md:hidden">
+    <ul className="grid gap-3 md:grid-cols-2 lg:hidden">
       {apartments.map((apartment) => (
         <li
           key={apartment.id}
@@ -42,7 +52,13 @@ export default async function ApartmentCards({ apartments }: { apartments: Apart
               <dd>
                 {apartment.billingStartMonth
                   ? formatMonth(apartment.billingStartMonth, locale)
-                  : t('buildingDefault')}
+                  : t('buildingDefault', { month: formatMonth(buildingMonth, locale) })}
+              </dd>
+            </div>
+            <div className="flex gap-1">
+              <dt>{t('invite')}:</dt>
+              <dd>
+                <InviteStandingText standing={inviteStanding(apartment)} timeZone={timeZone} />
               </dd>
             </div>
           </dl>

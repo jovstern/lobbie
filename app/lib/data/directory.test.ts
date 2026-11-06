@@ -396,3 +396,72 @@ describe('committee', () => {
     expect((await committee()).map((member) => member.name)).toEqual(['Another Building Person'])
   })
 })
+
+// Someone who joined with an invite before saying their name (spec: `displayName`).
+describe('people who joined without a name', () => {
+  let namelessBuildingId: string
+
+  beforeAll(async () => {
+    const [building] = await db
+      .insert(buildings)
+      .values({ name: 'Nameless', address: 'There 1', billingStartMonth: '2026-01' })
+      .returning()
+    namelessBuildingId = building.id
+    const [apartment] = await db
+      .insert(apartments)
+      .values({ buildingId: namelessBuildingId, number: '5', floor: 1 })
+      .returning()
+    await addPeople(namelessBuildingId, new Map([['5', apartment.id]]), [
+      { name: 'Zohar Named', email: 'zohar@shown.example', phone: null, apartment: '5' },
+      { name: '', email: 'quiet@hidden.example', phone: null, apartment: '5' },
+      {
+        name: '  ',
+        email: 'open@shown.example',
+        phone: null,
+        apartment: '5',
+        showContact: true,
+      },
+      {
+        name: '',
+        email: 'treasurer@hidden.example',
+        phone: null,
+        role: 'committee',
+        committeeEmail: 'money@committee.example',
+      },
+    ])
+  })
+
+  it('lists them in the directory after the named, never with an email they keep hidden', async () => {
+    signInAs(namelessBuildingId)
+
+    const [floor] = await list('')
+    const residents = floor.apartments[0].residents
+
+    const shown = residents.map(({ name, email }) => ({ name, email }))
+    expect(shown[0]).toEqual({ name: 'Zohar Named', email: null })
+    // The two without a name follow, in a stable order of their own.
+    expect(shown.slice(1)).toHaveLength(2)
+    expect(shown.slice(1)).toEqual(
+      expect.arrayContaining([
+        { name: null, email: 'open@shown.example' },
+        { name: null, email: null },
+      ]),
+    )
+    expect(await rawRowsOf(() => list(''))).not.toContain('quiet@hidden.example')
+  })
+
+  it('lists them on the committee page with no name and only the role’s contact', async () => {
+    signInAs(namelessBuildingId)
+
+    expect(await committee()).toEqual([
+      {
+        userId: expect.any(String),
+        name: null,
+        role: 'committee',
+        committeeTitle: null,
+        committeePhone: null,
+        committeeEmail: 'money@committee.example',
+      },
+    ])
+  })
+})

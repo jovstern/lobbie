@@ -24,7 +24,15 @@ export default async function CommitteeList() {
           className="rounded-card border-border bg-surface-raised shadow-card flex flex-col gap-3 border p-4"
         >
           <div className="flex flex-col">
-            <h2 className="text-lg font-semibold">{member.name}</h2>
+            <h2 className="text-lg font-semibold wrap-anywhere">
+              {/* Without a name, the email they publish for the role; never a personal one. */}
+              {member.name ??
+                (member.committeeEmail ? (
+                  <bdi dir="ltr">{member.committeeEmail}</bdi>
+                ) : (
+                  t('unnamed')
+                ))}
+            </h2>
             <p className="text-text-muted">{member.committeeTitle ?? tRoles(member.role)}</p>
           </div>
           {member.committeePhone || member.committeeEmail ? (

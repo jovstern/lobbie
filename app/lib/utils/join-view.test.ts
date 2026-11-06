@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { inviteStatus, joinView, type InvitePreview, type JoinMembership } from './join-view'
+import {
+  inviteStatus,
+  joiningApartment,
+  joinView,
+  type InvitePreview,
+  type JoinMembership,
+} from './join-view'
 
 describe('inviteStatus', () => {
   it.each([
@@ -75,4 +81,25 @@ describe('joinView', () => {
       expect(joinView({ ...preview, status }, noMembership)).toEqual({ kind: status })
     },
   )
+})
+
+describe('joiningApartment', () => {
+  it('names the apartment on the way back to an invite, in either language', () => {
+    expect(joiningApartment('/join/ABCDE23456', '12')).toBe('12')
+    expect(joiningApartment('/en/join/ABCDE23456', '12A')).toBe('12A')
+    expect(joiningApartment('/join/ABCDE23456', 'א-3')).toBe('א-3')
+  })
+
+  it.each([
+    ['no next', undefined, '12'],
+    ['no apartment', '/join/ABCDE23456', undefined],
+    ['code entry, not an invite', '/join', '12'],
+    ['another page', '/profile', '12'],
+    ['another site', '//evil.example/join/x', '12'],
+    ['a sentence', '/join/ABCDE23456', 'call 050-0000000'],
+    ['markup', '/join/ABCDE23456', '<b>1</b>'],
+    ['a list', '/join/ABCDE23456', ['12', '13']],
+  ])('is null for %s', (_case, next, apartment) => {
+    expect(joiningApartment(next, apartment)).toBeNull()
+  })
 })

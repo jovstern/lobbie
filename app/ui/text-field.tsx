@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import type { InputHTMLAttributes } from 'react'
 
 const inputClassName =
@@ -11,26 +12,46 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'aria-describedb
   hint?: string
   /** From the Server Action; announced as they appear. */
   errors?: string[]
+  /**
+   * A unit drawn inside the end of a short field, such as "%". Decoration only: the label or
+   * the hint names the unit for screen readers.
+   */
+  suffix?: string
 }
 
 /** A labelled input with its hint and its errors, which the input points to. */
-export default function TextField({ name, label, hint, errors, ...inputProps }: Props) {
+export default function TextField({ name, label, hint, errors, suffix, ...inputProps }: Props) {
   const hintId = `${name}-hint`
   const errorId = `${name}-error`
+  const input = (
+    <input
+      {...inputProps}
+      id={name}
+      name={name}
+      aria-describedby={hint ? `${hintId} ${errorId}` : errorId}
+      aria-invalid={errors?.length ? true : undefined}
+      className={clsx(inputClassName, suffix && 'pe-9')}
+    />
+  )
 
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={name} className="text-sm font-medium">
         {label}
       </label>
-      <input
-        {...inputProps}
-        id={name}
-        name={name}
-        aria-describedby={hint ? `${hintId} ${errorId}` : errorId}
-        aria-invalid={errors?.length ? true : undefined}
-        className={inputClassName}
-      />
+      {suffix ? (
+        <div className="relative max-w-40">
+          {input}
+          <span
+            aria-hidden
+            className="text-text-muted pointer-events-none absolute inset-y-0 end-3 flex items-center"
+          >
+            {suffix}
+          </span>
+        </div>
+      ) : (
+        input
+      )}
       {hint ? (
         <p id={hintId} className="text-text-muted text-sm">
           {hint}

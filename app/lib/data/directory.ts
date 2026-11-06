@@ -33,10 +33,8 @@ const directoryRow = z
     apartmentId,
     number,
     floor,
-    resident:
-      userId === null || name === null
-        ? null
-        : { userId, name, isOwner: isOwner ?? false, phone, email },
+    // Someone who joined without a name is listed too; the page names them (see `DirectoryResident`).
+    resident: userId === null ? null : { userId, name, isOwner: isOwner ?? false, phone, email },
   }))
 
 /**
@@ -56,7 +54,7 @@ export async function list(q: string): Promise<DirectoryFloor[]> {
         number: apartments.number,
         floor: apartments.floor,
         userId: user.id,
-        name: user.name,
+        name: nonBlank(user.name),
         isOwner: apartmentResidents.isOwner,
         phone: sql`CASE WHEN ${buildingMembers.showContact} THEN ${nonBlank(user.phone)} END`,
         email: sql`CASE WHEN ${buildingMembers.showContact} THEN ${user.email} END`,
@@ -100,7 +98,13 @@ export async function list(q: string): Promise<DirectoryFloor[]> {
             : undefined,
         ),
       )
-      .orderBy(...byFloorAndNumber, apartments.id, sql`lower(${user.name})`, user.id)
+      // Residents without a name after the named ones.
+      .orderBy(
+        ...byFloorAndNumber,
+        apartments.id,
+        sql`lower(${nonBlank(user.name)}) NULLS LAST`,
+        user.id,
+      )
     return groupByFloor(z.array(directoryRow).parse(rows))
   } catch (err) {
     // Next's own signals (such as a prerender that ended) are not failures.
@@ -124,7 +128,7 @@ const isChair = sql`lower(trim(${buildingMembers.committeeTitle})) LIKE ANY (ARR
 
 const committeeRow = z.object({
   userId: z.string(),
-  name: z.string(),
+  name: z.string().nullable(),
   role: z.enum(['committee', 'admin']),
   committeeTitle: z.string().nullable(),
   committeePhone: z.string().nullable(),
@@ -143,7 +147,7 @@ export async function committee(): Promise<CommitteeMember[]> {
     const rows = await db
       .select({
         userId: user.id,
-        name: user.name,
+        name: nonBlank(user.name),
         role: buildingMembers.role,
         committeeTitle: nonBlank(buildingMembers.committeeTitle),
         committeePhone: nonBlank(buildingMembers.committeePhone),
@@ -161,7 +165,7 @@ export async function committee(): Promise<CommitteeMember[]> {
         sql`CASE WHEN ${isChair} THEN 0 ELSE 1 END`,
         // The enum's order is resident < committee < admin.
         sql`${buildingMembers.role} DESC`,
-        sql`lower(${user.name})`,
+        sql`lower(${nonBlank(user.name)}) NULLS LAST`,
         user.id,
       )
     return z.array(committeeRow).parse(rows)

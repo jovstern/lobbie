@@ -30,7 +30,7 @@ function signInAsAdminOf(buildingId: string) {
 }
 
 beforeAll(async () => {
-  await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
+  await seed(db, { now: new Date('2026-11-02T10:00:00Z'), e2e: true })
 })
 
 describe('memberForUser', () => {
@@ -142,6 +142,24 @@ describe('list', () => {
 
     expect(people.map((person) => person.email)).toEqual(['e2e1@example.com'])
     expect(people[0].apartments.map((apartment) => apartment.number)).toEqual(['e2e-1'])
+  })
+
+  it('finds people by part of their email, in any case, like someone who has no name yet', async () => {
+    signInAsAdminOf(otherBuildingId)
+    const [newcomer] = await db
+      .insert(user)
+      .values({ name: '', email: 'newcomer@test.example' })
+      .returning()
+    await db.insert(buildingMembers).values({ userId: newcomer.id, buildingId: otherBuildingId })
+
+    expect((await list('NEWCOMER@')).map((person) => person.email)).toEqual([
+      'newcomer@test.example',
+    ])
+    // Sorted by the name as shown: their email, after "Another Building Person".
+    expect((await list('')).map((person) => person.email)).toEqual([
+      'stranger@test.example',
+      'newcomer@test.example',
+    ])
   })
 
   it('takes LIKE wildcards literally', async () => {
