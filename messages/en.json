@@ -414,6 +414,8 @@
     "otherBuilding": "You already belong to another building. Lobbie supports one building per account."
   },
   "JoinInvite": {
+    "pageTitle": "Invitation to Lobbie",
+    "pageLead": "An invitation joins you to your apartment in a building on Lobbie, where its residents see payments, announcements and schedules in one place.",
     "invitedTo": "You’re invited to apartment {number} in {building}",
     "join": "Join apartment {number}",
     "joining": "Joining…",

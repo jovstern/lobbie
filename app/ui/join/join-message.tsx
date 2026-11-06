@@ -9,15 +9,18 @@ type Props = {
   children?: ReactNode
 }
 
-/** A join page's heading, its explanation and the next step. */
+/**
+ * An invite's state under the join page's static heading: its title, its explanation and the
+ * next step.
+ */
 export default function JoinMessage({ icon, title, body, children }: Props) {
   return (
     <>
       <header className="flex flex-col gap-2">
-        <h1 className="flex items-start gap-2 text-2xl font-semibold text-balance">
+        <h2 className="flex items-start gap-2 text-xl font-semibold text-balance">
           {icon}
           {title}
-        </h1>
+        </h2>
         <p className="text-pretty">{body}</p>
       </header>
       {children ? <div>{children}</div> : null}

@@ -212,7 +212,7 @@ for (const locale of ['he', 'en'] as const) {
       await page.goto(`${prefix}/join/ABCDE23456`)
       await expect(
         page.getByRole('heading', {
-          level: 1,
+          level: 2,
           name: messages[locale].JoinInvite.invalidTitle,
           exact: true,
         }),

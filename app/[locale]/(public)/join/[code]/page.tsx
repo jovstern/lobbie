@@ -12,9 +12,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title'), robots: { index: false, follow: false }, referrer: 'no-referrer' }
 }
 
-export default function JoinInvitePage({ params }: PageProps<'/[locale]/join/[code]'>) {
+export default async function JoinInvitePage({ params }: PageProps<'/[locale]/join/[code]'>) {
+  const t = await getTranslations('JoinInvite')
+
   return (
     <AuthCard>
+      {/* Static, so it paints with the shell; what the invite says streams in below it. */}
+      <header className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold text-balance">{t('pageTitle')}</h1>
+        <p className="text-text-muted text-pretty">{t('pageLead')}</p>
+      </header>
       {/* Only this part reads the code and the session; the card is the static shell. */}
       <Suspense fallback={<JoinInviteSkeleton />}>
         <JoinInvite params={params} />

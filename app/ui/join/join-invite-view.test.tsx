@@ -39,7 +39,7 @@ function renderView(view: JoinView) {
   return redeemAction
 }
 
-const heading = () => screen.getByRole('heading', { level: 1 })
+const heading = () => screen.getByRole('heading', { level: 2 })
 
 describe('JoinInviteView', () => {
   it('offers to join the apartment it names', () => {

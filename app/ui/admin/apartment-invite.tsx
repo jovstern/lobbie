@@ -25,9 +25,11 @@ export default async function ApartmentInvite({ apartmentId }: { apartmentId: Pr
   ])
   if (!apartment) notFound()
 
-  // One block, as its placeholder is, so the card's gaps do not change when it streams in.
+  // One block, as its placeholder is, so the card's gaps do not change when it streams in. It
+  // keeps the height of an active invite (two lines and two rows of buttons on phones, one of
+  // each from sm), so neither state moves the note and the residents below it.
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-53 flex-col gap-4 sm:min-h-32">
       {invite ? (
         <div className="flex flex-col gap-1">
           <p className="font-medium">{t('active')}</p>

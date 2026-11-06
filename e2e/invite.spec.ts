@@ -39,7 +39,7 @@ test('the admin invites e2e-1 and someone new joins from the link', async ({
     await visitor.goto(new URL(url).pathname)
     await expect(
       visitor.getByRole('heading', {
-        level: 1,
+        level: 2,
         name: t('JoinInvite.invitedTo', { number: 'e2e-1', building: demoBuildingName }),
       }),
     ).toBeVisible()
@@ -129,7 +129,7 @@ test('"Invite every apartment" lists a link for every apartment', async ({ page 
 test('an unknown code says it is not valid', async ({ page }) => {
   await page.goto('/join/ABCDE23456')
   await expect(
-    page.getByRole('heading', { level: 1, name: text.JoinInvite.invalidTitle, exact: true }),
+    page.getByRole('heading', { level: 2, name: text.JoinInvite.invalidTitle, exact: true }),
   ).toBeVisible()
 })
 
@@ -170,7 +170,7 @@ test('a revoked invite says so', async ({ page }) => {
 
     await page.goto(`/join/${code}`)
     await expect(
-      page.getByRole('heading', { level: 1, name: text.JoinInvite.revokedTitle, exact: true }),
+      page.getByRole('heading', { level: 2, name: text.JoinInvite.revokedTitle, exact: true }),
     ).toBeVisible()
   } finally {
     await deleteInvitesOf('e2e-3')

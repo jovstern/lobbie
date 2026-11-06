@@ -280,11 +280,11 @@ export function ApartmentFactsSkeleton() {
 
 /**
  * The invite card's status and buttons, shaped like an active invite (its uses and expiry wrap
- * to two lines on phones); an apartment without one is a little shorter.
+ * to two lines on phones, its two buttons to two rows), the height the block keeps either way.
  */
 export function ApartmentInviteSkeleton() {
   return (
-    <div aria-hidden className="flex flex-col gap-4">
+    <div aria-hidden className="flex min-h-53 flex-col gap-4 sm:min-h-32">
       <div className="flex flex-col gap-1">
         <div className={`${block} h-6 w-28`} />
         <div className={`${block} h-6 w-64 max-w-full`} />
@@ -292,7 +292,11 @@ export function ApartmentInviteSkeleton() {
       </div>
       <div className="flex flex-col gap-4">
         <div />
-        <div className={`${block} h-11 w-44`} />
+        {/* "Create new invite" and "Revoke": a row each on phones. */}
+        <div className="flex flex-wrap gap-3">
+          <div className={`${block} h-11 w-full sm:w-44`} />
+          <div className={`${block} h-11 w-28`} />
+        </div>
       </div>
     </div>
   )
@@ -322,7 +326,7 @@ export function ApartmentResidentsSkeleton() {
 export function JoinInviteSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-4">
-      <div className={`${block} h-8 w-56 max-w-full`} />
+      <div className={`${block} h-7 w-56 max-w-full`} />
       <div className={`${block} h-6 w-full`} />
       <div className={`${block} h-11 w-44`} />
     </div>

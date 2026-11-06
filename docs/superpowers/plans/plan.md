@@ -66,6 +66,7 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `@electric-sql/pglite` (dev) | `app/lib/test/db.ts` | Real Postgres in-process for data tests: isolated, fast, no network, runs in CI |
 | `better-auth`, `auth` (dev) | `app/lib/auth.ts`, `/api/auth/[...all]` | Stable magic-link auth with a Drizzle adapter (ADR 0001); `auth` is Better Auth's CLI, which generates its tables (`@better-auth/cli` is deprecated at 1.4.21) |
 | `next-intl` | `i18n/`, `proxy.ts`, `app/[locale]/layout.tsx` | he/en routing, RTL, ICU messages; its `NextIntlClientProvider` is the only context, given only the messages client components need |
+| next-intl `experimental.messages.precompile` | `next.config.ts` | ICU messages compiled at build time, so the client ships a small formatter instead of the ICU parser (JS budget; ADR 0002); no `t.raw` |
 | `tsx` (dev) | `scripts/*.ts` | Runs TypeScript scripts with the `@/` alias, outside Next.js |
 | `@axe-core/playwright` (dev) | `e2e/a11y.spec.ts` | The `metrics` accessibility gate |
 | `radix-ui`, `use-debounce` | not used in M1 | House stack, installed with the starter: `use-debounce` is first used by M2's search, `radix-ui` by the dialogs and radio groups of M2 and M6 |
