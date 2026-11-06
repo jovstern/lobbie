@@ -1,3 +1,23 @@
+/*
+ * Magic links per seeded email in one run (both projects, desktop and phone), against the
+ * per-email limit of 3 per 15 minutes. Keep every row at 2 or less, so there is a margin.
+ * `useSessionOf` signs in once per email per run (the session file is shared by the projects).
+ *
+ * | Email                  | Where                                              | Links |
+ * | ---------------------- | -------------------------------------------------- | ----- |
+ * | e2e1@example.com       | sign-in.spec (resident lands on Home), ×2 projects |     2 |
+ * | e2e2@example.com       | admin-people.spec, useSessionOf                    |     1 |
+ * | e2e3@example.com       | directory.spec, useSessionOf                       |     1 |
+ * | resident1@example.com  | useSessionOf (a11y, auth, home, directory, ...)    |     1 |
+ * | resident9@example.com  | useSessionOf (a11y, home)                          |     1 |
+ * | admin@example.com      | useSessionOf (admin-*, a11y, invite)               |     1 |
+ * | committee1@example.com | useSessionOf (admin-*, a11y)                       |     1 |
+ * | committee2@example.com | useSessionOf (directory)                           |     1 |
+ *
+ * Everyone else who signs in is created by the test for its project (and locale, where it
+ * loops over them) and removed afterwards, so each such address signs in once: profile-*,
+ * more-*, leaving-*, signout-*, demo-*, invitee-*, join-a11y-*, locks-*.
+ */
 import { randomInt } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'

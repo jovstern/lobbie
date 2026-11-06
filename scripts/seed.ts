@@ -1,9 +1,10 @@
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { createDbClient, type Db } from '@/app/lib/db-client'
 import { requireEnv } from '@/app/lib/env'
 import {
   apartmentResidents,
   apartments,
+  balanceAdjustments,
   buildingMembers,
   buildings,
   expenses,
@@ -13,6 +14,7 @@ import {
 } from '@/app/lib/schema'
 import { addMonths, todayIn } from '@/app/lib/utils/dates'
 import { logger } from '@/app/lib/logger'
+import { demoBuildingId, demoBuildingName } from './demo-building'
 import { isEntryPoint, runScript } from './run'
 
 const timeZone = 'Asia/Jerusalem'
@@ -30,6 +32,7 @@ type Role = 'resident' | 'committee' | 'admin'
 type Person = {
   email: string
   name: string
+  /** E.164, as the profile saves it. */
   phone: string
   apartment: string
   isOwner: boolean
@@ -42,7 +45,7 @@ const people: Person[] = [
   {
     email: 'admin@example.com',
     name: 'מיכל אברהם',
-    phone: '050-5550101',
+    phone: '+972505550101',
     apartment: '1',
     isOwner: true,
     role: 'admin',
@@ -51,7 +54,7 @@ const people: Person[] = [
   {
     email: 'resident1@example.com',
     name: 'יונתן אברהם',
-    phone: '050-5550102',
+    phone: '+972505550102',
     apartment: '1',
     isOwner: true,
     role: 'resident',
@@ -59,7 +62,7 @@ const people: Person[] = [
   {
     email: 'committee1@example.com',
     name: 'דוד כהן',
-    phone: '052-5550201',
+    phone: '+972525550201',
     apartment: '2',
     isOwner: true,
     role: 'committee',
@@ -69,7 +72,7 @@ const people: Person[] = [
   {
     email: 'resident2@example.com',
     name: 'נועה לוי',
-    phone: '054-5550301',
+    phone: '+972545550301',
     apartment: '3',
     isOwner: false,
     role: 'resident',
@@ -78,7 +81,7 @@ const people: Person[] = [
   {
     email: 'resident3@example.com',
     name: 'אבי מזרחי',
-    phone: '050-5550401',
+    phone: '+972505550401',
     apartment: '4',
     isOwner: true,
     role: 'resident',
@@ -86,7 +89,7 @@ const people: Person[] = [
   {
     email: 'resident4@example.com',
     name: 'שרה פרץ',
-    phone: '053-5550501',
+    phone: '+972535550501',
     apartment: '5',
     isOwner: true,
     role: 'resident',
@@ -95,7 +98,7 @@ const people: Person[] = [
   {
     email: 'resident5@example.com',
     name: 'משה פרץ',
-    phone: '053-5550502',
+    phone: '+972535550502',
     apartment: '5',
     isOwner: true,
     role: 'resident',
@@ -103,7 +106,7 @@ const people: Person[] = [
   {
     email: 'committee2@example.com',
     name: 'רונית ביטון',
-    phone: '052-5550601',
+    phone: '+972525550601',
     apartment: '6',
     isOwner: true,
     role: 'committee',
@@ -113,7 +116,7 @@ const people: Person[] = [
   {
     email: 'resident6@example.com',
     name: 'עומר דהן',
-    phone: '054-5550701',
+    phone: '+972545550701',
     apartment: '7',
     isOwner: false,
     role: 'resident',
@@ -121,7 +124,7 @@ const people: Person[] = [
   {
     email: 'resident7@example.com',
     name: 'תמר אוחיון',
-    phone: '050-5550801',
+    phone: '+972505550801',
     apartment: '8',
     isOwner: false,
     role: 'resident',
@@ -130,7 +133,7 @@ const people: Person[] = [
   {
     email: 'resident8@example.com',
     name: 'איתי אוחיון',
-    phone: '050-5550802',
+    phone: '+972505550802',
     apartment: '8',
     isOwner: false,
     role: 'resident',
@@ -138,7 +141,7 @@ const people: Person[] = [
   {
     email: 'resident9@example.com',
     name: 'יעל גבאי',
-    phone: '058-5550901',
+    phone: '+972585550901',
     apartment: '9',
     isOwner: true,
     role: 'resident',
@@ -146,7 +149,7 @@ const people: Person[] = [
   {
     email: 'resident10@example.com',
     name: 'אריאל שפירא',
-    phone: '052-5551001',
+    phone: '+972525551001',
     apartment: '10',
     isOwner: true,
     role: 'resident',
@@ -155,7 +158,7 @@ const people: Person[] = [
   {
     email: 'resident11@example.com',
     name: 'חנה רוזן',
-    phone: '054-5551101',
+    phone: '+972545551101',
     apartment: '11',
     isOwner: true,
     role: 'resident',
@@ -163,7 +166,7 @@ const people: Person[] = [
   {
     email: 'resident12@example.com',
     name: 'יוסף רוזן',
-    phone: '054-5551102',
+    phone: '+972545551102',
     apartment: '11',
     isOwner: true,
     role: 'resident',
@@ -171,15 +174,22 @@ const people: Person[] = [
   {
     email: 'resident13@example.com',
     name: 'ליאור אלון',
-    phone: '050-5551201',
+    phone: '+972505551201',
     apartment: '12',
     isOwner: false,
     role: 'resident',
   },
+]
+
+/**
+ * The e2e suite's own people, one per e2e apartment: write tests change them, never the demo
+ * residents. Seeded only with `e2e` (the reset of the test database), never into dev.
+ */
+const e2ePeople: Person[] = [
   {
     email: 'e2e1@example.com',
     name: 'בודק אחד',
-    phone: '050-5559001',
+    phone: '+972505559001',
     apartment: 'e2e-1',
     isOwner: true,
     role: 'resident',
@@ -187,7 +197,7 @@ const people: Person[] = [
   {
     email: 'e2e2@example.com',
     name: 'בודקת שתיים',
-    phone: '050-5559002',
+    phone: '+972505559002',
     apartment: 'e2e-2',
     isOwner: true,
     role: 'resident',
@@ -195,7 +205,7 @@ const people: Person[] = [
   {
     email: 'e2e3@example.com',
     name: 'בודק שלוש',
-    phone: '050-5559003',
+    phone: '+972505559003',
     apartment: 'e2e-3',
     isOwner: true,
     role: 'resident',
@@ -253,13 +263,32 @@ const expenseRows = [
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+type SeedOptions = {
+  now?: Date
+  /**
+   * Marks the building as a demo, where every write is refused (`npm run db:seed -- --demo`).
+   * Off by default, so the seeded admin can try every screen.
+   */
+  demo?: boolean
+  /**
+   * Adds the e2e fixtures: apartments `e2e-1..3` and their people `e2e1..3@example.com`
+   * (`--e2e`). Only `scripts/reset-test-db.ts` asks for them; dev gets none.
+   */
+  e2e?: boolean
+}
+
 /**
- * Seeds the demo building. Idempotent: people, apartments, memberships and residents are
- * upserted on their natural keys; the demo building's fees, payments and expenses (which
- * have no natural key, and are relative to the current month) are replaced as a whole.
- * Everything runs in one transaction.
+ * Seeds the demo building. Idempotent: the building is upserted on its fixed id, whether or
+ * not it is marked as a demo; people, apartments, memberships and residents are upserted on their
+ * natural keys; the demo building's fees, payments and expenses (which have no natural key,
+ * and are relative to the current month) are replaced as a whole. Everything runs in one
+ * transaction.
  */
-export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): Promise<void> {
+export async function seed(
+  db: Db,
+  { now = new Date(), demo: isDemo = false, e2e = false }: SeedOptions = {},
+): Promise<void> {
+  const seeded = e2e ? [...people, ...e2ePeople] : people
   const today = todayIn(timeZone, now)
   const currentMonth = today.slice(0, 7)
   const todayDay = Number(today.slice(8))
@@ -268,26 +297,26 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
 
   await db.transaction(async (tx) => {
     const demo = {
-      name: 'רחוב הרימון 12',
+      name: demoBuildingName,
       address: 'הרימון 12, רמת גן',
       timezone: timeZone,
       quorumPercent: 50,
       openingBalanceAgorot: 850_000,
       billingStartMonth,
-      isDemo: true,
+      isDemo,
     }
-    const [existing] = await tx
-      .select({ id: buildings.id })
-      .from(buildings)
-      .where(and(eq(buildings.name, demo.name), eq(buildings.isDemo, true)))
-    const [building] = existing
-      ? await tx.update(buildings).set(demo).where(eq(buildings.id, existing.id)).returning()
-      : await tx.insert(buildings).values(demo).returning()
-    const buildingId = building.id
+    // Upserted on its fixed id: a re-run restores its name and settings, and a building
+    // elsewhere with the same name is never touched.
+    const buildingId = demoBuildingId
+    await tx
+      .insert(buildings)
+      .values({ id: buildingId, ...demo })
+      .onConflictDoUpdate({ target: buildings.id, set: demo })
 
     await tx.delete(payments).where(eq(payments.buildingId, buildingId))
     await tx.delete(expenses).where(eq(expenses.buildingId, buildingId))
     await tx.delete(feeRates).where(eq(feeRates.buildingId, buildingId))
+    await tx.delete(balanceAdjustments).where(eq(balanceAdjustments.buildingId, buildingId))
 
     const apartmentRows = [
       ...Array.from({ length: 12 }, (_, i) => ({
@@ -297,12 +326,14 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
         billingStartMonth: null,
       })),
       // e2e apartments owe only the current month, so write tests start from a known state.
-      ...[1, 2, 3].map((n) => ({
-        buildingId,
-        number: `e2e-${n}`,
-        floor: 0,
-        billingStartMonth: currentMonth,
-      })),
+      ...(e2e
+        ? [1, 2, 3].map((n) => ({
+            buildingId,
+            number: `e2e-${n}`,
+            floor: 0,
+            billingStartMonth: currentMonth,
+          }))
+        : []),
     ]
     const savedApartments = await tx
       .insert(apartments)
@@ -325,7 +356,7 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
     await tx
       .insert(user)
       .values(
-        people.map((p) => ({ name: p.name, email: p.email, phone: p.phone, emailVerified: true })),
+        seeded.map((p) => ({ name: p.name, email: p.email, phone: p.phone, emailVerified: true })),
       )
       .onConflictDoUpdate({
         target: user.email,
@@ -338,7 +369,7 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
       .where(
         inArray(
           user.email,
-          people.map((p) => p.email),
+          seeded.map((p) => p.email),
         ),
       )
     const userId = new Map(savedUsers.map((u) => [u.email, u.id]))
@@ -351,7 +382,7 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
     const savedMembers = await tx
       .insert(buildingMembers)
       .values(
-        people.map((p) => ({
+        seeded.map((p) => ({
           userId: idOf(userId, p.email),
           buildingId,
           role: p.role,
@@ -379,7 +410,7 @@ export async function seed(db: Db, { now = new Date() }: { now?: Date } = {}): P
     await tx
       .insert(apartmentResidents)
       .values(
-        people
+        seeded
           .filter((p) => demoMembers.has(idOf(userId, p.email)))
           .map((p) => ({
             userId: idOf(userId, p.email),
@@ -464,7 +495,9 @@ if (isEntryPoint(import.meta.url)) {
   void runScript('db:seed', async () => {
     const { db, close } = createDbClient(requireEnv('DATABASE_URL'))
     try {
-      await seed(db)
+      await seed(db, {
+        demo: process.argv.includes('--demo'),
+      })
       // Building rows, fee rates and balances are cached for hours ('use cache'), and the
       // seed writes behind the app's back, so no tag is updated.
       logger.info('db:seed: restart any running server to drop its cached building data')

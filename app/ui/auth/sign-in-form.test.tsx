@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { SignInState } from '@/app/lib/actions/auth'
 import SignInForm from '@/app/ui/auth/sign-in-form'
 import en from '@/messages/en.json'
@@ -52,13 +52,23 @@ describe('SignInForm', () => {
   it('shows "Sending…" and disables the button while the request is in flight', async () => {
     const user = userEvent.setup()
     let finish: (state: SignInState) => void = () => {}
-    const input = renderForm(() => new Promise((resolve) => (finish = resolve)))
+    const action = vi.fn(() => new Promise<SignInState>((resolve) => (finish = resolve)))
+    const input = renderForm(action)
 
     await user.type(input, 'dana@example.com')
     await user.click(screen.getByRole('button', { name: 'Send me a link' }))
 
-    expect(await screen.findByRole('button', { name: 'Sending…' })).toBeDisabled()
+    const sending = await screen.findByRole('button', { name: 'Sending…' })
+    expect(sending).toHaveAttribute('aria-disabled', 'true')
+    // Focus stays on the button (a disabled one would drop it to the page), and another
+    // activation while pending sends nothing.
+    expect(sending).toHaveFocus()
+    await user.click(sending)
+    expect(action).toHaveBeenCalledTimes(1)
     finish({})
-    expect(await screen.findByRole('button', { name: 'Send me a link' })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: 'Send me a link' })).toHaveAttribute(
+      'aria-disabled',
+      'false',
+    )
   })
 })

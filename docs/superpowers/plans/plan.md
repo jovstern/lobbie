@@ -66,12 +66,15 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `@electric-sql/pglite` (dev) | `app/lib/test/db.ts` | Real Postgres in-process for data tests: isolated, fast, no network, runs in CI |
 | `better-auth`, `auth` (dev) | `app/lib/auth.ts`, `/api/auth/[...all]` | Stable magic-link auth with a Drizzle adapter (ADR 0001); `auth` is Better Auth's CLI, which generates its tables (`@better-auth/cli` is deprecated at 1.4.21) |
 | `next-intl` | `i18n/`, `proxy.ts`, `app/[locale]/layout.tsx` | he/en routing, RTL, ICU messages; its `NextIntlClientProvider` is the only context, given only the messages client components need |
+| next-intl `experimental.messages.precompile` | `next.config.ts` | ICU messages compiled at build time, so the client ships a small formatter instead of the ICU parser (JS budget; ADR 0002); no `t.raw` |
 | `tsx` (dev) | `scripts/*.ts` | Runs TypeScript scripts with the `@/` alias, outside Next.js |
 | `@axe-core/playwright` (dev) | `e2e/a11y.spec.ts` | The `metrics` accessibility gate |
 | `radix-ui`, `use-debounce` | not used in M1 | House stack, installed with the starter: `use-debounce` is first used by M2's search, `radix-ui` by the dialogs and radio groups of M2 and M6 |
 | `resend` (M7) | `app/lib/mail.ts` | Production magic-link email |
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |
+| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages and `/admin/people`, each its own instance. No app-level use. |
+| `CreatedInvitesProvider` (section-scoped React context) | `app/ui/admin/created-invites-provider.tsx`, held by `admin/apartments/layout.tsx` | The one-time result of "Invite every apartment": plaintext codes that can never be fetched again. Apartments section only; in memory only, never stored, sent back or put in the URL; cleared on Done or on leaving the section. |
 
 **Route Handlers.** Each one is called by something other than this app's own forms:
 - `/api/auth/[...all]`: the magic link in the email.
@@ -505,7 +508,7 @@ M1's PR.
 
 | Milestone | Estimated | Actual | Why it differed |
 |---|---|---|---|
-| M1 | 2 h 45 min | | |
+| M1 | 2 h 45 min | ~3 h 30 min agent (ratio 1.28); wall clock 3 days | Security and latency findings needed real fixes (HTTP magic-link bypass, plain tokens, session-cache renewal, one-round-trip status); workarounds for Better Auth + Cache Components + next-intl; three fix rounds. Wall clock: two usage-limit pauses and a Neon branch recreation. Remaining milestones re-scaled ×1.28 (M2–M7 ≈ 13 h) |
 | M2 | 1 h 45 min | | |
 | M3 | 2 h | | |
 | M4 | 1 h 40 min | | |

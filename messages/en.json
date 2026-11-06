@@ -4,14 +4,17 @@
     "description": "Your building's payments, balance, announcements and schedules, in one place for residents and the committee."
   },
   "Common": {
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "saved": "Saved",
+    "dialogLoadFailed": "That didn’t open. Check your connection and try again."
   },
   "NotFound": {
     "title": "Page not found",
     "description": "The link may be wrong, or the page may have moved."
   },
   "Home": {
-    "title": "Home"
+    "title": "Home",
+    "joined": "You joined apartment {number}. Welcome to the building!"
   },
   "Auth": {
     "appName": "Lobbie",
@@ -25,7 +28,8 @@
     "heading": "Sign in to Lobbie",
     "lead": "Enter your email and we'll send you a link to sign in. No password needed.",
     "expired": "That sign-in link has expired or was already used. Enter your email to get a new one.",
-    "signInFailed": "We couldn't sign you in. Please try again."
+    "signInFailed": "We couldn't sign you in. Please try again.",
+    "joiningApartment": "After signing in, you’ll come back to join apartment {number}."
   },
   "SignInForm": {
     "emailLabel": "Email",
@@ -46,7 +50,8 @@
   },
   "Join": {
     "title": "Join your building",
-    "body": "Ask your building committee for an invite link, then open it on this device to join your apartment."
+    "body": "Ask your building committee for an invite link and open it on this device, or type the code here.",
+    "wrongAccount": "Signed in with the wrong email?"
   },
   "Authz": {
     "signedOut": "Your session has ended. Sign in again to continue.",
@@ -71,7 +76,9 @@
     "home": "Home",
     "more": "More",
     "skipToContent": "Skip to content",
-    "moreHidden": "options"
+    "moreHidden": "options",
+    "admin": "Admin",
+    "building": "Building"
   },
   "LanguageSwitch": {
     "otherLanguage": "עברית"
@@ -104,15 +111,464 @@
   },
   "More": {
     "title": "More",
+    "lead": "Your profile, the app’s language, and signing out.",
     "profile": "Profile",
-    "language": "Language"
+    "language": "Language",
+    "admin": "Admin"
   },
   "Profile": {
     "title": "Profile",
+    "lead": "Your name and phone, whether neighbours see them in the directory, and the app’s language.",
+    "detailsTitle": "Your details",
+    "directoryTitle": "Directory",
+    "languageTitle": "Language",
+    "committeeTitle": "Committee contact",
+    "committeeLead": "Neighbours see this contact on the Committee page, for your role. It is separate from whether the directory shows your own phone and email.",
+    "committeeRole": "Your title",
+    "committeeRoleNone": "No title yet",
+    "committeeRoleHint": "The building’s admin sets titles."
+  },
+  "ProfileForm": {
     "name": "Name",
+    "phone": "Phone",
+    "phoneHint": "Optional. An Israeli number, such as 050‑123‑4567.",
     "email": "Email",
-    "language": "Language",
-    "notSet": "Not set",
-    "languageName": "English"
+    "emailHint": "You sign in with this address, so it can’t be changed here.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "welcomeTitle": "What should neighbours call you?",
+    "welcomeLead": "You’ve joined the building. Add your name, so neighbours and the committee know who you are.",
+    "welcomeDoneTitle": "Thanks, neighbours will see your name.",
+    "continueHome": "Continue to home"
+  },
+  "CommitteeContactForm": {
+    "phone": "Committee phone",
+    "email": "Committee email",
+    "hint": "Optional. Leave both empty to publish no contact.",
+    "save": "Save contact",
+    "saving": "Saving…",
+    "saved": "Saved"
+  },
+  "ContactVisibility": {
+    "label": "Show my phone and email to neighbours",
+    "hint": "When this is off, neighbours see only your name and apartment.",
+    "noPhoneHint": "You haven’t added a phone, so the directory will show only your email."
+  },
+  "LanguageChoice": {
+    "hint": "Saved to your profile and to this device.",
+    "he": "עברית",
+    "en": "English"
+  },
+  "ProfileErrors": {
+    "name": "Enter a name of 2 to 60 characters.",
+    "phone": "Enter an Israeli phone number, such as 050-123-4567.",
+    "committeePhone": "Enter an Israeli phone number, such as 050-123-4567.",
+    "committeeEmail": "Enter an email address, such as name@example.com.",
+    "locale": "Choose Hebrew or English.",
+    "saveFailed": "We couldn’t save the change. Please try again."
+  },
+  "Demo": {
+    "readOnly": "This is a demo building, so changes are turned off."
+  },
+  "Admin": {
+    "title": "Admin",
+    "navLabel": "Admin",
+    "overview": "Overview",
+    "building": "Building",
+    "lead": "The committee’s tools for running the building: its details and money, its apartments and the people in them. What you see here depends on your role.",
+    "buildingLink": "Building details",
+    "buildingLinkBody": "Name, address, quorum and billing, and corrections to the fund.",
+    "noToolsYet": "The committee's tools, such as payments and announcements, will appear here as they're added.",
+    "apartments": "Apartments",
+    "apartmentsLink": "Apartments",
+    "apartmentsLinkBody": "Add, edit and remove apartments, and set when each starts paying.",
+    "people": "People",
+    "peopleLink": "People",
+    "peopleLinkBody": "Roles, committee titles, and who lives in the building.",
+    "noToolsTitle": "Nothing to manage here yet"
+  },
+  "AdminBuilding": {
+    "title": "Building details",
+    "lead": "The building’s name and address, the month billing starts from, and the quorum for the annual meeting. The fund shows its opening balance and every correction to it.",
+    "detailsTitle": "Details",
+    "fundTitle": "Building fund",
+    "openingBalance": "Opening balance",
+    "openingBalanceHint": "Set when the building was created. To correct the fund, add an adjustment.",
+    "adjustmentsTitle": "Adjustments",
+    "emptyTitle": "No adjustments yet",
+    "emptyBody": "If the fund doesn’t match the bank, record the difference here with a reason.",
+    "date": "Date",
+    "amount": "Amount",
+    "recordedBy": "Recorded by"
+  },
+  "BuildingForm": {
+    "name": "Building name",
+    "address": "Address",
+    "quorumPercent": "Quorum for the annual meeting",
+    "quorumHint": "The share of apartments that must take part, in percent.",
+    "billingStartMonth": "Billing starts",
+    "billingStartHint": "Apartments owe the monthly fee from this month on, unless they have their own start. Without a month picker, type it as YYYY-MM, for example 2026-01.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "confirmTitle": "Change when billing starts?",
+    "confirmBody": "Billing would start in {to} instead of {from}. This changes what every apartment owes, past months included.",
+    "saveAnyway": "Save anyway"
+  },
+  "BuildingErrors": {
+    "name": "Enter a name of 2 to 80 characters.",
+    "address": "Keep the address to 160 characters.",
+    "quorumPercent": "Enter a whole number from 1 to 100.",
+    "billingStartMonth": "Choose a month, such as 2026-01.",
+    "saveFailed": "We couldn’t save the details. Please try again."
+  },
+  "AdjustmentForm": {
+    "open": "Add adjustment",
+    "title": "Add an adjustment",
+    "description": "Corrects the building fund. It’s recorded with your name and today’s date.",
+    "direction": "Direction",
+    "in": "Add to the fund",
+    "out": "Take from the fund",
+    "amount": "Amount in shekels",
+    "amountHint": "For example 250 or 1,200.50",
+    "reason": "Reason",
+    "reasonHint": "For example: bank fees not recorded earlier.",
+    "submit": "Add adjustment",
+    "adding": "Adding…",
+    "cancel": "Cancel",
+    "added": "Adjustment added",
+    "close": "Close"
+  },
+  "AdjustmentErrors": {
+    "direction": "Choose whether the money is added to the fund or taken from it.",
+    "amount": "Enter an amount above zero, such as 250 or 1,200.50.",
+    "reason": "Write a reason of 3 to 200 characters.",
+    "addFailed": "We couldn’t add the adjustment. Please try again."
+  },
+  "AdminApartments": {
+    "title": "Apartments",
+    "lead": "Every apartment in the building, with its residents and invite. Add apartments, then invite the people who live in them.",
+    "apartmentHeading": "Apartment <number></number>",
+    "count": "{count, plural, one {One apartment} other {# apartments}}, by floor",
+    "tableLabel": "Apartments",
+    "number": "Apartment",
+    "floor": "Floor",
+    "billingStart": "Billing starts",
+    "residents": "Residents",
+    "actions": "Actions",
+    "buildingDefault": "Same as the building ({month})",
+    "floorValue": "{floor, plural, =0 {Ground floor} other {Floor #}}",
+    "residentCount": "{count, plural, =0 {No residents} one {One resident} other {# residents}}",
+    "emptyTitle": "No apartments yet",
+    "emptyBody": "Add each apartment with its number and floor. Then you can invite the people who live there.",
+    "apartmentTitle": "Apartment {number}",
+    "back": "Back to apartments",
+    "invite": "Invite",
+    "inviteActive": "Active, until {date}",
+    "inviteJoined": "{count, plural, one {Joined: one resident} other {Joined: # residents}}",
+    "inviteUsedUp": "All places used",
+    "inviteNone": "None yet"
+  },
+  "ApartmentForm": {
+    "open": "Add apartment",
+    "addTitle": "Add an apartment",
+    "addDescription": "Its residents join later, with an invite link.",
+    "edit": "Edit",
+    "editLabel": "Edit apartment {number}",
+    "editTitle": "Edit apartment {number}",
+    "editDescription": "The number and floor are how residents and the committee find it.",
+    "number": "Apartment number",
+    "numberHint": "Up to 10 characters, for example 7 or 12A.",
+    "floor": "Floor",
+    "floorHint": "0 is the ground floor; below it, -1 and down.",
+    "billingStartMonth": "Billing starts",
+    "billingStartHint": "Leave it empty to use the building’s month. Without a month picker, type it as YYYY-MM, for example 2026-01.",
+    "add": "Add apartment",
+    "adding": "Adding…",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "added": "Apartment {number} added",
+    "saved": "Apartment {number} saved",
+    "confirmTitle": "Change when this apartment’s billing starts?",
+    "confirmBody": "Billing would start {to} instead of {from}. This changes what the apartment owes, past months included.",
+    "inMonth": "in {month}",
+    "inBuildingMonth": "in the building’s month",
+    "saveAnyway": "Save anyway"
+  },
+  "ApartmentRemove": {
+    "remove": "Remove",
+    "removeLabel": "Remove apartment {number}",
+    "title": "Remove apartment {number}?",
+    "description": "No one lives in it and it has no payments, so nothing else changes. This can’t be undone.",
+    "confirm": "Remove apartment",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removed": "Apartment {number} removed",
+    "blockedTitle": "Apartment {number} can’t be removed yet",
+    "blockedClose": "OK"
+  },
+  "ApartmentErrors": {
+    "number": "Enter a number of 1 to 10 characters.",
+    "floor": "Enter a whole number from -5 to 200.",
+    "billingStartMonth": "Choose a month, such as 2026-01, or leave it empty.",
+    "duplicate": "Apartment {number} already exists.",
+    "notFound": "This apartment no longer exists. Reload the page to see the current list.",
+    "saveFailed": "We couldn’t save the apartment. Please try again.",
+    "removeFailed": "We couldn’t remove the apartment. Please try again.",
+    "blocked": "It can’t be removed yet.",
+    "hasHistory": "It can’t be removed: other records still point to it."
+  },
+  "ApartmentBlockers": {
+    "residents": "Move or remove its {count, plural, one {resident} other {# residents}} first.",
+    "payments": "It has payment history, which is kept.",
+    "feeOverrides": "It has its own fee history, which is kept.",
+    "activeInvites": "It has an active invite. Revoke it first.",
+    "residentsShort": "Has residents",
+    "activeInvitesShort": "Active invite",
+    "paymentsShort": "Has payments",
+    "feeOverridesShort": "Has its own fee"
+  },
+  "InviteErrors": {
+    "apartmentNotFound": "This apartment no longer exists. Reload the page to see the current list.",
+    "inviteNotFound": "This invite is no longer active. Reload the page to see the current one.",
+    "activeExists": "This apartment already has an active invite. Reload the page to see it.",
+    "createFailed": "We couldn’t create the invite. Please try again.",
+    "revokeFailed": "We couldn’t revoke the invite. Please try again.",
+    "noApartments": "Add apartments first, then invite the people who live in them."
+  },
+  "InviteAdmin": {
+    "title": "Invite",
+    "lead": "One link for this apartment: up to 6 people can join with it within 14 days.",
+    "none": "No active invite. Create one and send the link to the people who live here.",
+    "active": "Active invite",
+    "uses": "{uses} of {max} used",
+    "expires": "Expires {date}",
+    "codeHidden": "Code hidden",
+    "onceNote": "For safety, a link is shown only once, right after it’s created. To send it again, create a new invite; the current one then stops working."
+  },
+  "InviteAdminClient": {
+    "create": "Create invite",
+    "creating": "Creating…",
+    "replace": "Create new invite",
+    "replaceTitle": "Replace the invite for apartment {number}?",
+    "replaceBody": "The current link stops working, also for anyone who hasn’t used it yet. People who already joined stay.",
+    "replaceConfirm": "Replace invite",
+    "cancel": "Cancel",
+    "revoke": "Revoke",
+    "revokeLabel": "Revoke the invite for apartment {number}",
+    "revokeTitle": "Revoke the invite for apartment {number}?",
+    "revokeBody": "The link stops working at once. People who already joined stay.",
+    "revokeConfirm": "Revoke invite",
+    "revoking": "Revoking…",
+    "revoked": "Invite revoked",
+    "created": "Invite created",
+    "newTitle": "New invite link",
+    "newLead": "Copy it now: it won’t be shown again.",
+    "link": "Link",
+    "code": "Code",
+    "copyLink": "Copy link",
+    "revokeCancel": "Keep invite"
+  },
+  "InviteAll": {
+    "open": "Invite every apartment",
+    "creating": "Creating invites…",
+    "dialogTitle": "Invite every apartment?",
+    "dialogBody": "{active, plural, one {One apartment already has} other {# apartments already have}} an active invite, whose link was shown only when it was created.",
+    "missingOnly": "{count, plural, one {Only the one without an invite} other {Only the # without an invite}}",
+    "replaceAll": "{count, plural, one {Replace it too} other {Replace all # invites}}",
+    "replaceNote": "Replacing makes the current links stop working.",
+    "cancel": "Cancel",
+    "resultTitle": "{count, plural, one {One new invite link} other {# new invite links}}",
+    "resultLead": "Copy them now: they’re shown only this once. Each link lets up to 6 people join within 14 days.",
+    "skipped": "{count, plural, one {One apartment already had an active invite and isn’t listed.} other {# apartments already had an active invite and aren’t listed.}}",
+    "copyAll": "Copy all",
+    "line": "Apartment {number}:\n{link}",
+    "apartment": "Apartment {number}",
+    "copyLinkLabel": "Copy link for apartment {number}",
+    "sectionTitle": "Invite the residents",
+    "sectionLead": "Create a link for each apartment and send it to the people who live there, for example in the building’s WhatsApp group.",
+    "listLabel": "New invite links",
+    "copyLink": "Copy link",
+    "done": "Done, I copied them",
+    "close": "Close"
+  },
+  "CopyButton": {
+    "copied": "Copied",
+    "copyFailed": "Couldn’t copy automatically. The text is selected: copy it with your device’s copy command."
+  },
+  "JoinCodeForm": {
+    "label": "Invite code",
+    "hint": "10 letters and digits, like ABCDE-23456",
+    "submit": "Continue",
+    "checking": "Checking…"
+  },
+  "JoinErrors": {
+    "format": "Enter the 10 letters and digits of the code, like ABCDE-23456.",
+    "unknown": "We couldn’t find this code. Check it, or ask your building committee for a new link.",
+    "rateLimited": "Too many attempts. Try again in {minutes, plural, one {a minute} other {# minutes}}.",
+    "failed": "Something went wrong. Please try again.",
+    "invalid": "This invite link isn’t valid.",
+    "expired": "This invite has expired. Ask your building committee for a new link.",
+    "full": "This invite has been used up. Ask your building committee for a new link.",
+    "revoked": "This invite was cancelled. Ask your building committee for a new link.",
+    "otherBuilding": "You already belong to another building. Lobbie supports one building per account."
+  },
+  "JoinInvite": {
+    "pageTitle": "Invitation to Lobbie",
+    "pageLead": "An invitation joins you to your apartment in a building on Lobbie, where its residents see payments, announcements and schedules in one place.",
+    "invitedTo": "You’re invited to apartment {number} in {building}",
+    "join": "Join apartment {number}",
+    "joining": "Joining…",
+    "signInLead": "Sign in first; you’ll come back here to join.",
+    "signIn": "Sign in to join",
+    "invalidTitle": "This invite link isn’t valid",
+    "invalidBody": "Check that you opened the whole link, or type the code instead.",
+    "expiredTitle": "This invite has expired",
+    "expiredBody": "Invites work for 14 days. Ask your building committee for a new link.",
+    "fullTitle": "This invite has been used up",
+    "fullBody": "Each invite works for up to 6 people. Ask your building committee for a new link.",
+    "revokedTitle": "This invite was cancelled",
+    "revokedBody": "Ask your building committee for a new link.",
+    "alreadyTitle": "You’re already in apartment {number}",
+    "alreadyBody": "You’re a member of {building}.",
+    "otherTitle": "You already belong to another building",
+    "otherBody": "Your account is a member of {building}. Lobbie supports one building per account, so you can’t join this one.",
+    "goHome": "Go to Home",
+    "enterCode": "Type a code",
+    "validLead": "Join to see your payments, the building fund and what’s happening in the building.",
+    "rateLimitedTitle": "Too many invite links tried",
+    "rateLimitedBody": "To keep invites safe, wait {minutes, plural, one {a minute} other {# minutes}} before opening another one."
+  },
+  "Roles": {
+    "resident": "Resident",
+    "committee": "Committee",
+    "admin": "Admin"
+  },
+  "People": {
+    "title": "People",
+    "lead": "Everyone who has joined the building, with their apartments, role and committee title.",
+    "count": "{count, plural, one {One person} other {# people}} in the building",
+    "searchLabel": "Search people",
+    "searchHint": "A name, email or apartment number.",
+    "tableLabel": "People in the building",
+    "name": "Name",
+    "apartments": "Apartments",
+    "role": "Role",
+    "actions": "Actions",
+    "you": "You",
+    "noApartment": "No apartment",
+    "apartmentLabel": "Apartment {number}",
+    "emptyTitle": "No one has joined yet",
+    "emptyBody": "People join with an invite to their apartment. Create the invites on the apartments page.",
+    "emptyLink": "Go to apartments",
+    "noResultsTitle": "No one matches “{q}”",
+    "noResultsBody": "Try part of a name or email, or an apartment’s exact number, or clear the search."
+  },
+  "PersonRole": {
+    "edit": "Change role",
+    "editLabel": "Change role of {name}",
+    "title": "Role of {name}",
+    "description": "Committee members and admins open the admin section. Only admins manage the building and its people.",
+    "role": "Role",
+    "residentHint": "Sees the building and their own payments.",
+    "committeeHint": "Also opens the admin section.",
+    "adminHint": "Also manages the building, its apartments and its people.",
+    "committeeTitle": "Committee title",
+    "committeeTitleHint": "Optional, up to 40 characters, such as Chair or Treasurer.",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "saved": "{name}’s role is saved",
+    "selfDemoteWarning": "You will lose the admin pages and go to Home as soon as you save."
+  },
+  "PersonRemove": {
+    "remove": "Remove",
+    "removeLabel": "Remove {name} from the building",
+    "title": "Remove {name} from the building?",
+    "description": "This removes {name} from all their apartments and from the building, and they lose access to it at once. Their account remains: a new invite brings them back.",
+    "confirm": "Remove from building",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removed": "{name} was removed from the building",
+    "selfDescription": "This removes you from all your apartments and from the building. You will lose access to this building at once. Your account remains: a new invite brings you back."
+  },
+  "MemberErrors": {
+    "role": "Choose a role.",
+    "committeeTitle": "Use up to 40 characters.",
+    "notFound": "This person is no longer in the building. Reload the page to see the current list.",
+    "lastAdminDemote": "This is the building’s only admin. Make someone else an admin first.",
+    "lastAdminRemove": "This is the building’s only admin, so they can’t be removed. Make someone else an admin first.",
+    "saveFailed": "We couldn’t save the role. Please try again.",
+    "removeFailed": "We couldn’t remove this person. Please try again."
+  },
+  "Residents": {
+    "title": "Residents",
+    "empty": "No one lives here yet. Create an invite above.",
+    "you": "You"
+  },
+  "ResidentsClient": {
+    "ownership": "{name} lives here as",
+    "owner": "Owner",
+    "tenant": "Tenant",
+    "remove": "Remove",
+    "removeLabel": "Remove {name} from apartment {number}",
+    "removeTitle": "Remove {name} from apartment {number}?",
+    "stays": "{name} stays in the building, in their other apartments.",
+    "leaves": "{name} leaves the building too: they’ll lose access. Their account remains, and a new invite brings them back.",
+    "confirm": "Remove from apartment",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "removed": "{name} no longer lives in apartment {number}"
+  },
+  "ResidentErrors": {
+    "notFound": "This person no longer lives in this apartment. Reload the page to see the current list.",
+    "saveFailed": "We couldn’t save the change. Please try again.",
+    "removeFailed": "We couldn’t remove the resident. Please try again.",
+    "lastAdmin": "This is the building’s only admin, and this is their last apartment. Make someone else an admin first."
+  },
+  "Search": {
+    "clear": "Clear",
+    "clearLabel": "Clear the search"
+  },
+  "BuildingHub": {
+    "title": "Building",
+    "directory": "Directory",
+    "directoryBody": "Who lives in each apartment, and how to reach the neighbours who share their details.",
+    "committee": "Committee",
+    "committeeBody": "Who runs the building, and how to reach them.",
+    "back": "Back to Building"
+  },
+  "Directory": {
+    "title": "Directory",
+    "lead": "Phone numbers and emails appear only for neighbours who chose to share them.",
+    "searchLabel": "Search the directory",
+    "searchHint": "A name, or an apartment number.",
+    "floor": "{floor, plural, =0 {Ground floor} other {Floor #}}",
+    "apartment": "Apartment {number}",
+    "owner": "Owner",
+    "tenant": "Tenant",
+    "emptyTitle": "No one has joined yet",
+    "emptyBody": "Neighbours appear here once they join with the invite to their apartment.",
+    "noResultsTitle": "No one matches “{q}”",
+    "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search.",
+    "yourApartment": "Your apartment",
+    "notJoined": "Not in Lobbie yet",
+    "unnamed": "A neighbour who hasn’t added a name"
+  },
+  "Committee": {
+    "title": "Committee",
+    "lead": "Who runs the building. Each member chooses the contact they publish for the role.",
+    "emptyTitle": "No committee yet",
+    "emptyBody": "Committee members appear here once the admin names them.",
+    "noContact": "No contact published",
+    "unnamed": "A member who hasn’t added a name"
+  },
+  "Contact": {
+    "phone": "Phone:",
+    "email": "Email:"
   }
 }

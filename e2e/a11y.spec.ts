@@ -1,7 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { useSessionOf } from './helpers/auth'
+import { signIn, useSessionOf } from './helpers/auth'
+import { messages, translator } from './helpers/copy'
+import { deleteInvitesOf, deleteUser } from './helpers/db'
 
 // WCAG 2.2 AA (spec §8): zero violations on every page, in both languages.
 const wcag = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -59,6 +61,208 @@ for (const locale of ['he', 'en'] as const) {
       await page.goto(`${prefix}/profile`)
       await expect(page.getByRole('main')).toContainText('resident1@example.com')
       await expectNoViolations(page)
+    })
+
+    test('Profile of a committee member, with the committee contact', async ({ page }) => {
+      await useSessionOf(page, 'committee1@example.com')
+      await page.goto(`${prefix}/profile`)
+      await expect(
+        page.getByRole('region', { name: messages[locale].Profile.committeeTitle, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Admin', async ({ page }) => {
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: messages[locale].Admin.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Admin: building details, and the adjustment dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/building`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: text.AdminBuilding.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await page.getByRole('button', { name: text.AdjustmentForm.open, exact: true }).click()
+      await expect(
+        page.getByRole('dialog', { name: text.AdjustmentForm.title, exact: true }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: apartments, and the add dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/apartments`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: text.AdminApartments.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await page
+        .getByRole('main')
+        .getByRole('button', { name: text.ApartmentForm.open, exact: true })
+        .click()
+      await expect(
+        page.getByRole('dialog', { name: text.ApartmentForm.addTitle, exact: true }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: one apartment', async ({ page }) => {
+      const apartment = translator(locale)('AdminApartments.apartmentTitle', { number: '1' })
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/apartments`)
+      await page.getByRole('main').getByRole('link', { name: apartment, exact: true }).click()
+      await expect(
+        page.getByRole('heading', { level: 1, name: apartment, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Admin: people, and the role dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/people`)
+      await expect(
+        page.getByRole('heading', { level: 1, name: text.People.title, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      const name = 'מיכל אברהם'
+      await page
+        .getByRole('main')
+        .getByRole('button', {
+          name: translator(locale)('PersonRole.editLabel', { name }),
+          exact: true,
+        })
+        .click()
+      await expect(
+        page.getByRole('dialog', {
+          name: translator(locale)('PersonRole.title', { name }),
+          exact: true,
+        }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: people, a search with no results', async ({ page }) => {
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/people?q=nobody-here`)
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: translator(locale)('People.noResultsTitle', { q: 'nobody-here' }),
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Building', async ({ page }) => {
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/building`)
+      await expect(
+        page.getByRole('heading', {
+          level: 1,
+          name: messages[locale].BuildingHub.title,
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Building: directory', async ({ page }) => {
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/building/directory`)
+      // Once the floors have streamed in, so axe checks them rather than the skeleton.
+      await expect(
+        page.getByRole('main').getByRole('heading', {
+          level: 2,
+          name: translator(locale)('Directory.floor', { floor: 1 }),
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Building: committee', async ({ page }) => {
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/building/committee`)
+      await expect(
+        page.getByRole('main').getByRole('heading', { level: 2, name: 'דוד כהן', exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Join: an invite, signed out', async ({ page }) => {
+      // An unknown code: the card, its message and its link, with nothing to clean up.
+      await page.goto(`${prefix}/join/ABCDE23456`)
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: messages[locale].JoinInvite.invalidTitle,
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test('Join: code entry', async ({ page }, testInfo) => {
+      // Someone without a building: Home sends them to /join, where sign-in lands.
+      const newcomer = `join-a11y-${locale}-${testInfo.project.name}@example.com`
+      try {
+        await signIn(page, newcomer, { locale, landing: `${prefix}/join` })
+        await expect(
+          page.getByLabel(messages[locale].JoinCodeForm.label, { exact: true }),
+        ).toBeVisible()
+        await expectNoViolations(page)
+      } finally {
+        await deleteUser(newcomer)
+      }
+    })
+
+    test('Admin: one apartment with a new invite, and the revoke dialog', async ({ page }) => {
+      const text = messages[locale]
+      const apartment = translator(locale)('AdminApartments.apartmentTitle', { number: 'e2e-3' })
+      await useSessionOf(page, 'admin@example.com')
+      try {
+        await page.goto(`${prefix}/admin/apartments`)
+        await page.getByRole('main').getByRole('link', { name: apartment, exact: true }).click()
+        const invite = page.getByRole('region', { name: text.InviteAdmin.title, exact: true })
+        await invite
+          .getByRole('button', { name: text.InviteAdminClient.create, exact: true })
+          .click()
+        await expect(
+          page.getByRole('group', { name: text.InviteAdminClient.newTitle, exact: true }),
+        ).toBeVisible()
+        await expectNoViolations(page)
+
+        await invite
+          .getByRole('button', {
+            name: translator(locale)('InviteAdminClient.revokeLabel', { number: 'e2e-3' }),
+            exact: true,
+          })
+          .click()
+        await expect(page.getByRole('alertdialog')).toBeVisible()
+        // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+        await page.waitForFunction(() => document.getAnimations().length === 0)
+        await expectNoViolations(page)
+      } finally {
+        await deleteInvitesOf('e2e-3')
+      }
     })
 
     test.describe('dark', () => {

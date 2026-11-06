@@ -1,0 +1,46 @@
+import { getLocale, getTranslations } from 'next-intl/server'
+import { remove, update } from '@/app/lib/actions/apartments'
+import type { ApartmentListItem } from '@/app/lib/definitions'
+import { blockersOf, describeBlockers, summarizeBlockers } from '@/app/lib/utils/apartment-blockers'
+import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
+import RemoveApartmentDialog from '@/app/ui/admin/remove-apartment-dialog'
+
+type Props = {
+  apartment: ApartmentListItem
+  /** Which of the page's two layouts this is in, so the ids stay unique. */
+  layout: 'table' | 'cards'
+}
+
+/** A row's "Edit" and "Remove", the second with the reason it is blocked, if it is. */
+export default async function ApartmentRowActions({ apartment, layout }: Props) {
+  const [locale, tBlockers] = await Promise.all([getLocale(), getTranslations('ApartmentBlockers')])
+  const blockers = blockersOf(apartment)
+
+  return (
+    // Edit and Remove side by side; a blocked removal's reason takes the next line.
+    <div className="flex flex-wrap items-start gap-x-2 gap-y-1 [&>button]:shrink-0">
+      <ApartmentDialog
+        action={update.bind(null, locale, apartment.id, false)}
+        confirmedAction={update.bind(null, locale, apartment.id, true)}
+        saved={{
+          number: apartment.number,
+          floor: String(apartment.floor),
+          billingStartMonth: apartment.billingStartMonth ?? '',
+        }}
+      />
+      <RemoveApartmentDialog
+        action={remove.bind(null, locale, apartment.id)}
+        number={apartment.number}
+        blocked={
+          blockers.length > 0
+            ? {
+                summary: summarizeBlockers(tBlockers, blockers),
+                reason: describeBlockers(tBlockers, blockers),
+              }
+            : null
+        }
+        reasonId={`remove-reason-${layout}-${apartment.id}`}
+      />
+    </div>
+  )
+}

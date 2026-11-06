@@ -64,7 +64,8 @@ async function signInAs(email: string) {
 let outsiderEmail: string
 
 beforeAll(async () => {
-  await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
+  // As a demo building, so the member's `isDemo` is shown to come from the building.
+  await seed(db, { now: new Date('2026-11-02T10:00:00Z'), demo: true })
   outsiderEmail = 'new@example.com'
   await db.insert(user).values({ name: '', email: outsiderEmail, emailVerified: true })
 })

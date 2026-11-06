@@ -159,11 +159,18 @@ app/
     auth.ts  auth-options.ts      Better Auth; the options that shape its schema (CLI input)
     definitions.ts  session.ts  authz.ts  mail.ts  storage.ts  logger.ts  rate-limit.ts
     safe-fetch.ts
+    admin-guard.ts                lockMember: the row locks and last-admin guard of role
+                                  changes and removals
+    join-limits.ts                the rate limits of joining (per person, and misses per IP)
     data/<area>.ts                one async function per query, building-scoped
     data/cache-tags.ts            the `building:<id>` tags of the cached building-wide reads
     actions/<area>.ts             'use server'; Zod schemas and State types next to each action
+    actions/shared.ts             helpers the actions share (demo refusal, page refreshes); not
+                                  'use server'
     utils/money.ts fees.ts status.ts ledger.ts recurrence.ts meeting.ts ics.ts
           dates.ts redirect.ts app-sections.ts roles.ts contrast.ts session-cache.ts
+          invite-code.ts join-view.ts pg-error.ts phone.ts search.ts directory.ts
+          apartment-blockers.ts client-ip.ts form.ts
     test/db.ts                    PGlite + migrations, per test file
   ui/<area>/*.tsx  ui/skeletons.tsx  ui/web-vitals.tsx
   ui/tokens.ts                    the palette in TypeScript (emails, contrast test)
@@ -232,7 +239,7 @@ reference `(apartmentId, buildingId)`.
 | `apartments` | id, buildingId, number text, floor int, billingStartMonth null, createdAt | `UNIQUE(buildingId, number)`, `UNIQUE(id, buildingId)` |
 | `building_members` | id, userId **unique**, buildingId, role enum(resident, committee, admin), committeeTitle null, showContact bool default false, committeePhone null, committeeEmail null, createdAt | idx buildingId |
 | `apartment_residents` | userId, apartmentId, isOwner bool, createdAt | PK (userId, apartmentId); idx apartmentId |
-| `invites` | id, buildingId, apartmentId, codeHash, maxUses (default 6), uses int default 0, createdBy, expiresAt, revokedAt null | `UNIQUE(codeHash)`; FK (apartmentId, buildingId); `CHECK uses <= maxUses` |
+| `invites` | id, buildingId, apartmentId, codeHash, maxUses (default 6), uses int default 0, createdBy null, expiresAt, revokedAt null | `UNIQUE(codeHash)`; FK (apartmentId, buildingId); createdBy `ON DELETE SET NULL` (an invite outlives the admin who made it); `CHECK uses <= maxUses` |
 | `rate_limits` | key text, windowStart timestamptz, count int | PK (key, windowStart); old windows pruned on write |
 | `fee_rates` | id, buildingId, apartmentId null (null = default), amountAgorot, effectiveFrom month, createdBy, createdAt | `UNIQUE NULLS NOT DISTINCT (buildingId, apartmentId, effectiveFrom)`; FK (apartmentId, buildingId); idx (buildingId, effectiveFrom) |
 | `payments` | id, buildingId, apartmentId, month, amountAgorot, paidOn date, method enum(cash, transfer, check, bit, other), note, recordedBy, createdAt, voidedAt/voidedBy/voidReason null | FK (apartmentId, buildingId); idx (apartmentId, month), (buildingId, month); `CHECK` void columns all-or-none |
@@ -280,8 +287,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 | `/schedule` | What happens this week | prev/next week (`?week=YYYY-MM-DD`, a Sunday) | empty week, cancelled/moved marked | `data/schedules.occurrences(range)` | phone day list; desktop 7 columns |
 | `/building` | Hub | open a section | cameras link only if any visible | `data/cameras.visibleCount` | link list; desktop shows the latest announcements beside it |
 | `/building/announcements` | Read posts | "Load more" (`?before=` cursor) | empty, pinned first | `data/announcements.feed` | single column, 65ch |
-| `/building/directory` | Who lives where | search (`?q=`, debounced) | no results, contact hidden | `data/directory.list` (never selects hidden contacts) | grouped by floor; desktop table |
-| `/building/committee` | Who runs the building | call / email | no committee yet, no published contact | `data/committee.list` | cards |
+| `/building/directory` | Who lives where | search (`?q=`, debounced) | no results, contact hidden | `data/directory.list` (never selects hidden contacts) | grouped by floor; cards, grid on desktop |
+| `/building/committee` | Who runs the building | call / email | no committee yet, no published contact | `data/directory.committee` | cards |
 | `/building/parking` | Who parks where | — | my spots first, guest spots, none yet | `data/parking.list` | grouped list; desktop grid |
 | `/building/cameras` | Live views | refresh a snapshot | none visible → 404, one failing → inline error with retry | `data/cameras.listVisible` (embed URLs only for allowed roles; snapshot URLs never selected) | 1 column phone, 2 columns desktop, 16:9 |
 | `/meeting` | Vote and see the result | mark each slot | no poll, open, closed, confirmed (+ calendar, minutes), two apartments (`?apartment=`) | `data/meeting.current`, `ranking`; `actions/meeting.vote` (save on change, `useOptimistic`) | slot cards; desktop table with tallies |
@@ -295,8 +302,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 | `/admin` | Overview: who's behind and by how much, quick links | "Record a payment" | `data/payments.arrears`, counts |
 | `/admin/building` ★ | Building details, balance adjustments | Save | `data/buildings.get` / `actions/buildings.update`, `addAdjustment` |
 | `/admin/apartments` ★ | Apartments and invites | Add apartment; "Create invites for all" | `data/apartments.list` / `actions/apartments.*`, `actions/invites.createAll` |
-| `/admin/apartments/[id]` ★ | One apartment: residents, invite, fee override | Create invite | `data/apartments.get`, `data/invites.forApartment` / `actions/invites.create`, `revoke`, `actions/members.*`, `actions/fees.setOverride` |
-| `/admin/people` ★ | Everyone in the building: role, title, apartments | Change role | `data/members.list` / `actions/members.setRole`, `remove` |
+| `/admin/apartments/[id]` ★ | One apartment: residents, invite, fee override | Create invite | `data/apartments.get`, `residentsOf`, `data/invites.forApartment` / `actions/invites.create`, `revoke`, `actions/residents.setOwnership`, `removeFromApartment`, `actions/fees.setOverride` |
+| `/admin/people` ★ | Everyone in the building: role, title, apartments | Change role | `data/members.list` / `actions/members.setRole`, `removeFromBuilding` |
 | `/admin/fees` | Building fee and overrides | Set fee from month | `data/fees.list` / `actions/fees.setDefault` |
 | `/admin/payments` | Apartment × month grid (`?year=`), arrears, record, void, remind | Record payment | `data/payments.grid` / `actions/payments.record`, `void`, `actions/reminders.send` |
 | `/admin/expenses` | Expenses with receipts | Add expense | `data/expenses.list` / `actions/expenses.record`, `void` |
@@ -337,11 +344,13 @@ rgb(31 27 22 / .05)` (none in dark; a border instead). Motion 180 ms ease-out; n
 | `--color-text` | `#1F1B16` | `#F3EEE7` | 16.2 / 16.0 |
 | `--color-text-muted` | `#6B6259` | `#B3A89B` | 5.6 / 7.9 |
 | `--color-accent` (buttons, links, focus) | `#B54E29` | `#E07A52` | 4.9 / 6.2 |
+| `--color-accent-strong` (hovered, pressed button) | `#9A4222` | `#E8916F` | on-accent 6.6 / 7.7 |
 | `--color-on-accent` | `#FFFFFF` | `#16130F` | 5.1 / 6.2 |
 | `--color-success` (paid) | `#2F7A4F` | `#5FB384` | 4.9 / 7.3 |
 | `--color-warning` (due, text) | `#8A5A12` | `#E0A94A` | 5.6 / 8.8 |
 | `--color-warning-fill` (chips, bars) | `#B7791F` | `#E0A94A` | non-text 3.4 |
 | `--color-danger` (overdue) | `#B23A3A` | `#EC7B7B` | 5.6 / 6.8 |
+| `--color-danger-strong` (hovered, pressed) | `#973131` | `#F09393` | on-accent 7.5 / 8.2 |
 
 (The brief's `#C2562F` is exactly 4.50:1 on white; `#B54E29` keeps the colour with margin.)
 Status is never colour alone: every chip has a word and an icon. Focus ring: 2 px accent

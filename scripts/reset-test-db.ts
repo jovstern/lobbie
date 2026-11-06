@@ -5,7 +5,8 @@ import { checkResetTarget } from './reset-guard'
 import { runScript } from './run'
 import { seed } from './seed'
 
-// Wipes the e2e database (E2E_DATABASE_URL), then migrates and seeds it. Never the app's.
+// Wipes the e2e database (E2E_DATABASE_URL), then migrates and seeds it, with the e2e
+// fixtures. Never the app's.
 void runScript('db:reset-test', async () => {
   const target = checkResetTarget(process.env)
   if (!target.ok) throw new Error(target.reason)
@@ -16,7 +17,8 @@ void runScript('db:reset-test', async () => {
     await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`)
     await db.execute(sql`CREATE SCHEMA public`)
     await migrate(db, { migrationsFolder: 'drizzle' })
-    await seed(db)
+    // With the e2e fixtures, which the dev seed never creates.
+    await seed(db, { e2e: true })
   } finally {
     await close()
   }

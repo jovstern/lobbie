@@ -97,3 +97,50 @@ describe('auth', () => {
     expect(stored).toMatchObject({ name: '', phone: null, locale: 'he' })
   })
 })
+
+describe('signing in with a saved language', () => {
+  async function verifyAs(email: string, locale: string, callbackURL: string) {
+    await getAuth().api.signInMagicLink({
+      body: { email, callbackURL, metadata: { locale: 'he' } },
+      headers: new Headers(),
+    })
+    const { url } = vi.mocked(sendMagicLinkEmail).mock.calls.at(-1)?.[0] ?? { url: '' }
+    // The account exists before its link is followed, with the language it saved.
+    await db
+      .insert(user)
+      .values({ name: '', email, locale })
+      .onConflictDoUpdate({ target: user.email, set: { locale } })
+    return getAuth().handler(new Request(url))
+  }
+
+  it('lands in English with the cookie set, when English is saved', async () => {
+    const response = await verifyAs('lea@example.com', 'en', '/money')
+
+    expect(response.status).toBe(302)
+    expect(response.headers.get('location')).toBe(`${baseURL}/en/money`)
+    const cookies = response.headers.getSetCookie()
+    expect(cookies.some((cookie) => cookie.startsWith('better-auth.session_token='))).toBe(true)
+    const locale = cookies.find((cookie) => cookie.startsWith('NEXT_LOCALE='))
+    expect(locale).toMatch(/^NEXT_LOCALE=en;/)
+    expect(locale).toContain('Path=/')
+    expect(locale).toContain('Max-Age=31536000')
+  })
+
+  it('stays in Hebrew when Hebrew is saved', async () => {
+    const response = await verifyAs('gil@example.com', 'he', '/')
+
+    expect(response.headers.get('location')).toBe(`${baseURL}/`)
+    expect(
+      response.headers.getSetCookie().find((cookie) => cookie.startsWith('NEXT_LOCALE=')),
+    ).toMatch(/^NEXT_LOCALE=he;/)
+  })
+
+  it('leaves a failed link alone', async () => {
+    const response = await getAuth().handler(
+      new Request(`${baseURL}/api/auth/magic-link/verify?token=nope&callbackURL=%2F`),
+    )
+
+    expect(response.headers.get('location')).toContain('error=INVALID_TOKEN')
+    expect(response.headers.getSetCookie().join()).not.toContain('NEXT_LOCALE=')
+  })
+})

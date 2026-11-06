@@ -1,0 +1,504 @@
+'use server'
+
+import { and, eq, notExists, sql } from 'drizzle-orm'
+import { unstable_rethrow } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import { z } from 'zod'
+import { demoRefusal, refreshApartmentPages } from '@/app/lib/actions/shared'
+import { authorizeAction } from '@/app/lib/authz'
+import { byFloorAndNumber } from '@/app/lib/data/apartments'
+import { inviteFlags, isActiveInvite } from '@/app/lib/data/invites'
+import { db } from '@/app/lib/db'
+import type { CreatedInvite, Member } from '@/app/lib/definitions'
+import { requireEnv } from '@/app/lib/env'
+import { joinAttempt, joinMiss } from '@/app/lib/join-limits'
+import { logger } from '@/app/lib/logger'
+import {
+  apartmentResidents,
+  apartments,
+  buildingMembers,
+  buildings,
+  invites,
+} from '@/app/lib/schema'
+import { getSession } from '@/app/lib/session'
+import { hasGivenName } from '@/app/lib/utils/display-name'
+import { typed } from '@/app/lib/utils/form'
+import {
+  formatInviteCode,
+  generateInviteCode,
+  hashInviteCode,
+  inviteLink,
+  isInviteCode,
+  normalizeInviteCode,
+} from '@/app/lib/utils/invite-code'
+import { inviteStatus, type InviteStatus } from '@/app/lib/utils/join-view'
+import { redirect } from '@/i18n/navigation'
+import { resolveLocale } from '@/i18n/locale'
+
+// Invites are read by no cached data (the apartments list counts them uncached), so these
+// actions update no tag; they refresh the admin's apartment pages.
+
+const inviteLifetime = sql`now() + interval '14 days'`
+
+/** A new code for an apartment: the row to insert (hash only) and what is shown once. */
+function newInvite(member: Member, apartment: { id: string; number: string }) {
+  const code = generateInviteCode()
+  return {
+    row: {
+      buildingId: member.buildingId,
+      apartmentId: apartment.id,
+      codeHash: hashInviteCode(code),
+      createdBy: member.userId,
+      expiresAt: inviteLifetime,
+    },
+    shown: {
+      apartmentId: apartment.id,
+      apartmentNumber: apartment.number,
+      code: formatInviteCode(code),
+      link: inviteLink(requireEnv('BETTER_AUTH_URL'), code),
+    } satisfies CreatedInvite,
+  }
+}
+
+export type CreateInviteState = {
+  message?: string | null
+  /** The new invite, with its code: shown this once, never stored or logged. */
+  created?: CreatedInvite & { inviteId: string }
+}
+
+type Creation =
+  | { kind: 'created'; invite: CreatedInvite & { inviteId: string } }
+  | { kind: 'missing' }
+  | { kind: 'active-exists' }
+
+/**
+ * A new invite for one apartment of the admin's building (R9). With `replace`, the apartment's
+ * active invite is revoked in the same transaction; without it, an active invite is left alone
+ * and the admin is told. Admins only.
+ */
+export async function create(
+  locale: string,
+  apartmentId: string,
+  replace: boolean,
+): Promise<CreateInviteState> {
+  const lang = resolveLocale(locale)
+  const authorization = await authorizeAction('admin', lang)
+  if (!authorization.ok) return { message: authorization.message }
+  const { member } = authorization
+
+  const t = await getTranslations({ locale: lang, namespace: 'InviteErrors' })
+  if (!z.uuid().safeParse(apartmentId).success) return { message: t('apartmentNotFound') }
+  if (member.isDemo) return { message: await demoRefusal(lang) }
+
+  let creation: Creation
+  try {
+    creation = await db.transaction(async (tx): Promise<Creation> => {
+      // Locked, so two admins creating at once cannot both leave an active invite. NO KEY
+      // UPDATE, not UPDATE: a redeem holding this apartment's invite inserts a resident, whose
+      // foreign key takes KEY SHARE here, which UPDATE would block (a deadlock). Removing the
+      // apartment (FOR UPDATE) still waits for this.
+      const [apartment] = await tx
+        .select({ id: apartments.id, number: apartments.number })
+        .from(apartments)
+        .where(and(eq(apartments.id, apartmentId), eq(apartments.buildingId, member.buildingId)))
+        .for('no key update')
+      if (!apartment) return { kind: 'missing' }
+
+      const ofApartment = and(
+        eq(invites.apartmentId, apartment.id),
+        eq(invites.buildingId, member.buildingId),
+        isActiveInvite,
+      )
+      if (replace) {
+        await tx
+          .update(invites)
+          .set({ revokedAt: sql`now()` })
+          .where(ofApartment)
+      }
+
+      // The active-invite check and the insert are one statement: it runs after the lock above,
+      // so its snapshot sees any invite a concurrent create committed while this one waited.
+      // No row back means the apartment already has an active invite (never after a replace).
+      // Drizzle's INSERT…SELECT names every column, so the defaults are spelled out here, taken
+      // from the columns' own definitions where Drizzle keeps them (max uses, uses); id, created_at
+      // and revoked_at mirror defaultRandom(), defaultNow() and the nullable column.
+      const { row, shown } = newInvite(member, apartment)
+      const [saved] = await tx
+        .insert(invites)
+        .select(
+          tx
+            .select({
+              id: sql<string>`gen_random_uuid()`.as('id'),
+              buildingId: sql<string>`${row.buildingId}::uuid`.as('building_id'),
+              apartmentId: apartments.id,
+              codeHash: sql<string>`${row.codeHash}::text`.as('code_hash'),
+              maxUses: sql<number>`${invites.maxUses.default}::integer`.as('max_uses'),
+              uses: sql<number>`${invites.uses.default}::integer`.as('uses'),
+              createdBy: sql<string>`${row.createdBy}::uuid`.as('created_by'),
+              createdAt: sql<Date>`now()`.as('created_at'),
+              expiresAt: sql<Date>`${row.expiresAt}`.as('expires_at'),
+              revokedAt: sql<Date | null>`NULL::timestamptz`.as('revoked_at'),
+            })
+            .from(apartments)
+            .where(
+              and(
+                eq(apartments.id, apartment.id),
+                notExists(
+                  tx
+                    .select({ one: sql`1` })
+                    .from(invites)
+                    .where(ofApartment),
+                ),
+              ),
+            ),
+        )
+        .returning({ id: invites.id })
+      if (!saved) return { kind: 'active-exists' }
+      return { kind: 'created', invite: { ...shown, inviteId: saved.id } }
+    })
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to create an invite', {
+      area: 'actions/invites',
+      route: '/admin/apartments/[id]',
+      buildingId: member.buildingId,
+      apartmentId,
+      err,
+    })
+    return { message: t('createFailed') }
+  }
+
+  if (creation.kind === 'missing') return { message: t('apartmentNotFound') }
+  if (creation.kind === 'active-exists') return { message: t('activeExists') }
+
+  refreshApartmentPages()
+  return { created: creation.invite, message: null }
+}
+
+/** Which apartments "Create invites for all" covers. */
+export type CreateAllMode = 'missing' | 'all'
+
+export type CreateAllState = {
+  message?: string | null
+  /** The new links in the list's order: shown this once, never stored or logged. */
+  created?: CreatedInvite[]
+  /** Apartments left out because they already had an active invite (`missing` mode). */
+  skipped?: number
+}
+
+/**
+ * A fresh invite for every apartment of the admin's building that has no active one
+ * (`missing`), or for every apartment, revoking the active ones (`all`), in one transaction
+ * (R9). Admins only.
+ */
+export async function createAll(locale: string, mode: CreateAllMode): Promise<CreateAllState> {
+  const lang = resolveLocale(locale)
+  const authorization = await authorizeAction('admin', lang)
+  if (!authorization.ok) return { message: authorization.message }
+  const { member } = authorization
+
+  const t = await getTranslations({ locale: lang, namespace: 'InviteErrors' })
+  if (mode !== 'missing' && mode !== 'all') return { message: t('createFailed') }
+  if (member.isDemo) return { message: await demoRefusal(lang) }
+
+  let result: { created: CreatedInvite[]; skipped: number }
+  try {
+    result = await db.transaction(async (tx) => {
+      const ofBuilding = eq(invites.buildingId, member.buildingId)
+      // Locked like a single create (NO KEY UPDATE, see there), so no apartment ends up with
+      // two active invites.
+      const all = await tx
+        .select({ id: apartments.id, number: apartments.number })
+        .from(apartments)
+        .where(eq(apartments.buildingId, member.buildingId))
+        .orderBy(...byFloorAndNumber)
+        .for('no key update')
+
+      let targets = all
+      if (mode === 'all') {
+        await tx
+          .update(invites)
+          .set({ revokedAt: sql`now()` })
+          .where(and(ofBuilding, isActiveInvite))
+      } else {
+        const active = await tx
+          .selectDistinct({ apartmentId: invites.apartmentId })
+          .from(invites)
+          .where(and(ofBuilding, isActiveInvite))
+        const invited = new Set(active.map((row) => row.apartmentId))
+        targets = all.filter((apartment) => !invited.has(apartment.id))
+      }
+      if (targets.length === 0) return { created: [], skipped: all.length }
+
+      const made = targets.map((apartment) => newInvite(member, apartment))
+      await tx.insert(invites).values(made.map(({ row }) => row))
+      return { created: made.map(({ shown }) => shown), skipped: all.length - targets.length }
+    })
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to create invites for all apartments', {
+      area: 'actions/invites',
+      route: '/admin/apartments',
+      buildingId: member.buildingId,
+      mode,
+      err,
+    })
+    return { message: t('createFailed') }
+  }
+
+  if (result.created.length === 0 && result.skipped === 0) return { message: t('noApartments') }
+  refreshApartmentPages()
+  return { created: result.created, skipped: result.skipped, message: null }
+}
+
+export type RevokeInviteState = {
+  message?: string | null
+  /** Set once the invite stops working; the dialog closes. */
+  revoked?: boolean
+}
+
+/** Stops an invite of the admin's building from working (R9). Admins only. */
+export async function revoke(locale: string, inviteId: string): Promise<RevokeInviteState> {
+  const lang = resolveLocale(locale)
+  const authorization = await authorizeAction('admin', lang)
+  if (!authorization.ok) return { message: authorization.message }
+  const { member } = authorization
+
+  const t = await getTranslations({ locale: lang, namespace: 'InviteErrors' })
+  if (!z.uuid().safeParse(inviteId).success) return { message: t('inviteNotFound') }
+  if (member.isDemo) return { message: await demoRefusal(lang) }
+
+  try {
+    const revoked = await db
+      .update(invites)
+      .set({ revokedAt: sql`now()` })
+      .where(
+        and(
+          eq(invites.id, inviteId),
+          eq(invites.buildingId, member.buildingId),
+          sql`${invites.revokedAt} IS NULL`,
+        ),
+      )
+      .returning({ id: invites.id })
+    if (revoked.length === 0) return { message: t('inviteNotFound') }
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to revoke an invite', {
+      area: 'actions/invites',
+      route: '/admin/apartments/[id]',
+      buildingId: member.buildingId,
+      inviteId,
+      err,
+    })
+    return { message: t('revokeFailed') }
+  }
+
+  refreshApartmentPages()
+  return { revoked: true, message: null }
+}
+
+export type JoinCodeState = {
+  /** What was typed, so the field keeps it after an error. */
+  code?: string
+  error?: string
+}
+
+/**
+ * `/join`'s code entry: a code that names an invite opens its page, `/join/<code>`, which says
+ * whether it can be used. A malformed or unknown code is a field error. Rate-limited.
+ */
+export async function lookup(
+  locale: string,
+  _prevState: JoinCodeState,
+  formData: FormData,
+): Promise<JoinCodeState> {
+  const lang = resolveLocale(locale)
+  const t = await getTranslations({ locale: lang, namespace: 'JoinErrors' })
+  const typedCode = typed(formData, 'code')
+
+  const session = await getSession()
+  if (!session) {
+    const tAuthz = await getTranslations({ locale: lang, namespace: 'Authz' })
+    return { code: typedCode, error: tAuthz('signedOut') }
+  }
+
+  const code = normalizeInviteCode(typedCode)
+  if (!isInviteCode(code)) return { code: typedCode, error: t('format') }
+
+  try {
+    const retryAfterSeconds = await joinAttempt(session.user.id)
+    if (retryAfterSeconds > 0) {
+      return {
+        code: typedCode,
+        error: t('rateLimited', { minutes: Math.ceil(retryAfterSeconds / 60) }),
+      }
+    }
+    const [found] = await db
+      .select({ id: invites.id })
+      .from(invites)
+      .where(eq(invites.codeHash, hashInviteCode(code)))
+    if (!found) {
+      await joinMiss()
+      return { code: typedCode, error: t('unknown') }
+    }
+  } catch (err) {
+    unstable_rethrow(err)
+    // Never the code: it is a bearer secret.
+    logger.error('Failed to look up an invite code', {
+      area: 'actions/invites',
+      route: '/join',
+      err,
+    })
+    return { code: typedCode, error: t('failed') }
+  }
+
+  return redirect({ href: `/join/${code}`, locale: lang })
+}
+
+/** The page binds its locale and the code from its URL. */
+export type RedeemContext = { locale: string; code: string }
+
+export type RedeemState = { message?: string | null }
+
+type Redemption =
+  | { kind: 'joined'; apartmentId: string }
+  | { kind: 'already-member' | 'other-building' | 'demo' }
+  | { kind: 'refused'; status: Exclude<InviteStatus, 'valid'> | 'invalid' }
+
+/** Ends the transaction without writing anything, with the reason. */
+class RedemptionRefused extends Error {
+  readonly redemption: Redemption
+
+  constructor(redemption: Redemption) {
+    super(redemption.kind)
+    this.redemption = redemption
+  }
+}
+
+/**
+ * Joins the signed-in person to the invite's apartment (R9), atomically: the use is taken by a
+ * guarded `UPDATE`, so two people cannot both take the last one; then the membership (resident)
+ * and the apartment. One building per user: a member of another building is refused and the
+ * use given back. Someone already in the apartment goes home without using one. Rate-limited
+ * (see join-limits). Someone who has not given a name yet is asked for it on their profile;
+ * everyone else lands on Home, which welcomes them to the apartment once.
+ */
+export async function redeem(context: RedeemContext): Promise<RedeemState> {
+  const locale = resolveLocale(context.locale)
+  const t = await getTranslations({ locale, namespace: 'JoinErrors' })
+
+  const session = await getSession()
+  if (!session) {
+    const tAuthz = await getTranslations({ locale, namespace: 'Authz' })
+    return { message: tAuthz('signedOut') }
+  }
+  const userId = session.user.id
+  const code = normalizeInviteCode(context.code)
+  if (!isInviteCode(code)) return { message: t('invalid') }
+  const codeHash = hashInviteCode(code)
+
+  let redemption: Redemption
+  try {
+    const retryAfterSeconds = await joinAttempt(userId)
+    if (retryAfterSeconds > 0) {
+      return { message: t('rateLimited', { minutes: Math.ceil(retryAfterSeconds / 60) }) }
+    }
+
+    redemption = await db.transaction(async (tx): Promise<Redemption> => {
+      // Locks in the same order as creating an invite and removing an apartment: the apartment
+      // first, then its invite. Taking the invite's row lock first (the UPDATE below) and the
+      // apartment's key lock later (the new resident's foreign key) would deadlock against a
+      // removal that holds the apartment (FOR UPDATE) and waits to delete this invite. KEY SHARE
+      // is all the foreign key needs: it waits for a removal, never for an invite being created
+      // (NO KEY UPDATE) or another redemption.
+      const [target] = await tx
+        .select({ apartmentId: invites.apartmentId })
+        .from(invites)
+        .where(eq(invites.codeHash, codeHash))
+      if (!target) return { kind: 'refused', status: 'invalid' }
+      const [apartment] = await tx
+        .select({ id: apartments.id })
+        .from(apartments)
+        .where(eq(apartments.id, target.apartmentId))
+        .for('key share')
+      // Removed meanwhile, its invites with it.
+      if (!apartment) return { kind: 'refused', status: 'invalid' }
+
+      const [taken] = await tx
+        .update(invites)
+        .set({ uses: sql`${invites.uses} + 1` })
+        .where(and(eq(invites.codeHash, codeHash), isActiveInvite))
+        .returning({
+          apartmentId: invites.apartmentId,
+          buildingId: invites.buildingId,
+          isDemo: sql<boolean>`(SELECT ${buildings.isDemo} FROM ${buildings} WHERE ${buildings.id} = ${invites.buildingId})`,
+        })
+      if (!taken) {
+        const [flags] = await tx
+          .select(inviteFlags)
+          .from(invites)
+          .where(eq(invites.codeHash, codeHash))
+        const status = flags ? inviteStatus(flags) : 'invalid'
+        // Used up between the UPDATE and this read counts as full; nothing was written.
+        return { kind: 'refused', status: status === 'valid' ? 'full' : status }
+      }
+      if (taken.isDemo) throw new RedemptionRefused({ kind: 'demo' })
+
+      // A membership made at the same moment elsewhere wins the unique user_id; it is read next.
+      await tx
+        .insert(buildingMembers)
+        .values({ userId, buildingId: taken.buildingId, role: 'resident' })
+        .onConflictDoNothing({ target: buildingMembers.userId })
+      const [membership] = await tx
+        .select({ buildingId: buildingMembers.buildingId })
+        .from(buildingMembers)
+        .where(eq(buildingMembers.userId, userId))
+      if (membership?.buildingId !== taken.buildingId) {
+        throw new RedemptionRefused({ kind: 'other-building' })
+      }
+
+      const joined = await tx
+        .insert(apartmentResidents)
+        .values({ userId, apartmentId: taken.apartmentId, isOwner: false })
+        .onConflictDoNothing()
+        .returning({ userId: apartmentResidents.userId })
+      if (joined.length === 0) throw new RedemptionRefused({ kind: 'already-member' })
+      return { kind: 'joined', apartmentId: taken.apartmentId }
+    })
+    // A code that names no invite may be a guess: it counts against the address.
+    if (redemption.kind === 'refused' && redemption.status === 'invalid') await joinMiss()
+  } catch (err) {
+    if (err instanceof RedemptionRefused) {
+      redemption = err.redemption
+    } else {
+      unstable_rethrow(err)
+      // Never the code: it is a bearer secret.
+      logger.error('Failed to redeem an invite', {
+        area: 'actions/invites',
+        route: '/join/[code]',
+        userId,
+        err,
+      })
+      return { message: t('failed') }
+    }
+  }
+
+  switch (redemption.kind) {
+    // The membership is read uncached on every request (authz), so the next page sees it.
+    case 'joined':
+      return redirect({
+        href: hasGivenName(session.user)
+          ? `/?${new URLSearchParams({ joined: redemption.apartmentId })}`
+          : '/profile?welcome=1',
+        locale,
+      })
+    case 'already-member':
+      return redirect({ href: '/', locale })
+    case 'other-building':
+      return { message: t('otherBuilding') }
+    case 'demo':
+      return { message: await demoRefusal(locale) }
+    case 'refused':
+      return { message: t(redemption.status) }
+  }
+}

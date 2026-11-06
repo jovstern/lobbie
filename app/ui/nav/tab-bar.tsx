@@ -17,7 +17,7 @@ export default async function TabBar() {
           <li key={item.href} className="flex-1">
             <NavLink
               href={item.href}
-              sections={item.sections}
+              sections={item.tabSections ?? item.sections}
               icon={item.icon}
               activeIcon={item.activeIcon}
               variant="tab"

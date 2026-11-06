@@ -1,16 +1,16 @@
 'use server'
 
 import { cookies, headers } from 'next/headers'
-import { hasLocale } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 import { getAuth } from '@/app/lib/auth'
 import { logger } from '@/app/lib/logger'
 import { consume, type RateLimitRule } from '@/app/lib/rate-limit'
+import { clientIp } from '@/app/lib/utils/client-ip'
 import { safeNextPath, withLocalePrefix } from '@/app/lib/utils/redirect'
 import { sentToCookie } from '@/app/lib/utils/sent-to'
 import { redirect } from '@/i18n/navigation'
-import { routing, type Locale } from '@/i18n/routing'
+import { resolveLocale } from '@/i18n/locale'
 
 const fifteenMinutes = 15 * 60 * 1000
 const perEmail: RateLimitRule = { limit: 3, windowMs: fifteenMinutes }
@@ -31,14 +31,6 @@ export type SignInState = {
 
 /** Bound by the page: actions cannot read the route's locale, and `next` comes from its URL. */
 export type SignInContext = { locale: string; next?: string }
-
-function resolveLocale(locale: string): Locale {
-  return hasLocale(routing.locales, locale) ? locale : routing.defaultLocale
-}
-
-function clientIp(requestHeaders: Headers): string {
-  return requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-}
 
 /**
  * Emails a sign-in link. Every request that is valid and within the rate limits ends on

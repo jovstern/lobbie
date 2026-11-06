@@ -10,6 +10,7 @@ import {
   payments,
   user,
 } from '@/app/lib/schema'
+import { demoBuildingId } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
 import { statusForUser } from './payments'
 
@@ -62,8 +63,8 @@ const statusesOf = async (numbers: string[]) =>
   statusForUser(await residentOf(numbers.map(idOf)), now)
 
 beforeAll(async () => {
-  await seed(db, { now })
-  const [demo] = await db.select().from(buildings).where(eq(buildings.isDemo, true))
+  await seed(db, { now, e2e: true })
+  const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
   buildingId = demo.id
   const rows = await db
     .select({ id: apartments.id, number: apartments.number })

@@ -32,10 +32,27 @@ describe('design tokens meet WCAG AA in both themes', () => {
     expect(contrastRatio(palette[theme][text], palette[theme][surface])).toBeGreaterThanOrEqual(4.5)
   })
 
+  it.each(themes)('%s: on-accent on danger (the danger button) is at least 4.5:1', (theme) => {
+    expect(
+      contrastRatio(palette[theme]['on-accent'], palette[theme].danger),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
   it.each(themes)('%s: on-accent on accent is at least 4.5:1', (theme) => {
     expect(
       contrastRatio(palette[theme]['on-accent'], palette[theme].accent),
     ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  // A hovered or pressed button keeps its text readable.
+  it.each(
+    themes.flatMap((theme) =>
+      (['accent-strong', 'danger-strong'] as const).map((fill) => [theme, fill] as const),
+    ),
+  )('%s: on-accent on %s is at least 4.5:1', (theme, fill) => {
+    expect(contrastRatio(palette[theme]['on-accent'], palette[theme][fill])).toBeGreaterThanOrEqual(
+      4.5,
+    )
   })
 
   it.each(themes.flatMap((theme) => surfaces.map((surface) => [theme, surface] as const)))(

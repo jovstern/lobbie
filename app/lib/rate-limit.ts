@@ -1,5 +1,5 @@
 import 'server-only'
-import { lt, sql } from 'drizzle-orm'
+import { and, eq, lt, sql } from 'drizzle-orm'
 import { db } from '@/app/lib/db'
 import { logger } from '@/app/lib/logger'
 import { rateLimits } from '@/app/lib/schema'
@@ -28,6 +28,15 @@ async function pruneOldWindows(now: Date) {
   }
 }
 
+function windowStartOf(now: Date, windowMs: number): Date {
+  return new Date(Math.floor(now.getTime() / windowMs) * windowMs)
+}
+
+function refused(windowStart: Date, windowMs: number, now: Date): RateLimitResult {
+  const windowEnd = windowStart.getTime() + windowMs
+  return { ok: false, retryAfterSeconds: Math.ceil((windowEnd - now.getTime()) / 1000) }
+}
+
 /**
  * Counts one request for `key` in a fixed window and says whether it is within `limit`.
  * The upsert is atomic, so concurrent requests cannot both take the last slot.
@@ -37,7 +46,7 @@ export async function consume(
   { limit, windowMs }: RateLimitRule,
   { now = new Date(), random = Math.random }: Options = {},
 ): Promise<RateLimitResult> {
-  const windowStart = new Date(Math.floor(now.getTime() / windowMs) * windowMs)
+  const windowStart = windowStartOf(now, windowMs)
   const [{ count }] = await db
     .insert(rateLimits)
     .values({ key, windowStart, count: 1 })
@@ -50,6 +59,25 @@ export async function consume(
   if (random() < pruneChance) await pruneOldWindows(now)
 
   if (count <= limit) return { ok: true }
-  const windowEnd = windowStart.getTime() + windowMs
-  return { ok: false, retryAfterSeconds: Math.ceil((windowEnd - now.getTime()) / 1000) }
+  return refused(windowStart, windowMs, now)
+}
+
+/**
+ * Whether `key` has used up `limit` in the current window, without counting this request: for
+ * limits that count only failures (`consume` is called after one). Checking and counting are
+ * two statements, so concurrent failures can overshoot the limit by a few; that is acceptable
+ * for a limit against guessing.
+ */
+export async function peek(
+  key: string,
+  { limit, windowMs }: RateLimitRule,
+  { now = new Date() }: Pick<Options, 'now'> = {},
+): Promise<RateLimitResult> {
+  const windowStart = windowStartOf(now, windowMs)
+  const [row] = await db
+    .select({ count: rateLimits.count })
+    .from(rateLimits)
+    .where(and(eq(rateLimits.key, key), eq(rateLimits.windowStart, windowStart)))
+  if (!row || row.count < limit) return { ok: true }
+  return refused(windowStart, windowMs, now)
 }
