@@ -242,15 +242,17 @@ for (const locale of ['he', 'en'] as const) {
         await page.goto(`${prefix}/admin/apartments`)
         await page.getByRole('main').getByRole('link', { name: apartment, exact: true }).click()
         const invite = page.getByRole('region', { name: text.InviteAdmin.title, exact: true })
-        await invite.getByRole('button', { name: text.InviteAdmin.create, exact: true }).click()
+        await invite
+          .getByRole('button', { name: text.InviteAdminClient.create, exact: true })
+          .click()
         await expect(
-          page.getByRole('group', { name: text.InviteAdmin.newTitle, exact: true }),
+          page.getByRole('group', { name: text.InviteAdminClient.newTitle, exact: true }),
         ).toBeVisible()
         await expectNoViolations(page)
 
         await invite
           .getByRole('button', {
-            name: translator(locale)('InviteAdmin.revokeLabel', { number: 'e2e-3' }),
+            name: translator(locale)('InviteAdminClient.revokeLabel', { number: 'e2e-3' }),
             exact: true,
           })
           .click()

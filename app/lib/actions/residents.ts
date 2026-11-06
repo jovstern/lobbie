@@ -1,11 +1,11 @@
 'use server'
 
 import { and, eq, inArray } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 import { lockMember } from '@/app/lib/admin-guard'
+import { demoRefusal, refreshPeoplePages } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
@@ -14,23 +14,11 @@ import { apartmentResidents, apartments, buildingMembers } from '@/app/lib/schem
 import { typed } from '@/app/lib/utils/form'
 import { redirect } from '@/i18n/navigation'
 import { resolveLocale } from '@/i18n/locale'
-import type { Locale } from '@/i18n/routing'
 
 // No cached read holds residents (the apartments list counts them uncached), so these actions
 // update no tag; they refresh the pages that show residents and their apartments.
 
 const route = '/admin/apartments/[id]'
-
-async function demoRefusal(locale: Locale): Promise<string> {
-  const t = await getTranslations({ locale, namespace: 'Demo' })
-  return t('readOnly')
-}
-
-function refreshResidents() {
-  revalidatePath('/[locale]/admin/apartments', 'page')
-  revalidatePath('/[locale]/admin/apartments/[id]', 'page')
-  revalidatePath('/[locale]/admin/people', 'page')
-}
 
 /** Whether both ids are well formed; a malformed one is nothing of the building. */
 function validIds(...ids: string[]): boolean {
@@ -101,7 +89,7 @@ export async function setOwnership(
   }
   if (updated.length === 0) return { message: t('notFound') }
 
-  refreshResidents()
+  refreshPeoplePages()
   return { message: null }
 }
 
@@ -198,7 +186,7 @@ export async function removeFromApartment(
   if (removal.kind === 'missing') return { message: t('notFound') }
   if (removal.kind === 'last-admin') return { message: t('lastAdmin') }
 
-  refreshResidents()
+  refreshPeoplePages()
   // An admin who took themselves out of the building has no admin pages now.
   if (removal.leftBuilding && userId === member.userId) redirect({ href: '/', locale: lang })
   return { removed: true, message: null }

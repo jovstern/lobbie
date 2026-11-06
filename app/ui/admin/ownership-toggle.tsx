@@ -24,7 +24,7 @@ const choices = [
  * shows at once, and a failed save falls back to the saved one and says why.
  */
 export default function OwnershipToggle({ action, isOwner, name, userId }: Props) {
-  const t = useTranslations('Residents')
+  const t = useTranslations('ResidentsClient')
   const initialState: OwnershipState = {}
   const [state, dispatch, isPending] = useActionState(action, initialState)
   const [shownIsOwner, setShownIsOwner] = useOptimistic(isOwner)

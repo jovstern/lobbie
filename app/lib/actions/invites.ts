@@ -1,10 +1,10 @@
 'use server'
 
 import { and, eq, sql } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
+import { demoRefusal, refreshApartmentPages } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { byFloorAndNumber } from '@/app/lib/data/apartments'
 import { inviteFlags, isActiveInvite } from '@/app/lib/data/invites'
@@ -33,22 +33,11 @@ import {
 import { inviteStatus, type InviteStatus } from '@/app/lib/utils/join-view'
 import { redirect } from '@/i18n/navigation'
 import { resolveLocale } from '@/i18n/locale'
-import type { Locale } from '@/i18n/routing'
 
 // Invites are read by no cached data (the apartments list counts them uncached), so these
 // actions update no tag; they refresh the admin's apartment pages.
 
 const inviteLifetime = sql`now() + interval '14 days'`
-
-async function demoRefusal(locale: Locale): Promise<string> {
-  const t = await getTranslations({ locale, namespace: 'Demo' })
-  return t('readOnly')
-}
-
-function refreshApartments() {
-  revalidatePath('/[locale]/admin/apartments', 'page')
-  revalidatePath('/[locale]/admin/apartments/[id]', 'page')
-}
 
 /** A new code for an apartment: the row to insert (hash only) and what is shown once. */
 function newInvite(member: Member, apartment: { id: string; number: string }) {
@@ -103,12 +92,15 @@ export async function create(
   let creation: Creation
   try {
     creation = await db.transaction(async (tx): Promise<Creation> => {
-      // Locked, so two admins creating at once cannot both leave an active invite.
+      // Locked, so two admins creating at once cannot both leave an active invite. NO KEY
+      // UPDATE, not UPDATE: a redeem holding this apartment's invite inserts a resident, whose
+      // foreign key takes KEY SHARE here, which UPDATE would block (a deadlock). Removing the
+      // apartment (FOR UPDATE) still waits for this.
       const [apartment] = await tx
         .select({ id: apartments.id, number: apartments.number })
         .from(apartments)
         .where(and(eq(apartments.id, apartmentId), eq(apartments.buildingId, member.buildingId)))
-        .for('update')
+        .for('no key update')
       if (!apartment) return { kind: 'missing' }
 
       const ofApartment = and(
@@ -145,7 +137,7 @@ export async function create(
   if (creation.kind === 'missing') return { message: t('apartmentNotFound') }
   if (creation.kind === 'active-exists') return { message: t('activeExists') }
 
-  refreshApartments()
+  refreshApartmentPages()
   return { created: creation.invite, message: null }
 }
 
@@ -179,13 +171,14 @@ export async function createAll(locale: string, mode: CreateAllMode): Promise<Cr
   try {
     result = await db.transaction(async (tx) => {
       const ofBuilding = eq(invites.buildingId, member.buildingId)
-      // Locked like a single create, so no apartment ends up with two active invites.
+      // Locked like a single create (NO KEY UPDATE, see there), so no apartment ends up with
+      // two active invites.
       const all = await tx
         .select({ id: apartments.id, number: apartments.number })
         .from(apartments)
         .where(eq(apartments.buildingId, member.buildingId))
         .orderBy(...byFloorAndNumber)
-        .for('update')
+        .for('no key update')
 
       let targets = all
       if (mode === 'all') {
@@ -220,7 +213,7 @@ export async function createAll(locale: string, mode: CreateAllMode): Promise<Cr
   }
 
   if (result.created.length === 0 && result.skipped === 0) return { message: t('noApartments') }
-  refreshApartments()
+  refreshApartmentPages()
   return { created: result.created, skipped: result.skipped, message: null }
 }
 
@@ -266,7 +259,7 @@ export async function revoke(locale: string, inviteId: string): Promise<RevokeIn
     return { message: t('revokeFailed') }
   }
 
-  refreshApartments()
+  refreshApartmentPages()
   return { revoked: true, message: null }
 }
 

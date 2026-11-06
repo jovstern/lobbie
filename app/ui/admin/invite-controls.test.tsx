@@ -7,7 +7,7 @@ import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import InviteControls from '@/app/ui/admin/invite-controls'
 import en from '@/messages/en.json'
 
-const copy = en.InviteAdmin
+const copy = en.InviteAdminClient
 const created: CreateInviteState = {
   message: null,
   created: {
@@ -21,7 +21,10 @@ const created: CreateInviteState = {
 
 function controls(activeInviteId: string | null, createAction = vi.fn(async () => created)) {
   return (
-    <NextIntlClientProvider locale="en" messages={{ InviteAdmin: copy, CopyButton: en.CopyButton }}>
+    <NextIntlClientProvider
+      locale="en"
+      messages={{ InviteAdminClient: copy, CopyButton: en.CopyButton }}
+    >
       <AdminAnnouncer
         headingId="heading"
         header={

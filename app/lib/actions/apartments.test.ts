@@ -207,7 +207,7 @@ describe('create', () => {
 
     expect(state).toEqual({ saved: { number: '14A' }, message: null })
     expect(await apartmentNumbered('14A')).toMatchObject({ floor: -2, billingStartMonth: null })
-    expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
+    expect(updateTag).not.toHaveBeenCalled()
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments', 'page')
   })
 
@@ -296,7 +296,7 @@ describe('update', () => {
 
     expect(state).toEqual({ saved: { number: 'u-1b' }, message: null })
     expect(await apartmentNumbered('u-1b')).toMatchObject({ id: target.id, floor: 6 })
-    expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
+    expect(updateTag).not.toHaveBeenCalled()
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
   })
 
@@ -365,7 +365,7 @@ describe('update, billing start month', () => {
 
       expect(confirmed).toEqual({ saved: { number: target.number }, message: null })
       expect(await apartmentNumbered(target.number)).toMatchObject({ billingStartMonth: to })
-      expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
+      expect(updateTag).not.toHaveBeenCalled()
     },
   )
 
@@ -395,7 +395,7 @@ describe('remove', () => {
 
     expect(state).toEqual({ removed: true, message: null })
     expect(await apartmentNumbered('r-empty')).toBeUndefined()
-    expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
+    expect(updateTag).not.toHaveBeenCalled()
   })
 
   it('is blocked while people live in it, saying how many to move', async () => {

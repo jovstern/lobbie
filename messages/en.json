@@ -188,7 +188,6 @@
     "emptyBody": "If the fund doesn’t match the bank, record the difference here with a reason.",
     "date": "Date",
     "amount": "Amount",
-    "reason": "Reason",
     "recordedBy": "Recorded by"
   },
   "BuildingForm": {
@@ -323,7 +322,9 @@
     "uses": "{uses} of {max} used",
     "expires": "Expires {date}",
     "codeHidden": "Code hidden",
-    "onceNote": "For safety, a link is shown only once, right after it’s created. To send it again, create a new invite; the current one then stops working.",
+    "onceNote": "For safety, a link is shown only once, right after it’s created. To send it again, create a new invite; the current one then stops working."
+  },
+  "InviteAdminClient": {
     "create": "Create invite",
     "creating": "Creating…",
     "replace": "Create new invite",
@@ -361,7 +362,6 @@
     "line": "Apartment {number}: {link}",
     "apartment": "Apartment {number}",
     "copyLinkLabel": "Copy the link for apartment {number}",
-    "done": "{count, plural, one {One invite created} other {# invites created}}",
     "sectionTitle": "Invite the residents",
     "sectionLead": "Create a link for each apartment and send it to the people who live there, for example in the building’s WhatsApp group.",
     "listLabel": "New invite links",
@@ -424,7 +424,6 @@
     "searchHint": "A name, or an apartment number.",
     "tableLabel": "People in the building",
     "name": "Name",
-    "email": "Email",
     "apartments": "Apartments",
     "role": "Role",
     "actions": "Actions",
@@ -478,7 +477,9 @@
   "Residents": {
     "title": "Residents",
     "empty": "No one lives here yet. Create an invite above.",
-    "you": "You",
+    "you": "You"
+  },
+  "ResidentsClient": {
     "ownership": "{name} lives here as",
     "owner": "Owner",
     "tenant": "Tenant",

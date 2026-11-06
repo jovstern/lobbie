@@ -36,7 +36,7 @@ export default function InviteControls({
   activeInviteId,
   revoke,
 }: Props) {
-  const t = useTranslations('InviteAdmin')
+  const t = useTranslations('InviteAdminClient')
   const { announce } = useAnnouncer()
   const [confirming, setConfirming] = useState(false)
   const createdRef = useRef<HTMLDivElement>(null)

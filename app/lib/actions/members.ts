@@ -1,11 +1,11 @@
 'use server'
 
 import { and, eq, inArray } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 import { lockMember } from '@/app/lib/admin-guard'
+import { demoRefusal, refreshPeoplePages } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Member, Role } from '@/app/lib/definitions'
@@ -14,7 +14,6 @@ import { apartmentResidents, apartments, buildingMembers, roleEnum } from '@/app
 import { typed, type Translate } from '@/app/lib/utils/form'
 import { redirect } from '@/i18n/navigation'
 import { resolveLocale } from '@/i18n/locale'
-import type { Locale } from '@/i18n/routing'
 
 // No cached read holds roles or memberships (requireMember reads them on every request), so
 // these actions update no tag; they refresh the admin pages that list people.
@@ -47,18 +46,6 @@ export type RoleFormState = {
   message?: string | null
   /** Set once saved, with the role saved; the dialog closes. */
   saved?: { role: Role }
-}
-
-async function demoRefusal(locale: Locale): Promise<string> {
-  const t = await getTranslations({ locale, namespace: 'Demo' })
-  return t('readOnly')
-}
-
-/** The admin pages that list people or residents, refreshed after a write. */
-function refreshPeople() {
-  revalidatePath('/[locale]/admin/people', 'page')
-  revalidatePath('/[locale]/admin/apartments', 'page')
-  revalidatePath('/[locale]/admin/apartments/[id]', 'page')
 }
 
 type RoleChange = { kind: 'saved' } | { kind: 'missing' } | { kind: 'last-admin' }
@@ -102,9 +89,12 @@ export async function setRole(
       if (!target) return { kind: 'missing' }
       if (target.isLastAdmin && role !== 'admin') return { kind: 'last-admin' }
 
+      // A resident publishes no committee contact either: the committee page would otherwise
+      // keep it for whoever is promoted again.
+      const contact = role === 'resident' ? { committeePhone: null, committeeEmail: null } : {}
       await tx
         .update(buildingMembers)
-        .set({ role, committeeTitle })
+        .set({ role, committeeTitle, ...contact })
         .where(
           and(
             eq(buildingMembers.userId, userId),
@@ -128,7 +118,7 @@ export async function setRole(
   if (change.kind === 'missing') return { values, message: t('notFound') }
   if (change.kind === 'last-admin') return { values, message: t('lastAdminDemote') }
 
-  refreshPeople()
+  refreshPeoplePages()
   // Their own admin pages are gone with the role: the next request sees it (requireMember reads
   // the role from the database each time).
   if (userId === member.userId && role !== 'admin') redirect({ href: '/', locale: lang })
@@ -209,7 +199,7 @@ export async function removeFromBuilding(
   if (removal.kind === 'missing') return { message: t('notFound') }
   if (removal.kind === 'last-admin') return { message: t('lastAdminRemove') }
 
-  refreshPeople()
+  refreshPeoplePages()
   // An admin who removed themselves has no building now: home sends them to /join.
   if (userId === member.userId) redirect({ href: '/', locale: lang })
   return { removed: true, message: null }

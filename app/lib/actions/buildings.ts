@@ -5,6 +5,7 @@ import { updateTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
+import { demoRefusal } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
@@ -85,8 +86,7 @@ export async function update(
   }
 
   if (member.isDemo) {
-    const tDemo = await getTranslations({ locale: lang, namespace: 'Demo' })
-    return { values, message: tDemo('readOnly') }
+    return { values, message: await demoRefusal(lang) }
   }
 
   const details = validatedFields.data
@@ -184,8 +184,7 @@ export async function addAdjustment(
   }
 
   if (member.isDemo) {
-    const tDemo = await getTranslations({ locale: lang, namespace: 'Demo' })
-    return { values, message: tDemo('readOnly') }
+    return { values, message: await demoRefusal(lang) }
   }
 
   const { direction, amount, reason } = validatedFields.data

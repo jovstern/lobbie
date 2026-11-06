@@ -9,6 +9,7 @@ import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentTable from '@/app/ui/admin/apartment-table'
 import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import InviteAll from '@/app/ui/admin/invite-all'
+import EmptyState from '@/app/ui/empty-state'
 
 const headingId = 'apartments-title'
 
@@ -46,12 +47,9 @@ export default async function ApartmentsAdmin() {
       }
     >
       {isEmpty ? (
-        <div className="rounded-card border-border bg-surface-raised flex max-w-xl flex-col items-start gap-3 border p-6">
-          <HomeModernIcon aria-hidden className="text-text-muted size-8" />
-          <h2 className="text-lg font-semibold">{t('emptyTitle')}</h2>
-          <p className="text-text-muted">{t('emptyBody')}</p>
+        <EmptyState icon={HomeModernIcon} title={t('emptyTitle')} body={t('emptyBody')}>
           <ApartmentDialog action={addAction} variant="primary" focusHeadingAfterSave />
-        </div>
+        </EmptyState>
       ) : (
         <>
           <InviteAll

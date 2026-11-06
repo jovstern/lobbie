@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
+import { demoRefusal } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
@@ -15,7 +16,7 @@ import { typed, type Translate } from '@/app/lib/utils/form'
 import { formatPhone, normalizePhone } from '@/app/lib/utils/phone'
 import { redirect } from '@/i18n/navigation'
 import { resolveLocale } from '@/i18n/locale'
-import { localeCookie, routing, type Locale } from '@/i18n/routing'
+import { localeCookie, routing } from '@/i18n/routing'
 
 // Each action writes only the caller's own rows: the user is always the session's, and the
 // membership is theirs in their own building. No cached read holds a name, phone or contact
@@ -55,11 +56,6 @@ function committeeContactSchema(t: Translate<'ProfileErrors'>) {
       .refine((value) => value === '' || z.email().safeParse(value).success, t('committeeEmail'))
       .transform((value) => value || null),
   })
-}
-
-async function demoRefusal(locale: Locale): Promise<string> {
-  const t = await getTranslations({ locale, namespace: 'Demo' })
-  return t('readOnly')
 }
 
 function refreshProfile() {

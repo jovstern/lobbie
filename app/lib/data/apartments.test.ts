@@ -180,6 +180,15 @@ describe('list', () => {
 })
 
 describe('get', () => {
+  it('asks for the admin role', async () => {
+    signInAsAdminOf(buildingId)
+    vi.mocked(requireRole).mockClear()
+
+    await get(ids.get('2') ?? '')
+
+    expect(requireRole).toHaveBeenCalledExactlyOnceWith('admin')
+  })
+
   it('is an apartment of the admin’s building', async () => {
     signInAsAdminOf(buildingId)
 

@@ -159,11 +159,18 @@ app/
     auth.ts  auth-options.ts      Better Auth; the options that shape its schema (CLI input)
     definitions.ts  session.ts  authz.ts  mail.ts  storage.ts  logger.ts  rate-limit.ts
     safe-fetch.ts
+    admin-guard.ts                lockMember: the row locks and last-admin guard of role
+                                  changes and removals
+    join-limits.ts                the rate limits of joining (per person, and misses per IP)
     data/<area>.ts                one async function per query, building-scoped
     data/cache-tags.ts            the `building:<id>` tags of the cached building-wide reads
     actions/<area>.ts             'use server'; Zod schemas and State types next to each action
+    actions/shared.ts             helpers the actions share (demo refusal, page refreshes); not
+                                  'use server'
     utils/money.ts fees.ts status.ts ledger.ts recurrence.ts meeting.ts ics.ts
           dates.ts redirect.ts app-sections.ts roles.ts contrast.ts session-cache.ts
+          invite-code.ts join-view.ts pg-error.ts phone.ts search.ts directory.ts
+          apartment-blockers.ts client-ip.ts form.ts
     test/db.ts                    PGlite + migrations, per test file
   ui/<area>/*.tsx  ui/skeletons.tsx  ui/web-vitals.tsx
   ui/tokens.ts                    the palette in TypeScript (emails, contrast test)
@@ -232,7 +239,7 @@ reference `(apartmentId, buildingId)`.
 | `apartments` | id, buildingId, number text, floor int, billingStartMonth null, createdAt | `UNIQUE(buildingId, number)`, `UNIQUE(id, buildingId)` |
 | `building_members` | id, userId **unique**, buildingId, role enum(resident, committee, admin), committeeTitle null, showContact bool default false, committeePhone null, committeeEmail null, createdAt | idx buildingId |
 | `apartment_residents` | userId, apartmentId, isOwner bool, createdAt | PK (userId, apartmentId); idx apartmentId |
-| `invites` | id, buildingId, apartmentId, codeHash, maxUses (default 6), uses int default 0, createdBy, expiresAt, revokedAt null | `UNIQUE(codeHash)`; FK (apartmentId, buildingId); `CHECK uses <= maxUses` |
+| `invites` | id, buildingId, apartmentId, codeHash, maxUses (default 6), uses int default 0, createdBy null, expiresAt, revokedAt null | `UNIQUE(codeHash)`; FK (apartmentId, buildingId); createdBy `ON DELETE SET NULL` (an invite outlives the admin who made it); `CHECK uses <= maxUses` |
 | `rate_limits` | key text, windowStart timestamptz, count int | PK (key, windowStart); old windows pruned on write |
 | `fee_rates` | id, buildingId, apartmentId null (null = default), amountAgorot, effectiveFrom month, createdBy, createdAt | `UNIQUE NULLS NOT DISTINCT (buildingId, apartmentId, effectiveFrom)`; FK (apartmentId, buildingId); idx (buildingId, effectiveFrom) |
 | `payments` | id, buildingId, apartmentId, month, amountAgorot, paidOn date, method enum(cash, transfer, check, bit, other), note, recordedBy, createdAt, voidedAt/voidedBy/voidReason null | FK (apartmentId, buildingId); idx (apartmentId, month), (buildingId, month); `CHECK` void columns all-or-none |
@@ -295,8 +302,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 | `/admin` | Overview: who's behind and by how much, quick links | "Record a payment" | `data/payments.arrears`, counts |
 | `/admin/building` ★ | Building details, balance adjustments | Save | `data/buildings.get` / `actions/buildings.update`, `addAdjustment` |
 | `/admin/apartments` ★ | Apartments and invites | Add apartment; "Create invites for all" | `data/apartments.list` / `actions/apartments.*`, `actions/invites.createAll` |
-| `/admin/apartments/[id]` ★ | One apartment: residents, invite, fee override | Create invite | `data/apartments.get`, `data/invites.forApartment` / `actions/invites.create`, `revoke`, `actions/members.*`, `actions/fees.setOverride` |
-| `/admin/people` ★ | Everyone in the building: role, title, apartments | Change role | `data/members.list` / `actions/members.setRole`, `remove` |
+| `/admin/apartments/[id]` ★ | One apartment: residents, invite, fee override | Create invite | `data/apartments.get`, `residentsOf`, `data/invites.forApartment` / `actions/invites.create`, `revoke`, `actions/residents.setOwnership`, `removeFromApartment`, `actions/fees.setOverride` |
+| `/admin/people` ★ | Everyone in the building: role, title, apartments | Change role | `data/members.list` / `actions/members.setRole`, `removeFromBuilding` |
 | `/admin/fees` | Building fee and overrides | Set fee from month | `data/fees.list` / `actions/fees.setDefault` |
 | `/admin/payments` | Apartment × month grid (`?year=`), arrears, record, void, remind | Record payment | `data/payments.grid` / `actions/payments.record`, `void`, `actions/reminders.send` |
 | `/admin/expenses` | Expenses with receipts | Add expense | `data/expenses.list` / `actions/expenses.record`, `void` |

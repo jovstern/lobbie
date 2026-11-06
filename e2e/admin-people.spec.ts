@@ -98,14 +98,14 @@ test('the admin marks e2e-1’s resident a tenant, then an owner again', async (
     await page.goto(`/admin/apartments/${id}`)
     const residents = page.getByRole('region', { name: text.Residents.title, exact: true })
     const choice = residents.getByRole('group', {
-      name: t('Residents.ownership', { name: owner.name }),
+      name: t('ResidentsClient.ownership', { name: owner.name }),
       exact: true,
     })
-    const tenant = choice.getByRole('radio', { name: text.Residents.tenant, exact: true })
-    const ownerRadio = choice.getByRole('radio', { name: text.Residents.owner, exact: true })
+    const tenant = choice.getByRole('radio', { name: text.ResidentsClient.tenant, exact: true })
+    const ownerRadio = choice.getByRole('radio', { name: text.ResidentsClient.owner, exact: true })
     await expect(ownerRadio).toBeChecked()
 
-    await choice.getByText(text.Residents.tenant, { exact: true }).click()
+    await choice.getByText(text.ResidentsClient.tenant, { exact: true }).click()
     await expect(tenant).toBeChecked()
     // Saved: it is still a tenant after a reload.
     await expect(async () => {
@@ -113,7 +113,7 @@ test('the admin marks e2e-1’s resident a tenant, then an owner again', async (
       await expect(tenant).toBeChecked({ timeout: 1_000 })
     }).toPass()
 
-    await choice.getByText(text.Residents.owner, { exact: true }).click()
+    await choice.getByText(text.ResidentsClient.owner, { exact: true }).click()
     await expect(ownerRadio).toBeChecked()
     await expect(async () => {
       await page.reload()

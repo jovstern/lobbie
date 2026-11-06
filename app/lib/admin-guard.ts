@@ -22,6 +22,9 @@ export type LockedMember = {
  * other is demoting: the second waits, and Postgres then re-reads each locked row, leaving out
  * one that is no longer an admin. An admin promoted meanwhile is not counted, which can only
  * refuse a change, never allow one wrongly.
+ *
+ * FOR UPDATE, not NO KEY UPDATE: a removal deletes the row, and no foreign key points at
+ * `building_members`, so no insert elsewhere needs the KEY SHARE this would block.
  */
 export async function lockMember(
   tx: Tx,

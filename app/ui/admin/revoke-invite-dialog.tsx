@@ -20,7 +20,7 @@ type Props = {
  * focus goes to the page heading and the status region says what happened.
  */
 export default function RevokeInviteDialog({ action, number }: Props) {
-  const t = useTranslations('InviteAdmin')
+  const t = useTranslations('InviteAdminClient')
   const { announce, focusHeading } = useAnnouncer()
   const [open, setOpen] = useState(false)
   // Read when the dialog closes, to choose where focus goes; not shown, so not state.

@@ -6,13 +6,13 @@ import type { OwnershipState } from '@/app/lib/actions/residents'
 import OwnershipToggle from '@/app/ui/admin/ownership-toggle'
 import en from '@/messages/en.json'
 
-const copy = en.Residents
+const copy = en.ResidentsClient
 
 type Action = (state: OwnershipState, formData: FormData) => Promise<OwnershipState>
 
 function renderToggle(action: Action, isOwner = true) {
   return render(
-    <NextIntlClientProvider locale="en" messages={{ Residents: copy }}>
+    <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy }}>
       <OwnershipToggle action={action} isOwner={isOwner} name="Ana" userId="user-1" />
     </NextIntlClientProvider>,
   )
@@ -75,7 +75,7 @@ describe('OwnershipToggle', () => {
     await user.click(screen.getByRole('radio', { name: copy.tenant }))
     // The server's refresh: the saved value is now "tenant".
     rerender(
-      <NextIntlClientProvider locale="en" messages={{ Residents: copy }}>
+      <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy }}>
         <OwnershipToggle action={action} isOwner={false} name="Ana" userId="user-1" />
       </NextIntlClientProvider>,
     )

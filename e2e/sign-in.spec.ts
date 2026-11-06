@@ -1,8 +1,11 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { asNewClient, localePrefix, signIn } from './helpers/auth'
 import { messages, translator } from './helpers/copy'
+import { addResident, deleteUser } from './helpers/db'
 
-// Each test signs in a different e2e person, so a run stays inside the per-email limit.
+// Each test signs in a different person, so a run stays inside the per-email limit (the
+// count is in helpers/auth.ts).
 
 const en = messages.en
 
@@ -47,21 +50,41 @@ for (const locale of ['he', 'en'] as const) {
   })
 }
 
-test('a signed-out visit to /more comes back to /more after signing in', async ({ page }) => {
-  await page.goto('/more')
-  await expect(page).toHaveURL('/sign-in?next=%2Fmore')
+test('a signed-out visit to /more comes back to /more after signing in', async ({
+  page,
+}, testInfo) => {
+  // Someone new for each project, living in e2e-2.
+  const resident = `more-${testInfo.project.name}@example.com`
+  await addResident(resident, `חוזר ${testInfo.project.name}`, 'e2e-2')
+  try {
+    await page.goto('/more')
+    await expect(page).toHaveURL('/sign-in?next=%2Fmore')
 
-  await signIn(page, 'e2e2@example.com', { landing: '/more' })
+    await signIn(page, resident, { landing: '/more' })
 
-  await expect(
-    page.getByRole('heading', { level: 1, name: messages.he.More.title, exact: true }),
-  ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: messages.he.More.title, exact: true }),
+    ).toBeVisible()
+  } finally {
+    await deleteUser(resident)
+  }
 })
 
 test('signing out returns to sign-in, Home asks to sign in again, and the used link is expired', async ({
   page,
-}) => {
-  const link = await signIn(page, 'e2e3@example.com', { locale: 'en' })
+}, testInfo) => {
+  // Someone new for each project, living in e2e-3.
+  const resident = `leaving-${testInfo.project.name}@example.com`
+  await addResident(resident, `יוצא ${testInfo.project.name}`, 'e2e-3')
+  try {
+    await signOutFlow(page, resident)
+  } finally {
+    await deleteUser(resident)
+  }
+})
+
+async function signOutFlow(page: Page, resident: string) {
+  const link = await signIn(page, resident, { locale: 'en' })
 
   await page.goto('/en/more')
   await page.getByRole('button', { name: en.Auth.signOut, exact: true }).click()
@@ -77,7 +100,7 @@ test('signing out returns to sign-in, Home asks to sign in again, and the used l
   await expect(page.getByRole('status')).toHaveText(en.SignIn.expired)
   // The notice is read first: an expired link does not move focus to the field.
   await expect(page.getByLabel(en.SignInForm.emailLabel, { exact: true })).not.toBeFocused()
-})
+}
 
 test('signing out with an expired session cache still signs out', async ({
   page,

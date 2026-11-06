@@ -7,14 +7,14 @@ import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import RemoveResidentDialog from '@/app/ui/admin/remove-resident-dialog'
 import en from '@/messages/en.json'
 
-const copy = en.Residents
+const copy = en.ResidentsClient
 
 function renderDialog(
   leavesBuilding: boolean,
   action = vi.fn(async (): Promise<RemoveResidentState> => ({ removed: true, message: null })),
 ) {
   render(
-    <NextIntlClientProvider locale="en" messages={{ Residents: copy }}>
+    <NextIntlClientProvider locale="en" messages={{ ResidentsClient: copy }}>
       <AdminAnnouncer
         headingId="heading"
         header={

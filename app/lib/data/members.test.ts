@@ -109,6 +109,15 @@ describe('list', () => {
     })
   })
 
+  it('asks for the admin role', async () => {
+    signInAsAdminOf(demoBuildingId)
+    vi.mocked(requireRole).mockClear()
+
+    await list('')
+
+    expect(requireRole).toHaveBeenCalledExactlyOnceWith('admin')
+  })
+
   it('sorts each person’s apartments naturally: 2, 7, 10, 11', async () => {
     signInAsAdminOf(demoBuildingId)
 

@@ -1,13 +1,12 @@
 'use server'
 
 import { and, eq } from 'drizzle-orm'
-import { revalidatePath, updateTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
+import { demoRefusal, refreshApartmentPages } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { blockerCounts } from '@/app/lib/data/apartments'
-import { buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
@@ -17,7 +16,10 @@ import { monthPattern } from '@/app/lib/utils/dates'
 import { typed, type Translate } from '@/app/lib/utils/form'
 import { pgError, pgErrorCode } from '@/app/lib/utils/pg-error'
 import { resolveLocale } from '@/i18n/locale'
-import type { Locale } from '@/i18n/routing'
+
+// No cached read holds apartments: the building's cached billing has only its own start month
+// and fee rates, and each apartment's start month is read with the person's apartments,
+// uncached. So these actions update no tag; they refresh the admin's apartment pages.
 
 const numberUnique = 'apartments_building_id_number_unique'
 const route = '/admin/apartments'
@@ -67,20 +69,6 @@ function valuesOf(formData: FormData): Record<ApartmentField, string> {
     floor: typed(formData, 'floor'),
     billingStartMonth: typed(formData, 'billingStartMonth'),
   }
-}
-
-async function demoRefusal(locale: Locale): Promise<string> {
-  const t = await getTranslations({ locale, namespace: 'Demo' })
-  return t('readOnly')
-}
-
-/** The pages that show apartments, refreshed after a write. */
-function refreshApartments(member: Member) {
-  // Apartments are part of the building's billing (each one's start month), which is cached
-  // under the building's tag.
-  updateTag(buildingTag(member.buildingId))
-  revalidatePath('/[locale]/admin/apartments', 'page')
-  revalidatePath('/[locale]/admin/apartments/[id]', 'page')
 }
 
 /**
@@ -137,7 +125,7 @@ export async function create(
     return saveFailure(err, t, values, apartment.number, member)
   }
 
-  refreshApartments(member)
+  refreshApartmentPages()
   return { saved: { number: apartment.number }, message: null }
 }
 
@@ -199,7 +187,7 @@ export async function update(
     return saveFailure(err, t, values, apartment.number, member)
   }
 
-  refreshApartments(member)
+  refreshApartmentPages()
   return { saved: { number: apartment.number }, message: null }
 }
 
@@ -281,6 +269,6 @@ export async function remove(locale: string, id: string): Promise<RemoveApartmen
   if (removal.kind === 'missing') return { message: t('notFound') }
   if (removal.kind === 'blocked') return { message: removal.reason }
 
-  refreshApartments(member)
+  refreshApartmentPages()
   return { removed: true, message: null }
 }

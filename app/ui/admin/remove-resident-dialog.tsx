@@ -24,7 +24,7 @@ type Props = {
  * heading and the status region says what happened.
  */
 export default function RemoveResidentDialog({ action, name, number, leavesBuilding }: Props) {
-  const t = useTranslations('Residents')
+  const t = useTranslations('ResidentsClient')
   const { announce, focusHeading } = useAnnouncer()
   const [open, setOpen] = useState(false)
   // Read when the dialog closes, to choose where focus goes; not shown, so not state.

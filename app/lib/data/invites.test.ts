@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
@@ -113,6 +113,15 @@ describe('preview', () => {
 })
 
 describe('forApartment', () => {
+  it('asks for the admin role', async () => {
+    signInAsAdminOf(buildingId)
+    vi.mocked(requireRole).mockClear()
+
+    await forApartment(apartmentId)
+
+    expect(requireRole).toHaveBeenCalledExactlyOnceWith('admin')
+  })
+
   it('is the newest invite that still works, with its uses and expiry', async () => {
     await db.delete(invites)
     signInAsAdminOf(buildingId)
@@ -141,6 +150,15 @@ describe('forApartment', () => {
 })
 
 describe('previewForVisitor', () => {
+  // The limit counts in fixed 15-minute windows: a fixed clock keeps the loop inside one.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-02T10:00:01Z'))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('shows the rate-limited state after 60 pages of unknown codes, counting no hits', async () => {
     await db.delete(rateLimits)
     const { code } = await invite({ revokedAt: new Date() })

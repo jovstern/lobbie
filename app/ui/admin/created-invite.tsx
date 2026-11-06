@@ -13,7 +13,7 @@ type Props = {
 
 /** The link and code of an invite just created: shown this once, from the action's answer. */
 export default function CreatedInvite({ invite, ref }: Props) {
-  const t = useTranslations('InviteAdmin')
+  const t = useTranslations('InviteAdminClient')
   const linkId = `invite-link-${invite.apartmentId}`
 
   return (

@@ -3,6 +3,7 @@ import { revalidatePath, updateTag } from 'next/cache'
 import { createTranslator } from 'next-intl'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { removeFromBuilding, setRole, type RoleFormState } from '@/app/lib/actions/members'
+import { committee } from '@/app/lib/data/directory'
 import { db } from '@/app/lib/db'
 import { apartmentResidents, apartments, buildingMembers, buildings, user } from '@/app/lib/schema'
 import { getSession } from '@/app/lib/session'
@@ -263,6 +264,37 @@ describe('setRole', () => {
     expect(await membershipOf(target.id)).toMatchObject({
       role: 'resident',
       committeeTitle: null,
+    })
+  })
+
+  it('clears the committee contact on demotion, so the committee page drops it', async () => {
+    const { person: target } = await newResident()
+    await signInAs('admin@example.com')
+    await setRole('en', target.id, empty, form({ role: 'committee', committeeTitle: 'Gardens' }))
+    await db
+      .update(buildingMembers)
+      .set({ committeePhone: '+97235550000', committeeEmail: 'gardens@committee.example' })
+      .where(eq(buildingMembers.userId, target.id))
+    expect((await committee()).find((entry) => entry.name === target.name)).toMatchObject({
+      committeePhone: '+97235550000',
+      committeeEmail: 'gardens@committee.example',
+    })
+
+    await setRole('en', target.id, empty, form({ role: 'resident', committeeTitle: '' }))
+
+    expect(await membershipOf(target.id)).toMatchObject({
+      role: 'resident',
+      committeeTitle: null,
+      committeePhone: null,
+      committeeEmail: null,
+    })
+    expect((await committee()).map((entry) => entry.name)).not.toContain(target.name)
+
+    // Promoted again, they start with no contact rather than the old one.
+    await setRole('en', target.id, empty, form({ role: 'committee', committeeTitle: 'Gardens' }))
+    expect((await committee()).find((entry) => entry.name === target.name)).toMatchObject({
+      committeePhone: null,
+      committeeEmail: null,
     })
   })
 

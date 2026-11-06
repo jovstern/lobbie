@@ -25,9 +25,9 @@ test('the admin invites e2e-1 and someone new joins from the link', async ({
     await useSessionOf(page, admin)
     await page.goto(`/admin/apartments/${id}`)
     const invite = page.getByRole('region', { name: text.InviteAdmin.title, exact: true })
-    await invite.getByRole('button', { name: text.InviteAdmin.create, exact: true }).click()
+    await invite.getByRole('button', { name: text.InviteAdminClient.create, exact: true }).click()
 
-    const fresh = page.getByRole('group', { name: text.InviteAdmin.newTitle, exact: true })
+    const fresh = page.getByRole('group', { name: text.InviteAdminClient.newTitle, exact: true })
     await expect(fresh).toBeFocused()
     const link = (await fresh.textContent())?.match(joinLink)
     if (!link) throw new Error('no invite link on the page')
@@ -104,24 +104,32 @@ test('a revoked invite says so', async ({ page }) => {
     await useSessionOf(page, admin)
     await page.goto(`/admin/apartments/${id}`)
     const invite = page.getByRole('region', { name: text.InviteAdmin.title, exact: true })
-    await invite.getByRole('button', { name: text.InviteAdmin.create, exact: true }).click()
-    const fresh = page.getByRole('group', { name: text.InviteAdmin.newTitle, exact: true })
+    await invite.getByRole('button', { name: text.InviteAdminClient.create, exact: true }).click()
+    const fresh = page.getByRole('group', { name: text.InviteAdminClient.newTitle, exact: true })
     const code = (await fresh.textContent())?.match(joinLink)?.[1]
     if (!code) throw new Error('no invite link on the page')
 
     await invite
-      .getByRole('button', { name: t('InviteAdmin.revokeLabel', { number: 'e2e-3' }), exact: true })
+      .getByRole('button', {
+        name: t('InviteAdminClient.revokeLabel', { number: 'e2e-3' }),
+        exact: true,
+      })
       .click()
     const confirm = page.getByRole('alertdialog', {
-      name: t('InviteAdmin.revokeTitle', { number: 'e2e-3' }),
+      name: t('InviteAdminClient.revokeTitle', { number: 'e2e-3' }),
       exact: true,
     })
-    await confirm.getByRole('button', { name: text.InviteAdmin.revokeConfirm, exact: true }).click()
+    await confirm
+      .getByRole('button', { name: text.InviteAdminClient.revokeConfirm, exact: true })
+      .click()
     await expect(confirm).toBeHidden()
     // The page's announcer, found by what it says: the copy buttons have status regions too.
     await expect(
-      page.getByRole('main').getByRole('status').filter({ hasText: text.InviteAdmin.revoked }),
-    ).toHaveText(text.InviteAdmin.revoked)
+      page
+        .getByRole('main')
+        .getByRole('status')
+        .filter({ hasText: text.InviteAdminClient.revoked }),
+    ).toHaveText(text.InviteAdminClient.revoked)
     await expect(fresh).toBeHidden()
 
     await page.goto(`/join/${code}`)

@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { revalidatePath, updateTag } from 'next/cache'
 import { createTranslator } from 'next-intl'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { remove } from '@/app/lib/actions/apartments'
 import { create, createAll, lookup, redeem, revoke } from '@/app/lib/actions/invites'
 import { db } from '@/app/lib/db'
@@ -524,36 +524,47 @@ describe('redeem', () => {
     expect(joined).toHaveLength(1)
   })
 
-  it('takes at most 10 tries per person in 15 minutes', async () => {
-    await newcomer()
-    for (let i = 0; i < 10; i++) {
-      request.ip = `10.0.1.${i}`
-      expect(await redeem({ locale: 'en', code: generateInviteCode() })).toEqual({
-        message: en.JoinErrors.invalid,
-      })
-    }
-    request.ip = '10.0.1.99'
-    const refused = await redeem({ locale: 'en', code: generateInviteCode() })
-    expect(refused.message).toMatch(/^Too many attempts\. Try again in (a minute|\d+ minutes)\.$/)
-  })
+  // The limits count in fixed 15-minute windows: a fixed clock keeps a loop inside one.
+  describe('its limits', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-11-02T10:00:01Z'))
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
 
-  it('refuses an address after 100 codes that name no invite, from any account', async () => {
-    for (let i = 0; i < 100; i++) {
-      // Ten tries each, within every person's own limit.
-      if (i % 10 === 0) await newcomer()
-      const attempt =
-        i % 2 === 0
-          ? (await redeem({ locale: 'en', code: generateInviteCode() })).message
-          : (await lookup('en', {}, form({ code: generateInviteCode() }))).error
-      expect(attempt).not.toMatch(/Too many/)
-    }
-    await newcomer()
-    expect((await redeem({ locale: 'en', code: generateInviteCode() })).message).toMatch(
-      /^Too many attempts/,
-    )
-    expect((await lookup('en', {}, form({ code: generateInviteCode() }))).error).toMatch(
-      /^Too many attempts/,
-    )
+    it('takes at most 10 tries per person in 15 minutes', async () => {
+      await newcomer()
+      for (let i = 0; i < 10; i++) {
+        request.ip = `10.0.1.${i}`
+        expect(await redeem({ locale: 'en', code: generateInviteCode() })).toEqual({
+          message: en.JoinErrors.invalid,
+        })
+      }
+      request.ip = '10.0.1.99'
+      const refused = await redeem({ locale: 'en', code: generateInviteCode() })
+      expect(refused.message).toMatch(/^Too many attempts\. Try again in (a minute|\d+ minutes)\.$/)
+    })
+
+    it('refuses an address after 100 codes that name no invite, from any account', async () => {
+      for (let i = 0; i < 100; i++) {
+        // Ten tries each, within every person's own limit.
+        if (i % 10 === 0) await newcomer()
+        const attempt =
+          i % 2 === 0
+            ? (await redeem({ locale: 'en', code: generateInviteCode() })).message
+            : (await lookup('en', {}, form({ code: generateInviteCode() }))).error
+        expect(attempt).not.toMatch(/Too many/)
+      }
+      await newcomer()
+      expect((await redeem({ locale: 'en', code: generateInviteCode() })).message).toMatch(
+        /^Too many attempts/,
+      )
+      expect((await lookup('en', {}, form({ code: generateInviteCode() }))).error).toMatch(
+        /^Too many attempts/,
+      )
+    })
   })
 
   it('never counts a code that works: a meeting of 40 on one Wi-Fi all join', async () => {
