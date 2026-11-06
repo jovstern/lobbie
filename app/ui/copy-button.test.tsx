@@ -12,12 +12,12 @@ function renderCopy() {
       <CopyButton
         text="https://lobbie.example/join/ABCDE23456"
         label="Copy link"
-        accessibleLabel="Copy the link for apartment 7"
+        accessibleLabel="Copy link for apartment 7"
         sourceId="link"
       />
     </NextIntlClientProvider>,
   )
-  return screen.getByRole('button', { name: 'Copy the link for apartment 7' })
+  return screen.getByRole('button', { name: 'Copy link for apartment 7' })
 }
 
 describe('CopyButton', () => {

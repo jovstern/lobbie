@@ -75,7 +75,7 @@ test('a phone shows only when its owner shared it, and a hidden one never reache
   // A search that finds avi: his row reaches the page, his contact does not.
   const main = page.getByRole('main')
   await main.getByLabel(text.Directory.searchLabel, { exact: true }).fill(avi.name)
-  await expect(page).toHaveURL(`/building/directory?q=${encodeURIComponent(avi.name)}`)
+  await expect(page).toHaveURL(`/building/directory?${new URLSearchParams({ q: avi.name })}`)
   await expect(main.getByRole('heading', { level: 3 })).toHaveText([
     t('Directory.apartment', { number: avi.apartment }),
   ])
@@ -94,7 +94,7 @@ test('a search narrows the directory, and Clear brings everyone back', async ({ 
   const field = main.getByLabel(text.Directory.searchLabel, { exact: true })
 
   await field.fill(noa.name)
-  await expect(page).toHaveURL(`/building/directory?q=${encodeURIComponent(noa.name)}`)
+  await expect(page).toHaveURL(`/building/directory?${new URLSearchParams({ q: noa.name })}`)
   await expect(main.getByRole('heading', { level: 3 })).toHaveText([
     t('Directory.apartment', { number: noa.apartment }),
   ])

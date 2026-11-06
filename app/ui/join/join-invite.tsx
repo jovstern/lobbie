@@ -1,3 +1,4 @@
+import { connection } from 'next/server'
 import { getLocale } from 'next-intl/server'
 import { redeem } from '@/app/lib/actions/invites'
 import { getMembership } from '@/app/lib/authz'
@@ -14,6 +15,8 @@ type Props = { params: Promise<{ code: string }> }
  * bearer secret: it is read here and bound to the action, never logged.
  */
 export default async function JoinInvite({ params }: Props) {
+  // The visit counts against a rate limit, which reads the clock: never while prerendering.
+  await connection()
   const { code: raw } = await params
   const code = normalizeInviteCode(raw)
   const [lookup, membership, locale] = await Promise.all([

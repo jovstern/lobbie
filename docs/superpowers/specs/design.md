@@ -344,11 +344,13 @@ rgb(31 27 22 / .05)` (none in dark; a border instead). Motion 180 ms ease-out; n
 | `--color-text` | `#1F1B16` | `#F3EEE7` | 16.2 / 16.0 |
 | `--color-text-muted` | `#6B6259` | `#B3A89B` | 5.6 / 7.9 |
 | `--color-accent` (buttons, links, focus) | `#B54E29` | `#E07A52` | 4.9 / 6.2 |
+| `--color-accent-strong` (hovered, pressed button) | `#9A4222` | `#E8916F` | on-accent 6.6 / 7.7 |
 | `--color-on-accent` | `#FFFFFF` | `#16130F` | 5.1 / 6.2 |
 | `--color-success` (paid) | `#2F7A4F` | `#5FB384` | 4.9 / 7.3 |
 | `--color-warning` (due, text) | `#8A5A12` | `#E0A94A` | 5.6 / 8.8 |
 | `--color-warning-fill` (chips, bars) | `#B7791F` | `#E0A94A` | non-text 3.4 |
 | `--color-danger` (overdue) | `#B23A3A` | `#EC7B7B` | 5.6 / 6.8 |
+| `--color-danger-strong` (hovered, pressed) | `#973131` | `#F09393` | on-accent 7.5 / 8.2 |
 
 (The brief's `#C2562F` is exactly 4.50:1 on white; `#B54E29` keeps the colour with margin.)
 Status is never colour alone: every chip has a word and an icon. Focus ring: 2 px accent

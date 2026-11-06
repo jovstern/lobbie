@@ -361,7 +361,7 @@
     "copyAll": "Copy all",
     "line": "Apartment {number}: {link}",
     "apartment": "Apartment {number}",
-    "copyLinkLabel": "Copy the link for apartment {number}",
+    "copyLinkLabel": "Copy link for apartment {number}",
     "sectionTitle": "Invite the residents",
     "sectionLead": "Create a link for each apartment and send it to the people who live there, for example in the building’s WhatsApp group.",
     "listLabel": "New invite links",
@@ -438,7 +438,7 @@
   },
   "PersonRole": {
     "edit": "Change role",
-    "editLabel": "Change the role of {name}",
+    "editLabel": "Change role of {name}",
     "title": "Role of {name}",
     "description": "Committee members and admins open the admin section. Only admins manage the building and its people.",
     "role": "Role",

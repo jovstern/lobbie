@@ -44,6 +44,17 @@ describe('design tokens meet WCAG AA in both themes', () => {
     ).toBeGreaterThanOrEqual(4.5)
   })
 
+  // A hovered or pressed button keeps its text readable.
+  it.each(
+    themes.flatMap((theme) =>
+      (['accent-strong', 'danger-strong'] as const).map((fill) => [theme, fill] as const),
+    ),
+  )('%s: on-accent on %s is at least 4.5:1', (theme, fill) => {
+    expect(contrastRatio(palette[theme]['on-accent'], palette[theme][fill])).toBeGreaterThanOrEqual(
+      4.5,
+    )
+  })
+
   it.each(themes.flatMap((theme) => surfaces.map((surface) => [theme, surface] as const)))(
     '%s: warning-fill (non-text) on %s is at least 3:1',
     (theme, surface) => {

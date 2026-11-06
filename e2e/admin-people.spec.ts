@@ -63,8 +63,11 @@ test('the admin makes e2e2 a committee member, who then sees /admin, and back', 
     await expect(dialog).toBeHidden()
     await expect(main).not.toContainText('e2e-title')
 
-    const response = await testerPage.goto('/admin')
-    expect(response?.status()).toBe(404)
+    // The page streams (Cache Components), so the 404 is its content, not the status code.
+    await testerPage.goto('/admin')
+    await expect(
+      testerPage.getByRole('heading', { level: 1, name: text.NotFound.title, exact: true }),
+    ).toBeVisible()
   } finally {
     await testerContext.close()
     await resetToResident(tester.email)

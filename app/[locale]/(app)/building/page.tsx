@@ -37,27 +37,29 @@ export default async function BuildingPage() {
       {/* A list of compact rows on phones; two columns of cards from desktop width. */}
       <ul className="grid gap-3 lg:grid-cols-2 lg:gap-6">
         {links.map(({ href, label, body, icon: Icon }) => (
-          <li key={href}>
-            <Link
-              href={href}
-              aria-labelledby={`${label}-link`}
-              aria-describedby={`${label}-body`}
-              className="rounded-card border-border bg-surface-raised shadow-card hover:border-text-muted active:bg-surface flex h-full items-start gap-3 border p-4 transition-[background-color,border-color] lg:p-6"
-            >
-              <Icon aria-hidden className="text-accent mt-0.5 size-6 shrink-0" />
-              <span className="flex min-w-0 flex-col gap-1">
-                <span id={`${label}-link`} className="text-lg font-semibold">
-                  {t(label)}
-                </span>
-                <span id={`${label}-body`} className="text-text-muted text-pretty">
-                  {t(body)}
-                </span>
+          // The link holds only the title, so its name is its visible text; its ::after
+          // covers the card, so the whole row is the target, and the row shows the focus.
+          <li
+            key={href}
+            className="rounded-card border-border bg-surface-raised shadow-card hover:border-text-muted has-active:bg-surface has-focus-visible:outline-accent relative flex h-full items-start gap-3 border p-4 transition-[background-color,border-color] has-focus-visible:outline-2 has-focus-visible:outline-offset-2 lg:p-6"
+          >
+            <Icon aria-hidden className="text-accent mt-0.5 size-6 shrink-0" />
+            <span className="flex min-w-0 flex-col gap-1">
+              <Link
+                href={href}
+                aria-describedby={`${label}-body`}
+                className="rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
+              >
+                {t(label)}
+              </Link>
+              <span id={`${label}-body`} className="text-text-muted text-pretty">
+                {t(body)}
               </span>
-              <ChevronRightIcon
-                aria-hidden
-                className="text-text-muted ms-auto mt-1 size-5 shrink-0 rtl:-scale-x-100"
-              />
-            </Link>
+            </span>
+            <ChevronRightIcon
+              aria-hidden
+              className="text-text-muted ms-auto mt-1 size-5 shrink-0 rtl:-scale-x-100"
+            />
           </li>
         ))}
       </ul>

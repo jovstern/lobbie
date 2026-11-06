@@ -29,7 +29,7 @@ function renderDialog(
       </AdminAnnouncer>
     </NextIntlClientProvider>,
   )
-  return screen.getByRole('button', { name: 'Change the role of Ana' })
+  return screen.getByRole('button', { name: 'Change role of Ana' })
 }
 
 describe('PersonRoleDialog', () => {

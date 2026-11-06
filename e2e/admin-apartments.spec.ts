@@ -123,9 +123,16 @@ test('removing an apartment people live in is blocked, and says why', async ({ p
 
   await expect(remove).toHaveAttribute('aria-disabled', 'true')
   await expect(remove).toHaveAccessibleDescription(new RegExp(escapeRegExp(reason)))
-  await expect(page.getByRole('main').getByText(reason)).toBeVisible()
+  // Shown beside this apartment's button: other apartments may have the same reason.
+  const reasonId = await remove.getAttribute('aria-describedby')
+  const shown = page.locator(`[id="${reasonId}"]`)
+  await expect(shown).toBeVisible()
+  await expect(shown).toContainText(reason)
 
-  await remove.click()
+  // aria-disabled keeps it in the tab order (Playwright's click waits for it to be enabled):
+  // pressed from the keyboard, it opens nothing.
+  await remove.focus()
+  await page.keyboard.press('Enter')
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
 })
 

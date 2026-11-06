@@ -333,7 +333,7 @@
     "replaceConfirm": "החלפת ההזמנה",
     "cancel": "ביטול",
     "revoke": "ביטול הזמנה",
-    "revokeLabel": "ביטול ההזמנה של דירה {number}",
+    "revokeLabel": "ביטול הזמנה של דירה {number}",
     "revokeTitle": "לבטל את ההזמנה של דירה {number}?",
     "revokeBody": "הקישור יפסיק לעבוד מיד. מי שכבר הצטרף נשאר.",
     "revokeConfirm": "ביטול ההזמנה",
@@ -438,7 +438,7 @@
   },
   "PersonRole": {
     "edit": "שינוי תפקיד",
-    "editLabel": "שינוי התפקיד של {name}",
+    "editLabel": "שינוי תפקיד של {name}",
     "title": "התפקיד של {name}",
     "description": "חברי ועד ומנהלים נכנסים לאזור הניהול. רק מנהלים מנהלים את הבניין ואת האנשים בו.",
     "role": "תפקיד",
