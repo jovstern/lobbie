@@ -52,6 +52,8 @@ describe('ApartmentDialog', () => {
     const trigger = renderDialog()
 
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     const dialog = screen.getByRole('dialog', { name: copy.addTitle })
     expect(dialog).toHaveAccessibleDescription(copy.addDescription)
@@ -62,6 +64,8 @@ describe('ApartmentDialog', () => {
     const user = userEvent.setup()
     const trigger = renderDialog()
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     await user.keyboard('{Escape}')
 
@@ -74,6 +78,8 @@ describe('ApartmentDialog', () => {
     const trigger = renderDialog({ editing: true })
 
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     expect(screen.getByRole('dialog', { name: 'Edit apartment 7' })).toBeVisible()
     expect(screen.getByLabelText(copy.number)).toHaveValue('7')
@@ -89,6 +95,8 @@ describe('ApartmentDialog', () => {
     }
     renderDialog({ action: vi.fn(async () => failed) })
     await user.click(screen.getByRole('button', { name: copy.open }))
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.type(screen.getByLabelText(copy.number), '7')
     await user.type(screen.getByLabelText(copy.floor), '2')
 
@@ -114,6 +122,8 @@ describe('ApartmentDialog', () => {
     }))
     const trigger = renderDialog({ action, confirmedAction, editing: true })
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     await user.click(screen.getByRole('button', { name: copy.save }))
 
@@ -142,6 +152,8 @@ describe('ApartmentDialog', () => {
       focusHeadingAfterSave: true,
     })
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.type(screen.getByLabelText(copy.number), '12A')
     await user.type(screen.getByLabelText(copy.floor), '4')
 

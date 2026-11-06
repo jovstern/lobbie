@@ -110,12 +110,14 @@
   },
   "More": {
     "title": "More",
+    "lead": "Your profile, the app’s language, and signing out.",
     "profile": "Profile",
     "language": "Language",
     "admin": "Admin"
   },
   "Profile": {
     "title": "Profile",
+    "lead": "Your name and phone, whether neighbours see them in the directory, and the app’s language.",
     "detailsTitle": "Your details",
     "directoryTitle": "Directory",
     "languageTitle": "Language",
@@ -171,7 +173,7 @@
     "navLabel": "Admin",
     "overview": "Overview",
     "building": "Building",
-    "lead": "Manage the building and its money.",
+    "lead": "The committee’s tools for running the building: its details and money, its apartments and the people in them. What you see here depends on your role.",
     "buildingLink": "Building details",
     "buildingLinkBody": "Name, address, quorum and billing, and corrections to the fund.",
     "noToolsYet": "The committee's tools, such as payments and announcements, will appear here as they're added.",
@@ -185,6 +187,7 @@
   },
   "AdminBuilding": {
     "title": "Building details",
+    "lead": "The building’s name and address, the month billing starts from, and the quorum for the annual meeting. The fund shows its opening balance and every correction to it.",
     "detailsTitle": "Details",
     "fundTitle": "Building fund",
     "openingBalance": "Opening balance",
@@ -242,6 +245,8 @@
   },
   "AdminApartments": {
     "title": "Apartments",
+    "lead": "Every apartment in the building, with its residents and invite. Add apartments, then invite the people who live in them.",
+    "apartmentHeading": "Apartment <number></number>",
     "count": "{count, plural, one {One apartment} other {# apartments}}, by floor",
     "tableLabel": "Apartments",
     "number": "Apartment",
@@ -439,6 +444,7 @@
   },
   "People": {
     "title": "People",
+    "lead": "Everyone who has joined the building, with their apartments, role and committee title.",
     "count": "{count, plural, one {One person} other {# people}} in the building",
     "searchLabel": "Search people",
     "searchHint": "A name, or an apartment number.",

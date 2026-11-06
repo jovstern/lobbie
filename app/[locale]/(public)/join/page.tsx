@@ -7,7 +7,7 @@ import AuthCard from '@/app/ui/auth/auth-card'
 import JoinGate from '@/app/ui/auth/join-gate'
 import SignOutButton from '@/app/ui/auth/sign-out-button'
 import JoinCodeForm from '@/app/ui/join/join-code-form'
-import { SignInFormSkeleton } from '@/app/ui/skeletons'
+import { JoinFormSkeleton } from '@/app/ui/skeletons'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Join')
@@ -25,7 +25,7 @@ export default async function JoinPage() {
         <h1 className="text-2xl font-semibold">{t('title')}</h1>
         <p className="text-pretty">{t('body')}</p>
       </header>
-      <Suspense fallback={<SignInFormSkeleton />}>
+      <Suspense fallback={<JoinFormSkeleton />}>
         <JoinGate locale={locale} next={withLocalePrefix('/join', locale)}>
           <JoinCodeForm action={lookup.bind(null, locale)} />
           <div className="border-border flex flex-col items-start gap-3 border-t pt-6">

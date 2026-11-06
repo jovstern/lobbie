@@ -39,6 +39,8 @@ describe('RemoveResidentDialog', () => {
   it('warns that their last apartment takes them out of the building', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog(true))
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     const dialog = screen.getByRole('alertdialog', { name: 'Remove Ana from apartment 7?' })
     expect(dialog).toHaveAccessibleDescription(
@@ -50,6 +52,8 @@ describe('RemoveResidentDialog', () => {
   it('says they stay in the building when they live elsewhere in it', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog(false))
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     expect(screen.getByRole('alertdialog')).toHaveAccessibleDescription(
       'Ana stays in the building, in their other apartments.',
@@ -59,6 +63,8 @@ describe('RemoveResidentDialog', () => {
   it('removes, announces it and moves focus to the heading', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog(false))
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     await user.click(screen.getByRole('button', { name: copy.confirm }))
 
@@ -74,12 +80,16 @@ describe('RemoveResidentDialog', () => {
       vi.fn(async () => ({ message: en.ResidentErrors.lastAdmin })),
     )
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     await user.click(screen.getByRole('button', { name: copy.confirm }))
 
     expect(await screen.findByText(en.ResidentErrors.lastAdmin)).toBeVisible()
     await user.keyboard('{Escape}')
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
     expect(screen.queryByText(en.ResidentErrors.lastAdmin)).not.toBeInTheDocument()
   })
 })

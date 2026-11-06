@@ -36,6 +36,8 @@ describe('PersonRoleDialog', () => {
   it('opens a labelled dialog with focus on the saved role, and the title filled in', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog())
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     const dialog = screen.getByRole('dialog', { name: 'Role of Ana' })
     expect(dialog).toHaveAccessibleDescription(copy.description)
@@ -49,6 +51,8 @@ describe('PersonRoleDialog', () => {
     const user = userEvent.setup()
     const trigger = renderDialog()
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     await user.keyboard('{Escape}')
 
@@ -59,6 +63,8 @@ describe('PersonRoleDialog', () => {
   it('hides the title for a resident, who has none', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog())
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     await user.click(screen.getByRole('radio', { name: 'Resident' }))
 
@@ -77,6 +83,8 @@ describe('PersonRoleDialog', () => {
         { role: 'admin', committeeTitle: '' },
       ),
     )
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.click(screen.getByRole('radio', { name: 'Resident' }))
 
     await user.click(screen.getByRole('button', { name: copy.save }))
@@ -91,6 +99,8 @@ describe('PersonRoleDialog', () => {
     const action = vi.fn<RoleAction>(async () => ({ saved: { role: 'admin' }, message: null }))
     const trigger = renderDialog(action)
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.click(screen.getByRole('radio', { name: 'Admin' }))
     await user.clear(screen.getByLabelText(copy.committeeTitle))
     await user.type(screen.getByLabelText(copy.committeeTitle), 'Treasurer')
@@ -108,6 +118,8 @@ describe('PersonRoleDialog', () => {
   it('warns an admin who is about to give up the role themselves', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog(undefined, { role: 'admin', committeeTitle: '' }, true))
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     expect(screen.queryByText(copy.selfDemoteWarning)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: 'Committee' }))
@@ -118,6 +130,8 @@ describe('PersonRoleDialog', () => {
   it('does not warn when the admin changes someone else', async () => {
     const user = userEvent.setup()
     await user.click(renderDialog(undefined, { role: 'admin', committeeTitle: '' }))
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     await user.click(screen.getByRole('radio', { name: 'Committee' }))
 

@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { requireRole } from '@/app/lib/authz'
-import PeopleAdmin from '@/app/ui/admin/people-admin'
+import AdminPageHeader from '@/app/ui/admin/admin-page-header'
+import PeopleAdmin, { peopleHeadingId } from '@/app/ui/admin/people-admin'
 import { PeopleSkeleton } from '@/app/ui/skeletons'
 
 // The role first: below it the page is a 404, and its title must not name the page. (The
@@ -14,10 +15,17 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Admins only (★): PeopleAdmin checks the role and answers 404 to anyone else.
-export default function AdminPeoplePage({ searchParams }: PageProps<'/[locale]/admin/people'>) {
+export default async function AdminPeoplePage({
+  searchParams,
+}: PageProps<'/[locale]/admin/people'>) {
+  const t = await getTranslations('People')
+
   return (
-    <Suspense fallback={<PeopleSkeleton />}>
-      <PeopleAdmin searchParams={searchParams} />
-    </Suspense>
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader title={t('title')} lead={t('lead')} headingId={peopleHeadingId} />
+      <Suspense fallback={<PeopleSkeleton />}>
+        <PeopleAdmin searchParams={searchParams} />
+      </Suspense>
+    </div>
   )
 }

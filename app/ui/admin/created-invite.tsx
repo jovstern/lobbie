@@ -1,20 +1,24 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import type { Ref } from 'react'
+import { useEffect, useRef } from 'react'
 import type { CreatedInvite as CreatedInviteData } from '@/app/lib/definitions'
 import CopyButton from '@/app/ui/copy-button'
 
-type Props = {
-  invite: CreatedInviteData
-  /** Takes focus when the invite appears. */
-  ref: Ref<HTMLDivElement>
-}
-
-/** The link and code of an invite just created: shown this once, from the action's answer. */
-export default function CreatedInvite({ invite, ref }: Props) {
+/**
+ * The link and code of an invite just created: shown this once, from the action's answer. It
+ * appears only after a create, so it takes the focus as it mounts: the button that created it
+ * may be gone, and the new link is what the admin came for.
+ */
+export default function CreatedInvite({ invite }: { invite: CreatedInviteData }) {
   const t = useTranslations('InviteAdminClient')
   const linkId = `invite-link-${invite.apartmentId}`
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Focus is the DOM's, outside React.
+  useEffect(() => {
+    ref.current?.focus()
+  }, [])
 
   return (
     <div

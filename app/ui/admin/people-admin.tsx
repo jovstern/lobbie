@@ -6,7 +6,8 @@ import PeopleList from '@/app/ui/admin/people-list'
 import SearchField from '@/app/ui/search-field'
 import { PeopleListSkeleton } from '@/app/ui/skeletons'
 
-const headingId = 'people-title'
+/** The page's heading (in its static header), which takes focus when a dialog's button is gone. */
+export const peopleHeadingId = 'people-title'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
@@ -22,16 +23,9 @@ export default async function PeopleAdmin({ searchParams }: Props) {
 
   return (
     <AdminAnnouncer
-      headingId={headingId}
-      header={
-        <header className="flex flex-col gap-4">
-          {/* Focusable from script: it takes focus when the button that had it is gone. */}
-          <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold">
-            {t('title')}
-          </h1>
-          <SearchField query={query} label={t('searchLabel')} hint={t('searchHint')} />
-        </header>
-      }
+      headingId={peopleHeadingId}
+      // Below the page's static header.
+      header={<SearchField query={query} label={t('searchLabel')} hint={t('searchHint')} />}
     >
       {/* Keyed by the search, so each new one shows the skeleton while it loads. */}
       <Suspense key={query} fallback={<PeopleListSkeleton />}>

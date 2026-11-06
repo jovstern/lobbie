@@ -10,7 +10,7 @@ import { hasGivenName } from '@/app/lib/utils/display-name'
 import { formatPhone } from '@/app/lib/utils/phone'
 import { hasRole } from '@/app/lib/utils/roles'
 import Card from '@/app/ui/card'
-import CommitteeContactForm from '@/app/ui/profile/committee-contact-form'
+import CommitteeContact from '@/app/ui/profile/committee-contact'
 import ContactVisibility from '@/app/ui/profile/contact-visibility'
 import LanguageChoice from '@/app/ui/profile/language-choice'
 import ProfileForm from '@/app/ui/profile/profile-form'
@@ -68,7 +68,7 @@ export default async function ProfileSettings({ searchParams }: Props) {
             <dd className="font-medium">{profile.committeeTitle ?? t('committeeRoleNone')}</dd>
             <dd className="text-text-muted text-sm">{t('committeeRoleHint')}</dd>
           </dl>
-          <CommitteeContactForm
+          <CommitteeContact
             action={updateCommitteeContact.bind(null, locale)}
             saved={{
               committeePhone: shownPhone(profile.committeePhone),

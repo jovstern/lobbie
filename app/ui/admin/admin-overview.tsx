@@ -53,44 +53,37 @@ export default async function AdminOverview() {
   const t = await getTranslations('Admin')
   const links = hasRole(role, 'admin') ? adminLinks : []
 
-  return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold">{t('title')}</h1>
-        <p className="text-text-muted">{t('lead')}</p>
-      </header>
-      {links.length > 0 ? (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {links.map(({ href, id, label, body, icon: Icon }) => (
-            // The link holds only the title, so its name is its visible text; its ::after
-            // covers the card, so the whole card is the target, and the card shows the focus.
-            <li
-              key={href}
-              className={`${cardClassName} hover:border-text-muted has-active:bg-surface has-focus-visible:outline-accent relative h-full transition-[background-color,border-color] has-focus-visible:outline-2 has-focus-visible:outline-offset-2`}
+  // Below the page's static header.
+  return links.length > 0 ? (
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {links.map(({ href, id, label, body, icon: Icon }) => (
+        // The link holds only the title, so its name is its visible text; its ::after
+        // covers the card, so the whole card is the target, and the card shows the focus.
+        <li
+          key={href}
+          className={`${cardClassName} hover:border-text-muted has-active:bg-surface has-focus-visible:outline-accent relative h-full transition-[background-color,border-color] has-focus-visible:outline-2 has-focus-visible:outline-offset-2`}
+        >
+          <span className="flex items-center gap-3">
+            <Icon aria-hidden className="text-accent size-6 shrink-0" />
+            <Link
+              href={href}
+              aria-describedby={`${id}-body`}
+              className="after:rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
             >
-              <span className="flex items-center gap-3">
-                <Icon aria-hidden className="text-accent size-6 shrink-0" />
-                <Link
-                  href={href}
-                  aria-describedby={`${id}-body`}
-                  className="after:rounded-card text-lg font-semibold outline-none after:absolute after:inset-0"
-                >
-                  {t(label)}
-                </Link>
-                <ChevronRightIcon
-                  aria-hidden
-                  className="text-text-muted ms-auto size-5 shrink-0 rtl:-scale-x-100"
-                />
-              </span>
-              <span id={`${id}-body`} className="text-text-muted">
-                {t(body)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState icon={WrenchScrewdriverIcon} title={t('noToolsTitle')} body={t('noToolsYet')} />
-      )}
-    </div>
+              {t(label)}
+            </Link>
+            <ChevronRightIcon
+              aria-hidden
+              className="text-text-muted ms-auto size-5 shrink-0 rtl:-scale-x-100"
+            />
+          </span>
+          <span id={`${id}-body`} className="text-text-muted">
+            {t(body)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <EmptyState icon={WrenchScrewdriverIcon} title={t('noToolsTitle')} body={t('noToolsYet')} />
   )
 }

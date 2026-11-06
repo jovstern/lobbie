@@ -1,36 +1,33 @@
-import { LinkIcon } from '@heroicons/react/24/outline'
+import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { create, revoke } from '@/app/lib/actions/invites'
 import { requireRole } from '@/app/lib/authz'
+import { get } from '@/app/lib/data/apartments'
 import { forApartment } from '@/app/lib/data/invites'
-import type { Apartment } from '@/app/lib/definitions'
 import { formatDate } from '@/app/lib/utils/dates'
 import InviteControls from '@/app/ui/admin/invite-controls'
 import RevokeInviteDialog from '@/app/ui/admin/revoke-invite-dialog'
-import { cardClassName } from '@/app/ui/card'
 
 /**
- * The apartment's invite (R9): the active one's uses and expiry, or none, with create, replace
- * and revoke. Only a hash of the code is stored, so a saved invite's link cannot be shown
- * again; past (revoked or expired) invites are not listed, since nothing can be done with them.
+ * The apartment's invite (R9), inside the page's static Invite card: the active one's uses and
+ * expiry, or none, with create, replace and revoke. Only a hash of the code is stored, so a
+ * saved invite's link cannot be shown again; past (revoked or expired) invites are not listed,
+ * since nothing can be done with them.
  */
-export default async function ApartmentInvite({ apartment }: { apartment: Apartment }) {
-  const [member, invite, t, locale] = await Promise.all([
+export default async function ApartmentInvite({ apartmentId }: { apartmentId: Promise<string> }) {
+  const id = await apartmentId
+  const [member, apartment, invite, t, locale] = await Promise.all([
     requireRole('admin'),
-    forApartment(apartment.id),
+    get(id),
+    forApartment(id),
     getTranslations('InviteAdmin'),
     getLocale(),
   ])
+  if (!apartment) notFound()
 
+  // One block, as its placeholder is, so the card's gaps do not change when it streams in.
   return (
-    <section aria-labelledby="invite-title" className={`${cardClassName} max-w-2xl`}>
-      <div className="flex flex-col gap-1">
-        <h2 id="invite-title" className="flex items-center gap-2 text-lg font-semibold">
-          <LinkIcon aria-hidden className="text-text-muted size-5" />
-          {t('title')}
-        </h2>
-        <p className="text-text-muted">{t('lead')}</p>
-      </div>
+    <div className="flex flex-col gap-4">
       {invite ? (
         <div className="flex flex-col gap-1">
           <p className="font-medium">{t('active')}</p>
@@ -65,7 +62,6 @@ export default async function ApartmentInvite({ apartment }: { apartment: Apartm
           ) : null
         }
       />
-      <p className="text-text-muted text-sm">{t('onceNote')}</p>
-    </section>
+    </div>
   )
 }

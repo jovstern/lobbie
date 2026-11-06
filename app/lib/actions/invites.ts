@@ -1,6 +1,6 @@
 'use server'
 
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, notExists, sql } from 'drizzle-orm'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
@@ -114,13 +114,43 @@ export async function create(
           .update(invites)
           .set({ revokedAt: sql`now()` })
           .where(ofApartment)
-      } else {
-        const [active] = await tx.select({ id: invites.id }).from(invites).where(ofApartment)
-        if (active) return { kind: 'active-exists' }
       }
 
+      // The active-invite check and the insert are one statement: it runs after the lock above,
+      // so its snapshot sees any invite a concurrent create committed while this one waited.
+      // No row back means the apartment already has an active invite (never after a replace).
       const { row, shown } = newInvite(member, apartment)
-      const [saved] = await tx.insert(invites).values(row).returning({ id: invites.id })
+      const [saved] = await tx
+        .insert(invites)
+        .select(
+          tx
+            .select({
+              id: sql<string>`gen_random_uuid()`.as('id'),
+              buildingId: sql<string>`${row.buildingId}::uuid`.as('building_id'),
+              apartmentId: apartments.id,
+              codeHash: sql<string>`${row.codeHash}::text`.as('code_hash'),
+              maxUses: sql<number>`${invites.maxUses.default}::integer`.as('max_uses'),
+              uses: sql<number>`0`.as('uses'),
+              createdBy: sql<string>`${row.createdBy}::uuid`.as('created_by'),
+              createdAt: sql<Date>`now()`.as('created_at'),
+              expiresAt: sql<Date>`${row.expiresAt}`.as('expires_at'),
+              revokedAt: sql<Date | null>`NULL::timestamptz`.as('revoked_at'),
+            })
+            .from(apartments)
+            .where(
+              and(
+                eq(apartments.id, apartment.id),
+                notExists(
+                  tx
+                    .select({ one: sql`1` })
+                    .from(invites)
+                    .where(ofApartment),
+                ),
+              ),
+            ),
+        )
+        .returning({ id: invites.id })
+      if (!saved) return { kind: 'active-exists' }
       return { kind: 'created', invite: { ...shown, inviteId: saved.id } }
     })
   } catch (err) {

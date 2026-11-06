@@ -14,7 +14,10 @@ export default async function ProfilePage({ searchParams }: PageProps<'/[locale]
 
   return (
     <div className="flex max-w-xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{t('title')}</h1>
+      <header className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold">{t('title')}</h1>
+        <p className="text-text-muted max-w-prose text-pretty">{t('lead')}</p>
+      </header>
       <Suspense fallback={<ProfileSkeleton />}>
         <ProfileSettings searchParams={searchParams} />
       </Suspense>

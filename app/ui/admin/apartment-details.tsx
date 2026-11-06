@@ -1,36 +1,94 @@
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, LinkIcon, UsersIcon } from '@heroicons/react/24/outline'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
+import { Suspense, type ReactNode } from 'react'
 import { update } from '@/app/lib/actions/apartments'
-import { requireRole } from '@/app/lib/authz'
 import { get } from '@/app/lib/data/apartments'
 import { get as getBuilding } from '@/app/lib/data/buildings'
 import { formatMonth } from '@/app/lib/utils/dates'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentInvite from '@/app/ui/admin/apartment-invite'
 import ApartmentResidents from '@/app/ui/admin/apartment-residents'
-import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
+import { cardClassName } from '@/app/ui/card'
+import {
+  ApartmentFactsSkeleton,
+  ApartmentInviteSkeleton,
+  ApartmentNumberSkeleton,
+  ApartmentResidentsSkeleton,
+} from '@/app/ui/skeletons'
 import { Link } from '@/i18n/navigation'
 
 const headingId = 'apartment-title'
 
-type Props = { params: Promise<{ id: string }> }
+/** The apartment's number, for the heading. */
+async function ApartmentNumber({ apartmentId }: { apartmentId: Promise<string> }) {
+  const apartment = await get(await apartmentId)
+  if (!apartment) notFound()
+  return apartment.number
+}
 
-/**
- * `/admin/apartments/[id]` for an admin: the apartment's header, its invite, then its residents.
- * Another building's apartment, or none, is a 404.
- */
-export default async function ApartmentDetails({ params }: Props) {
-  // Admins only; anyone else gets the 404, before anything of the building is read.
-  await requireRole('admin')
-  const { id } = await params
+/** The apartment's floor and billing start, with its Edit button. */
+async function ApartmentFacts({ apartmentId }: { apartmentId: Promise<string> }) {
   const [apartment, building, t, locale] = await Promise.all([
-    get(id),
+    apartmentId.then(get),
     getBuilding(),
     getTranslations('AdminApartments'),
     getLocale(),
   ])
   if (!apartment) notFound()
+
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <dl className="text-text-muted flex flex-wrap gap-x-6 gap-y-1">
+        <div>
+          <dt className="sr-only">{t('floor')}</dt>
+          <dd>{t('floorValue', { floor: apartment.floor })}</dd>
+        </div>
+        <div className="flex gap-1">
+          <dt>{t('billingStart')}:</dt>
+          <dd>
+            {apartment.billingStartMonth
+              ? formatMonth(apartment.billingStartMonth, locale)
+              : t('buildingDefault', { month: formatMonth(building.billingStartMonth, locale) })}
+          </dd>
+        </div>
+      </dl>
+      <ApartmentDialog
+        action={update.bind(null, locale, apartment.id, false)}
+        confirmedAction={update.bind(null, locale, apartment.id, true)}
+        saved={{
+          number: apartment.number,
+          floor: String(apartment.floor),
+          billingStartMonth: apartment.billingStartMonth ?? '',
+        }}
+      />
+    </div>
+  )
+}
+
+type Props = {
+  /** The apartment's id from the URL. */
+  apartmentId: Promise<string>
+}
+
+/**
+ * `/admin/apartments/[id]` for an admin: the apartment's header, its invite, then its residents.
+ * What does not depend on the apartment (the way back, the heading, the cards' titles and notes)
+ * is in the static shell; the number, the facts, the invite and the residents stream in. Each of
+ * those checks the role and the apartment: anyone below admin, and an id that is not one of the
+ * building's apartments, get the 404.
+ */
+export default async function ApartmentDetails({ apartmentId }: Props) {
+  const [t, tInvite, tResidents] = await Promise.all([
+    getTranslations('AdminApartments'),
+    getTranslations('InviteAdmin'),
+    getTranslations('Residents'),
+  ])
+  // What reads the apartment streams in behind a placeholder of its shape.
+  const streamed = (fallback: ReactNode, content: (id: Promise<string>) => ReactNode) => (
+    <Suspense fallback={fallback}>{content(apartmentId)}</Suspense>
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -44,42 +102,44 @@ export default async function ApartmentDetails({ params }: Props) {
       <AdminAnnouncer
         headingId={headingId}
         header={
-          <header className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex flex-col gap-2">
-              <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold">
-                {t('apartmentTitle', { number: apartment.number })}
-              </h1>
-              <dl className="text-text-muted flex flex-wrap gap-x-6 gap-y-1">
-                <div>
-                  <dt className="sr-only">{t('floor')}</dt>
-                  <dd>{t('floorValue', { floor: apartment.floor })}</dd>
-                </div>
-                <div className="flex gap-1">
-                  <dt>{t('billingStart')}:</dt>
-                  <dd>
-                    {apartment.billingStartMonth
-                      ? formatMonth(apartment.billingStartMonth, locale)
-                      : t('buildingDefault', {
-                          month: formatMonth(building.billingStartMonth, locale),
-                        })}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            <ApartmentDialog
-              action={update.bind(null, locale, apartment.id, false)}
-              confirmedAction={update.bind(null, locale, apartment.id, true)}
-              saved={{
-                number: apartment.number,
-                floor: String(apartment.floor),
-                billingStartMonth: apartment.billingStartMonth ?? '',
-              }}
-            />
+          <header className="flex flex-col gap-2">
+            {/* Focusable from script: it takes focus when the button that had it is gone. */}
+            <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold">
+              {t.rich('apartmentHeading', {
+                number: () =>
+                  streamed(<ApartmentNumberSkeleton />, (id) => (
+                    <ApartmentNumber apartmentId={id} />
+                  )),
+              })}
+            </h1>
+            {streamed(<ApartmentFactsSkeleton />, (id) => (
+              <ApartmentFacts apartmentId={id} />
+            ))}
           </header>
         }
       >
-        <ApartmentInvite apartment={apartment} />
-        <ApartmentResidents apartment={apartment} />
+        <section aria-labelledby="invite-title" className={`${cardClassName} max-w-2xl`}>
+          <div className="flex flex-col gap-1">
+            <h2 id="invite-title" className="flex items-center gap-2 text-lg font-semibold">
+              <LinkIcon aria-hidden className="text-text-muted size-5" />
+              {tInvite('title')}
+            </h2>
+            <p className="text-text-muted">{tInvite('lead')}</p>
+          </div>
+          {streamed(<ApartmentInviteSkeleton />, (id) => (
+            <ApartmentInvite apartmentId={id} />
+          ))}
+          <p className="text-text-muted text-sm">{tInvite('onceNote')}</p>
+        </section>
+        <section aria-labelledby="residents-title" className={`${cardClassName} max-w-2xl`}>
+          <h2 id="residents-title" className="flex items-center gap-2 text-lg font-semibold">
+            <UsersIcon aria-hidden className="text-text-muted size-5" />
+            {tResidents('title')}
+          </h2>
+          {streamed(<ApartmentResidentsSkeleton />, (id) => (
+            <ApartmentResidents apartmentId={id} />
+          ))}
+        </section>
       </AdminAnnouncer>
     </div>
   )

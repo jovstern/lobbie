@@ -24,6 +24,8 @@ describe('AdjustmentDialog', () => {
     const trigger = renderDialog()
 
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     const dialog = screen.getByRole('dialog', { name: copy.title })
     expect(dialog).toHaveAccessibleDescription(copy.description)
@@ -34,6 +36,8 @@ describe('AdjustmentDialog', () => {
     const user = userEvent.setup()
     const trigger = renderDialog()
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
 
     await user.keyboard('{Escape}')
 
@@ -45,6 +49,8 @@ describe('AdjustmentDialog', () => {
     const user = userEvent.setup()
     const trigger = renderDialog()
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.type(screen.getByLabelText(copy.amount), '250')
 
     await user.click(screen.getByRole('button', { name: copy.cancel }))
@@ -52,6 +58,8 @@ describe('AdjustmentDialog', () => {
     expect(trigger).toHaveFocus()
 
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     expect(screen.getByLabelText(copy.amount)).toHaveValue('')
   })
 
@@ -64,6 +72,8 @@ describe('AdjustmentDialog', () => {
     }
     renderDialog(vi.fn(async () => failed))
     await user.click(screen.getByRole('button', { name: copy.open }))
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.click(screen.getByLabelText(copy.out))
     await user.type(screen.getByLabelText(copy.amount), '0')
     await user.type(screen.getByLabelText(copy.reason), 'Bank fees')
@@ -82,6 +92,8 @@ describe('AdjustmentDialog', () => {
     const user = userEvent.setup()
     const trigger = renderDialog(vi.fn(async () => ({ added: true, message: null })))
     await user.click(trigger)
+    // The dialog's code loads on first open.
+    await screen.findByRole('dialog')
     await user.click(screen.getByLabelText(copy.in))
     await user.type(screen.getByLabelText(copy.amount), '250')
     await user.type(screen.getByLabelText(copy.reason), 'Interest')

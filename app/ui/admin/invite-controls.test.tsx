@@ -69,6 +69,8 @@ describe('InviteControls', () => {
     render(controls('invite-0'))
 
     await user.click(screen.getByRole('button', { name: copy.replace }))
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     expect(
       screen.getByRole('alertdialog', { name: 'Replace the invite for apartment 7?' }),

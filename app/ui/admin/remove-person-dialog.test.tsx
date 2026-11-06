@@ -29,6 +29,8 @@ async function openDialog(isSelf: boolean) {
     </NextIntlClientProvider>,
   )
   await user.click(screen.getByRole('button', { name: 'Remove Ana from the building' }))
+  // The dialog's code loads on first open.
+  await screen.findByRole('alertdialog')
   return screen.getByRole('alertdialog', { name: 'Remove Ana from the building?' })
 }
 

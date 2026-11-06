@@ -18,6 +18,29 @@ export function SignInFormSkeleton() {
   )
 }
 
+/**
+ * `/join`'s code form and the sign-out block below it, the same height as both: the card is
+ * centred, so a shorter placeholder would move it when they stream in.
+ */
+export function JoinFormSkeleton() {
+  return (
+    <>
+      <div aria-hidden className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <div className={`${block} h-5 w-24`} />
+          <div className={`${block} h-11`} />
+          <div className={`${block} h-5 w-56 max-w-full`} />
+        </div>
+        <div className={`${block} h-11`} />
+      </div>
+      <div aria-hidden className="border-border flex flex-col items-start gap-3 border-t pt-6">
+        <div className={`${block} h-5 w-48 max-w-full`} />
+        <div className={`${block} h-11 w-28`} />
+      </div>
+    </>
+  )
+}
+
 export function ButtonSkeleton() {
   return <div aria-hidden className={`${block} h-11 w-28`} />
 }
@@ -128,8 +151,6 @@ export function ProfileSkeleton() {
 export function AdminOverviewSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
-      <div className={`${block} h-10 w-32`} />
-      <div className={`${block} h-6 w-64`} />
       <div className={clsx(cardClassName, 'max-w-xl')}>
         <div className={`${block} h-6 w-40`} />
         <div className={`${block} h-5 w-72 max-w-full`} />
@@ -138,11 +159,23 @@ export function AdminOverviewSkeleton() {
   )
 }
 
-/** `/admin/building`: the details form beside the fund. */
+/** The admin sections' tabs: one row of links (44 px) above the nav's bottom border. */
+export function AdminNavSkeleton() {
+  return (
+    <div aria-hidden className="border-border flex gap-6 border-b">
+      {['w-20', 'w-16', 'w-24', 'w-16'].map((width, tab) => (
+        <div key={tab} className="flex min-h-11 items-center px-1">
+          <div className={`${block} h-5 ${width}`} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** `/admin/building` below its header: the details form beside the fund. */
 export function BuildingSettingsSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
-      <div className={`${block} h-10 w-56`} />
       <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
         <div className={cardClassName}>
           <div className={`${block} h-6 w-24`} />
@@ -169,15 +202,15 @@ export function BuildingSettingsSkeleton() {
   )
 }
 
-/** `/admin/apartments`: the header with its button, then cards on phones or a table from md. */
+/**
+ * `/admin/apartments` below its header: the count with the add button, then cards on phones or a
+ * table from md.
+ */
 export function ApartmentsSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <div className={`${block} h-10 w-32`} />
-          <div className={`${block} h-6 w-44`} />
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className={`${block} h-6 w-44`} />
         <div className={`${block} h-11 w-40`} />
       </div>
       {/* "Invite the residents". */}
@@ -230,43 +263,57 @@ export function ApartmentsSkeleton() {
   )
 }
 
-/** `/admin/apartments/[id]`: the back link, the apartment's header and its invite card. */
-export function ApartmentDetailsSkeleton() {
+/** An apartment's number in its heading, while it streams. */
+export function ApartmentNumberSkeleton() {
+  return <span aria-hidden className={`${block} inline-block h-7 w-10 align-middle`} />
+}
+
+/** An apartment's floor and billing start, and its Edit button. */
+export function ApartmentFactsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-wrap items-center justify-between gap-4">
+      <div className={`${block} h-6 w-64 max-w-full`} />
+      <div className={`${block} h-11 w-28`} />
+    </div>
+  )
+}
+
+/**
+ * The invite card's status and buttons, shaped like an active invite (its uses and expiry wrap
+ * to two lines on phones); an apartment without one is a little shorter.
+ */
+export function ApartmentInviteSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-4">
-      <div className={`${block} h-11 w-36`} />
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div className={`${block} h-10 w-40`} />
-          <div className={`${block} h-6 w-64 max-w-full`} />
-        </div>
-        <div className={`${block} h-11 w-28`} />
+      <div className="flex flex-col gap-1">
+        <div className={`${block} h-6 w-28`} />
+        <div className={`${block} h-6 w-64 max-w-full`} />
+        <div className={`${block} h-6 w-40 sm:hidden`} />
       </div>
-      <div className={clsx(cardClassName, 'mt-2 max-w-2xl')}>
-        <div className="flex flex-col gap-2">
-          <div className={`${block} h-7 w-28`} />
-          <div className={`${block} h-6 w-80 max-w-full`} />
-        </div>
-        <div className={`${block} h-6 w-72 max-w-full`} />
-        <div className={`${block} h-11 w-40`} />
-        <div className={`${block} h-10 w-full`} />
+      <div className="flex flex-col gap-4">
+        <div />
+        <div className={`${block} h-11 w-44`} />
       </div>
-      {/* Residents: one row each, with the owner/tenant choice and Remove. */}
-      <div className={clsx(cardClassName, 'max-w-2xl')}>
-        <div className={`${block} h-7 w-28`} />
-        {[0, 1].map((row) => (
-          <div key={row} className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <div className={`${block} h-6 w-36`} />
-              <div className={`${block} h-5 w-48`} />
-            </div>
-            <div className="flex gap-3">
-              <div className={`${block} h-11 w-40`} />
-              <div className={`${block} h-11 w-24`} />
-            </div>
+    </div>
+  )
+}
+
+/** The residents card's rows: one each, with the owner/tenant choice and Remove. */
+export function ApartmentResidentsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      {[0, 1].map((row) => (
+        <div key={row} className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <div className={`${block} h-6 w-36`} />
+            <div className={`${block} h-5 w-48`} />
           </div>
-        ))}
-      </div>
+          <div className="flex gap-3">
+            <div className={`${block} h-11 w-40`} />
+            <div className={`${block} h-11 w-28`} />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -330,13 +377,10 @@ export function PeopleListSkeleton() {
 export function PeopleSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <div className={`${block} h-10 w-28`} />
-        <div className="flex max-w-md flex-col gap-2">
-          <div className={`${block} h-5 w-28`} />
-          <div className={`${block} h-11`} />
-          <div className={`${block} h-5 w-48`} />
-        </div>
+      <div className="flex max-w-md flex-col gap-2">
+        <div className={`${block} h-5 w-28`} />
+        <div className={`${block} h-11`} />
+        <div className={`${block} h-5 w-48`} />
       </div>
       <PeopleListSkeleton />
     </div>

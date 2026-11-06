@@ -45,7 +45,8 @@ describe('RemoveApartmentDialog', () => {
     expect(button).toHaveFocus()
     await user.keyboard('{Enter}')
 
-    const dialog = screen.getByRole('dialog', { name: 'Apartment 7 can’t be removed yet' })
+    // The dialog's code loads on first open.
+    const dialog = await screen.findByRole('dialog', { name: 'Apartment 7 can’t be removed yet' })
     expect(dialog).toHaveAccessibleDescription(reason)
     expect(screen.queryByRole('button', { name: copy.confirm })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: copy.blockedClose }))
@@ -59,6 +60,8 @@ describe('RemoveApartmentDialog', () => {
     const button = renderRemove()
 
     await user.click(button)
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     const dialog = screen.getByRole('alertdialog', { name: 'Remove apartment 7?' })
     expect(dialog).toHaveAccessibleDescription(copy.description)
@@ -74,12 +77,16 @@ describe('RemoveApartmentDialog', () => {
     const refused: RemoveApartmentState = { message: `It can’t be removed yet. ${reason}` }
     const button = renderRemove(vi.fn(async () => refused))
     await user.click(button)
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     await user.click(screen.getByRole('button', { name: copy.confirm }))
 
     expect(await screen.findByText(refused.message ?? '')).toBeVisible()
     await user.click(screen.getByRole('button', { name: copy.cancel }))
     await user.click(button)
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
     expect(screen.queryByText(refused.message ?? '')).not.toBeInTheDocument()
   })
 
@@ -88,6 +95,8 @@ describe('RemoveApartmentDialog', () => {
     const action = vi.fn(async () => ({ removed: true, message: null }))
     renderRemove(action)
     await user.click(screen.getByRole('button', { name: 'Remove apartment 7' }))
+    // The dialog's code loads on first open.
+    await screen.findByRole('alertdialog')
 
     await user.click(screen.getByRole('button', { name: copy.confirm }))
 

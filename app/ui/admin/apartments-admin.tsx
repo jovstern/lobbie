@@ -12,7 +12,8 @@ import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import InviteAll from '@/app/ui/admin/invite-all'
 import EmptyState from '@/app/ui/empty-state'
 
-const headingId = 'apartments-title'
+/** The page's heading (in its static header), which takes focus when a dialog's button is gone. */
+export const apartmentsHeadingId = 'apartments-title'
 
 /**
  * `/admin/apartments` for an admin: invites for every apartment at once (R9), and every
@@ -32,21 +33,16 @@ export default async function ApartmentsAdmin() {
 
   return (
     <AdminAnnouncer
-      headingId={headingId}
+      headingId={apartmentsHeadingId}
       header={
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            {/* Focusable from script: it takes focus when the button that had it is gone. */}
-            <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold">
-              {t('title')}
-            </h1>
-            {isEmpty ? null : (
-              <p className="text-text-muted">{t('count', { count: apartments.length })}</p>
-            )}
+        // Below the page's static header; an empty building has only the empty state.
+        isEmpty ? null : (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-text-muted">{t('count', { count: apartments.length })}</p>
+            {/* Secondary: inviting the building is the page's main action. */}
+            <ApartmentDialog action={addAction} />
           </div>
-          {/* Secondary: inviting the building is the page's main action once it has apartments. */}
-          {isEmpty ? null : <ApartmentDialog action={addAction} />}
-        </header>
+        )
       }
     >
       {isEmpty ? (

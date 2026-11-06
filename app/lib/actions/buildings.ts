@@ -1,6 +1,6 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { updateTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -91,20 +91,31 @@ export async function update(
 
   const details = validatedFields.data
   try {
-    if (!confirmBillingChange) {
-      const [saved] = await db
+    // Without the confirmation, the billing month must be unchanged: checked in the UPDATE
+    // itself, and read only when it refuses, to show the admin what would change.
+    const ofBuilding = eq(buildings.id, member.buildingId)
+    const saved = await db
+      .update(buildings)
+      .set(details)
+      .where(
+        confirmBillingChange
+          ? ofBuilding
+          : and(ofBuilding, eq(buildings.billingStartMonth, details.billingStartMonth)),
+      )
+      .returning({ id: buildings.id })
+    if (saved.length === 0 && !confirmBillingChange) {
+      const [current] = await db
         .select({ billingStartMonth: buildings.billingStartMonth })
         .from(buildings)
-        .where(eq(buildings.id, member.buildingId))
-      if (saved && saved.billingStartMonth !== details.billingStartMonth) {
+        .where(ofBuilding)
+      if (current) {
         return {
           values,
           message: null,
-          confirmBillingChange: { from: saved.billingStartMonth, to: details.billingStartMonth },
+          confirmBillingChange: { from: current.billingStartMonth, to: details.billingStartMonth },
         }
       }
     }
-    await db.update(buildings).set(details).where(eq(buildings.id, member.buildingId))
   } catch (err) {
     unstable_rethrow(err)
     logger.error('Failed to save the building', {

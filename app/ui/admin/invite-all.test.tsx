@@ -102,7 +102,8 @@ describe('InviteAll', () => {
 
     await user.click(screen.getByRole('button', { name: copy.open }))
 
-    const dialog = screen.getByRole('alertdialog', { name: copy.dialogTitle })
+    // The dialog's code loads on first open.
+    const dialog = await screen.findByRole('alertdialog', { name: copy.dialogTitle })
     expect([...dialog.querySelectorAll('button')].map((button) => button.textContent)).toEqual([
       'Only the 2 without an invite',
       'Replace it too',
@@ -116,6 +117,7 @@ describe('InviteAll', () => {
     renderInviteAll(vi.fn(never), { activeCount: 1 })
 
     await user.click(screen.getByRole('button', { name: copy.open }))
+    await screen.findByRole('alertdialog')
     await user.click(screen.getByRole('button', { name: 'Only the 2 without an invite' }))
 
     await waitFor(() =>
