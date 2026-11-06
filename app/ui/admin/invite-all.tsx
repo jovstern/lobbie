@@ -2,10 +2,10 @@
 
 import { CheckIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { lazy, useActionState, useEffect, useRef } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import type { CreateAllMode, CreateAllState } from '@/app/lib/actions/invites'
 import { useCreatedInvites } from '@/app/ui/admin/created-invites-provider'
-import { LazyDialogSlot, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
+import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName } from '@/app/ui/button-styles'
 import CopyButton from '@/app/ui/copy-button'
 import { cardClassName } from '@/app/ui/card'
@@ -21,7 +21,9 @@ type Props = {
   activeCount: number
 }
 
-const InviteAllDialogContent = lazy(() => import('@/app/ui/admin/invite-all-dialog-content'))
+const InviteAllDialogContent = lazyWithRetry(
+  () => import('@/app/ui/admin/invite-all-dialog-content'),
+)
 
 function preload() {
   void import('@/app/ui/admin/invite-all-dialog-content')
@@ -55,14 +57,16 @@ export default function InviteAll({
   })
   const initialState: CreateAllState = {}
   const [state, dispatch, isPending] = useActionState(
-    async (_previous: CreateAllState, mode: CreateAllMode) => {
+    async (_previous: CreateAllState, mode: CreateAllMode): Promise<CreateAllState> => {
       const next = await (mode === 'all' ? allAction : missingAction)()
       if (next.created) {
         dialog.setOpen(false)
         focusNext.current = 'list'
         show({ created: next.created, skipped: next.skipped ?? 0 })
       }
-      return next
+      // The links live in the section's context until Done; the state keeps only the message,
+      // so no plaintext code outlives the list.
+      return { message: next.message }
     },
     initialState,
   )
@@ -70,8 +74,9 @@ export default function InviteAll({
   const missingCount = apartmentCount - activeCount
   const message = state.message ? <p className="text-danger text-sm">{state.message}</p> : null
   const copyAllText = created
-    // Isolated, so a link keeps its order when pasted into a right-to-left line.
-    .map((invite) => t('line', { number: invite.apartmentNumber, link: `⁨${invite.link}⁩` }))
+    // The apartment on one line and its link on the next, so a link never shares a line with
+    // right-to-left text when pasted.
+    .map((invite) => t('line', { number: invite.apartmentNumber, link: invite.link }))
     .join('\n')
 
   // Focus is the DOM's, outside React: the list is what the admin came for, and once they are
@@ -171,7 +176,7 @@ export default function InviteAll({
               <button {...dialog.trigger} className={buttonClassName('primary')}>
                 {openButton}
               </button>
-              <LazyDialogSlot mounted={dialog.mounted}>
+              <LazyDialogSlot dialog={dialog}>
                 <InviteAllDialogContent
                   {...dialog.content}
                   missingCount={missingCount}

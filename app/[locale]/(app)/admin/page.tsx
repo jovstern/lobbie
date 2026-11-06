@@ -3,7 +3,6 @@ import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { requireRole } from '@/app/lib/authz'
 import AdminOverview from '@/app/ui/admin/admin-overview'
-import AdminPageHeader from '@/app/ui/admin/admin-page-header'
 import { AdminOverviewSkeleton } from '@/app/ui/skeletons'
 
 // The role first: below it the page is a 404, and its title must not name the page. (The
@@ -15,15 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // The arrears overview joins in M3; for now, the way into each admin page.
-export default async function AdminPage() {
-  const t = await getTranslations('Admin')
-
+export default function AdminPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <AdminPageHeader title={t('title')} lead={t('lead')} />
-      <Suspense fallback={<AdminOverviewSkeleton />}>
-        <AdminOverview />
-      </Suspense>
-    </div>
+    <Suspense fallback={<AdminOverviewSkeleton />}>
+      <AdminOverview />
+    </Suspense>
   )
 }

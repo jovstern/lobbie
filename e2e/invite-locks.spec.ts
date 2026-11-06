@@ -55,17 +55,18 @@ test('redeeming waits for an apartment being removed, holding nothing of its inv
       removal.begin(async (tx) => {
         // The removal's first step: the apartment, FOR UPDATE.
         await tx`SELECT id FROM apartments WHERE id = ${apartmentId} FOR UPDATE`
+        const [{ pid }] = await tx`SELECT pg_backend_pid() AS pid`
         await join.click()
 
-        // The redemption now waits on a lock, as its backend reports.
+        // The redemption now waits on this transaction's lock: some backend is blocked by it.
         await expect
           .poll(
             () =>
               withE2eSql(async (sql) => {
                 const [row] = await sql`
-                  SELECT count(*)::int AS waiting FROM pg_stat_activity
-                  WHERE datname = current_database() AND wait_event_type = 'Lock'`
-                return Number(row.waiting)
+                  SELECT count(*)::int AS blocked FROM pg_stat_activity
+                  WHERE pg_blocking_pids(pid) @> ARRAY[${Number(pid)}::int]`
+                return Number(row.blocked)
               }),
             { timeout: 15_000 },
           )

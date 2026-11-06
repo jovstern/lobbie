@@ -2,13 +2,15 @@
 
 import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { lazy, useRef } from 'react'
+import { useRef } from 'react'
 import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
 import type { ApartmentAction, ApartmentValues } from '@/app/ui/admin/apartment-form'
-import { LazyDialogSlot, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
+import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName, type ButtonVariant } from '@/app/ui/button-styles'
 
-const ApartmentDialogContent = lazy(() => import('@/app/ui/admin/apartment-dialog-content'))
+const ApartmentDialogContent = lazyWithRetry(
+  () => import('@/app/ui/admin/apartment-dialog-content'),
+)
 
 function preload() {
   void import('@/app/ui/admin/apartment-dialog-content')
@@ -70,7 +72,7 @@ export default function ApartmentDialog({
         )}
         {editing ? t('edit') : t('open')}
       </button>
-      <LazyDialogSlot mounted={dialog.mounted}>
+      <LazyDialogSlot dialog={dialog}>
         <ApartmentDialogContent
           {...dialog.content}
           action={action}

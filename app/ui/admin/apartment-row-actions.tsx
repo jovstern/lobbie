@@ -17,7 +17,8 @@ export default async function ApartmentRowActions({ apartment, layout }: Props) 
   const blockers = blockersOf(apartment)
 
   return (
-    <div className="flex flex-wrap items-start gap-2">
+    // Edit and Remove side by side; a blocked removal's reason takes the next line.
+    <div className="flex flex-wrap items-start gap-x-2 gap-y-1 [&>button]:shrink-0">
       <ApartmentDialog
         action={update.bind(null, locale, apartment.id, false)}
         confirmedAction={update.bind(null, locale, apartment.id, true)}

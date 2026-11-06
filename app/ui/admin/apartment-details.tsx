@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Suspense, type ReactNode } from 'react'
 import { update } from '@/app/lib/actions/apartments'
+import { requireRole } from '@/app/lib/authz'
 import { get } from '@/app/lib/data/apartments'
 import { get as getBuilding } from '@/app/lib/data/buildings'
 import { formatMonth } from '@/app/lib/utils/dates'
@@ -74,12 +75,13 @@ type Props = {
 
 /**
  * `/admin/apartments/[id]` for an admin: the apartment's header, its invite, then its residents.
- * What does not depend on the apartment (the way back, the heading, the cards' titles and notes)
- * is in the static shell; the number, the facts, the invite and the residents stream in. Each of
- * those checks the role and the apartment: anyone below admin, and an id that is not one of the
- * building's apartments, get the 404.
+ * Rendered after the role check (the page streams it behind a placeholder that names nothing);
+ * then the number, the facts, the invite and the residents stream in, each checking the
+ * apartment: an id that is not one of the building's apartments gets the 404.
  */
 export default async function ApartmentDetails({ apartmentId }: Props) {
+  // Admins only, before anything names the page; anyone else gets the 404.
+  await requireRole('admin')
   const [t, tInvite, tResidents] = await Promise.all([
     getTranslations('AdminApartments'),
     getTranslations('InviteAdmin'),

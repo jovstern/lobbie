@@ -74,6 +74,7 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |
 | `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages and `/admin/people`, each its own instance. No app-level use. |
+| `CreatedInvitesProvider` (section-scoped React context) | `app/ui/admin/created-invites-provider.tsx`, held by `admin/apartments/layout.tsx` | The one-time result of "Invite every apartment": plaintext codes that can never be fetched again. Apartments section only; in memory only, never stored, sent back or put in the URL; cleared on Done or on leaving the section. |
 
 **Route Handlers.** Each one is called by something other than this app's own forms:
 - `/api/auth/[...all]`: the magic link in the email.

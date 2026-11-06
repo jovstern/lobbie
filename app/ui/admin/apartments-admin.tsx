@@ -1,4 +1,5 @@
 import { HomeModernIcon } from '@heroicons/react/24/outline'
+import AdminPageHeader from '@/app/ui/admin/admin-page-header'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { create } from '@/app/lib/actions/apartments'
 import { createAll } from '@/app/lib/actions/invites'
@@ -31,44 +32,50 @@ export default async function ApartmentsAdmin() {
   const addAction = create.bind(null, locale)
   const isEmpty = apartments.length === 0
 
+  // The header comes after the role check: below admin the page names nothing.
   return (
-    <AdminAnnouncer
-      headingId={apartmentsHeadingId}
-      header={
-        // Below the page's static header; an empty building has only the empty state.
-        isEmpty ? null : (
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-text-muted">{t('count', { count: apartments.length })}</p>
-            {/* Secondary: inviting the building is the page's main action. */}
-            <ApartmentDialog action={addAction} />
-          </div>
-        )
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader title={t('title')} lead={t('lead')} headingId={apartmentsHeadingId} />
+      {
+        <AdminAnnouncer
+          headingId={apartmentsHeadingId}
+          header={
+            // Below the page's static header; an empty building has only the empty state.
+            isEmpty ? null : (
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <p className="text-text-muted">{t('count', { count: apartments.length })}</p>
+                {/* Secondary: inviting the building is the page's main action. */}
+                <ApartmentDialog action={addAction} />
+              </div>
+            )
+          }
+        >
+          {isEmpty ? (
+            <EmptyState icon={HomeModernIcon} title={t('emptyTitle')} body={t('emptyBody')}>
+              <ApartmentDialog action={addAction} variant="primary" focusHeadingAfterSave />
+            </EmptyState>
+          ) : (
+            <>
+              <InviteAll
+                missingAction={createAll.bind(null, locale, 'missing')}
+                allAction={createAll.bind(null, locale, 'all')}
+                apartmentCount={apartments.length}
+                activeCount={apartments.filter((apartment) => apartment.activeInvites > 0).length}
+              />
+              <ApartmentTable
+                apartments={apartments}
+                buildingMonth={building.billingStartMonth}
+                timeZone={timeZone}
+              />
+              <ApartmentCards
+                apartments={apartments}
+                buildingMonth={building.billingStartMonth}
+                timeZone={timeZone}
+              />
+            </>
+          )}
+        </AdminAnnouncer>
       }
-    >
-      {isEmpty ? (
-        <EmptyState icon={HomeModernIcon} title={t('emptyTitle')} body={t('emptyBody')}>
-          <ApartmentDialog action={addAction} variant="primary" focusHeadingAfterSave />
-        </EmptyState>
-      ) : (
-        <>
-          <InviteAll
-            missingAction={createAll.bind(null, locale, 'missing')}
-            allAction={createAll.bind(null, locale, 'all')}
-            apartmentCount={apartments.length}
-            activeCount={apartments.filter((apartment) => apartment.activeInvites > 0).length}
-          />
-          <ApartmentTable
-            apartments={apartments}
-            buildingMonth={building.billingStartMonth}
-            timeZone={timeZone}
-          />
-          <ApartmentCards
-            apartments={apartments}
-            buildingMonth={building.billingStartMonth}
-            timeZone={timeZone}
-          />
-        </>
-      )}
-    </AdminAnnouncer>
+    </div>
   )
 }

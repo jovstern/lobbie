@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { requireRole } from '@/app/lib/authz'
-import AdminPageHeader from '@/app/ui/admin/admin-page-header'
 import BuildingSettings from '@/app/ui/admin/building-settings'
 import { BuildingSettingsSkeleton } from '@/app/ui/skeletons'
 
@@ -15,15 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Admins only (★): BuildingSettings checks the role and answers 404 to anyone else.
-export default async function AdminBuildingPage() {
-  const t = await getTranslations('AdminBuilding')
-
+export default function AdminBuildingPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <AdminPageHeader title={t('title')} lead={t('lead')} />
-      <Suspense fallback={<BuildingSettingsSkeleton />}>
-        <BuildingSettings />
-      </Suspense>
-    </div>
+    <Suspense fallback={<BuildingSettingsSkeleton />}>
+      <BuildingSettings />
+    </Suspense>
   )
 }

@@ -2,12 +2,14 @@
 
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { lazy, useState } from 'react'
+import { useState } from 'react'
 import type { AdjustmentAction } from '@/app/ui/admin/adjustment-form'
-import { LazyDialogSlot, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
+import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName } from '@/app/ui/button-styles'
 
-const AdjustmentDialogContent = lazy(() => import('@/app/ui/admin/adjustment-dialog-content'))
+const AdjustmentDialogContent = lazyWithRetry(
+  () => import('@/app/ui/admin/adjustment-dialog-content'),
+)
 
 function preload() {
   void import('@/app/ui/admin/adjustment-dialog-content')
@@ -29,7 +31,7 @@ export default function AdjustmentDialog({ action }: { action: AdjustmentAction 
         <PlusIcon aria-hidden className="size-5" />
         {t('open')}
       </button>
-      <LazyDialogSlot mounted={dialog.mounted}>
+      <LazyDialogSlot dialog={dialog}>
         <AdjustmentDialogContent
           {...dialog.content}
           action={action}

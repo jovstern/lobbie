@@ -497,7 +497,6 @@ if (isEntryPoint(import.meta.url)) {
     try {
       await seed(db, {
         demo: process.argv.includes('--demo'),
-        e2e: process.argv.includes('--e2e'),
       })
       // Building rows, fee rates and balances are cached for hours ('use cache'), and the
       // seed writes behind the app's back, so no tag is updated.

@@ -119,6 +119,9 @@ export async function create(
       // The active-invite check and the insert are one statement: it runs after the lock above,
       // so its snapshot sees any invite a concurrent create committed while this one waited.
       // No row back means the apartment already has an active invite (never after a replace).
+      // Drizzle's INSERT…SELECT names every column, so the defaults are spelled out here, taken
+      // from the columns' own definitions where Drizzle keeps them (max uses, uses); id, created_at
+      // and revoked_at mirror defaultRandom(), defaultNow() and the nullable column.
       const { row, shown } = newInvite(member, apartment)
       const [saved] = await tx
         .insert(invites)
@@ -130,7 +133,7 @@ export async function create(
               apartmentId: apartments.id,
               codeHash: sql<string>`${row.codeHash}::text`.as('code_hash'),
               maxUses: sql<number>`${invites.maxUses.default}::integer`.as('max_uses'),
-              uses: sql<number>`0`.as('uses'),
+              uses: sql<number>`${invites.uses.default}::integer`.as('uses'),
               createdBy: sql<string>`${row.createdBy}::uuid`.as('created_by'),
               createdAt: sql<Date>`now()`.as('created_at'),
               expiresAt: sql<Date>`${row.expiresAt}`.as('expires_at'),

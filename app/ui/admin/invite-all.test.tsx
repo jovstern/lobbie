@@ -40,7 +40,7 @@ function renderInviteAll(...args: Parameters<typeof inviteAll>) {
 }
 
 describe('InviteAll', () => {
-  it('lists the new links and copies them all as lines, each link isolated', async () => {
+  it('lists the new links and copies them all, each link on the line below its apartment', async () => {
     const user = userEvent.setup()
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
     renderInviteAll(vi.fn(async () => listed))
@@ -52,8 +52,8 @@ describe('InviteAll', () => {
 
     await user.click(screen.getByRole('button', { name: copy.copyAll }))
     expect(writeText).toHaveBeenCalledWith(
-      'Apartment 2: ⁨https://lobbie.example/join/CODE2⁩\n' +
-        'Apartment 10: ⁨https://lobbie.example/join/CODE10⁩',
+      'Apartment 2:\nhttps://lobbie.example/join/CODE2\n' +
+        'Apartment 10:\nhttps://lobbie.example/join/CODE10',
     )
   })
 
@@ -121,8 +121,14 @@ describe('InviteAll', () => {
     await user.click(screen.getByRole('button', { name: 'Only the 2 without an invite' }))
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Replace it too' })).toBeDisabled(),
+      expect(screen.getByRole('button', { name: 'Replace it too' })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      ),
     )
-    expect(screen.getByRole('button', { name: copy.creating })).toBeDisabled()
+    expect(screen.getByRole('button', { name: copy.creating })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
   })
 })

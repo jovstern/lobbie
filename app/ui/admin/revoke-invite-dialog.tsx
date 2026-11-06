@@ -42,7 +42,7 @@ export default function RevokeInviteDialog({ action, number }: Props) {
         <NoSymbolIcon aria-hidden className="size-5" />
         {t('revoke')}
       </button>
-      <LazyDialogSlot mounted={dialog.mounted}>
+      <LazyDialogSlot dialog={dialog}>
         <ConfirmDialogContent
           {...dialog.content}
           title={t('revokeTitle', { number })}

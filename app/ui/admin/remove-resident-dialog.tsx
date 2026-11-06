@@ -46,7 +46,7 @@ export default function RemoveResidentDialog({ action, name, number, leavesBuild
         <UserMinusIcon aria-hidden className="size-5" />
         {t('remove')}
       </button>
-      <LazyDialogSlot mounted={dialog.mounted}>
+      <LazyDialogSlot dialog={dialog}>
         <ConfirmDialogContent
           {...dialog.content}
           title={t('removeTitle', { name, number })}

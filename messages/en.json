@@ -5,7 +5,8 @@
   },
   "Common": {
     "backHome": "Back to home",
-    "saved": "Saved"
+    "saved": "Saved",
+    "dialogLoadFailed": "That didn’t open. Check your connection and try again."
   },
   "NotFound": {
     "title": "Page not found",
@@ -130,14 +131,16 @@
   "ProfileForm": {
     "name": "Name",
     "phone": "Phone",
-    "phoneHint": "Optional. An Israeli number, such as 050-123-4567.",
+    "phoneHint": "Optional. An Israeli number, such as 050‑123‑4567.",
     "email": "Email",
     "emailHint": "You sign in with this address, so it can’t be changed here.",
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved",
     "welcomeTitle": "What should neighbours call you?",
-    "welcomeLead": "You’ve joined the building. Add your name, so neighbours and the committee know who you are."
+    "welcomeLead": "You’ve joined the building. Add your name, so neighbours and the committee know who you are.",
+    "welcomeDoneTitle": "Thanks, neighbours will see your name.",
+    "continueHome": "Continue to home"
   },
   "CommitteeContactForm": {
     "phone": "Committee phone",
@@ -382,7 +385,7 @@
     "resultLead": "Copy them now: they’re shown only this once. Each link lets up to 6 people join within 14 days.",
     "skipped": "{count, plural, one {One apartment already had an active invite and isn’t listed.} other {# apartments already had an active invite and aren’t listed.}}",
     "copyAll": "Copy all",
-    "line": "Apartment {number}: {link}",
+    "line": "Apartment {number}:\n{link}",
     "apartment": "Apartment {number}",
     "copyLinkLabel": "Copy link for apartment {number}",
     "sectionTitle": "Invite the residents",
@@ -449,7 +452,7 @@
     "lead": "Everyone who has joined the building, with their apartments, role and committee title.",
     "count": "{count, plural, one {One person} other {# people}} in the building",
     "searchLabel": "Search people",
-    "searchHint": "A name, or an apartment number.",
+    "searchHint": "A name, email or apartment number.",
     "tableLabel": "People in the building",
     "name": "Name",
     "apartments": "Apartments",
@@ -462,7 +465,7 @@
     "emptyBody": "People join with an invite to their apartment. Create the invites on the apartments page.",
     "emptyLink": "Go to apartments",
     "noResultsTitle": "No one matches “{q}”",
-    "noResultsBody": "Try part of a name, or an apartment’s exact number, or clear the search."
+    "noResultsBody": "Try part of a name or email, or an apartment’s exact number, or clear the search."
   },
   "PersonRole": {
     "edit": "Change role",

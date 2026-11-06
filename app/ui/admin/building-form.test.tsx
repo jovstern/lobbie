@@ -38,7 +38,10 @@ describe('BuildingForm', () => {
     renderForm(() => new Promise((resolve) => (finish = resolve)))
 
     await user.click(screen.getByRole('button', { name: copy.save }))
-    expect(await screen.findByRole('button', { name: copy.saving })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: copy.saving })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
 
     finish({ values: saved, message: null, savedAt: 1 })
     expect(await screen.findByText(copy.saved)).toBeVisible()

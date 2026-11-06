@@ -16,7 +16,11 @@ type Props = {
   className?: string
 }
 
-/** A form's submit button with its pending state; it must sit inside the `<form>`. */
+/**
+ * A form's submit button with its pending state; it must sit inside the `<form>`. While
+ * pending it is `aria-disabled` and ignores activation, rather than `disabled`: a disabled
+ * button drops the focus to the page.
+ */
 export default function SubmitButton({
   children,
   pendingLabel,
@@ -25,11 +29,15 @@ export default function SubmitButton({
   className,
 }: Props) {
   const { pending } = useFormStatus()
+  const inactive = pending || disabled
 
   return (
     <button
       type="submit"
-      disabled={pending || disabled}
+      aria-disabled={inactive}
+      onClick={(event) => {
+        if (inactive) event.preventDefault()
+      }}
       className={clsx(buttonClassName(variant), className)}
     >
       {pending ? pendingLabel : children}

@@ -2,13 +2,14 @@
 
 import { PencilSquareIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { lazy } from 'react'
 import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
-import { LazyDialogSlot, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
+import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import type { RoleAction, RoleValues } from '@/app/ui/admin/person-role-form'
 import { buttonClassName } from '@/app/ui/button-styles'
 
-const PersonRoleDialogContent = lazy(() => import('@/app/ui/admin/person-role-dialog-content'))
+const PersonRoleDialogContent = lazyWithRetry(
+  () => import('@/app/ui/admin/person-role-dialog-content'),
+)
 
 function preload() {
   void import('@/app/ui/admin/person-role-dialog-content')
@@ -43,7 +44,7 @@ export default function PersonRoleDialog({ action, name, isSelf, saved }: Props)
         <PencilSquareIcon aria-hidden className="size-5" />
         {t('edit')}
       </button>
-      <LazyDialogSlot mounted={dialog.mounted}>
+      <LazyDialogSlot dialog={dialog}>
         <PersonRoleDialogContent
           {...dialog.content}
           action={action}

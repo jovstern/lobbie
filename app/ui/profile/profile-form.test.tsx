@@ -1,10 +1,18 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
+import type { ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { ProfileFormState } from '@/app/lib/actions/users'
 import ProfileForm from '@/app/ui/profile/profile-form'
 import en from '@/messages/en.json'
+
+// next-intl's navigation cannot load in Vitest; the welcome link only needs an anchor.
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({ href, ...props }: ComponentProps<'a'>) => <a href={href} {...props} />,
+}))
+const search = vi.hoisted(() => ({ value: '' }))
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(search.value) }))
 
 const copy = en.ProfileForm
 const saved = { name: 'Dana Zur', phone: '050-555-0101' }
@@ -20,6 +28,28 @@ function renderForm(action: Action) {
 }
 
 describe('ProfileForm', () => {
+  it('after joining, asks for the name, then keeps the callout with the way home', async () => {
+    search.value = 'welcome=1'
+    const user = userEvent.setup()
+    const action = vi.fn<Action>(async () => ({
+      values: { name: 'Dana Zur', phone: '' },
+      savedAt: 1,
+      message: null,
+    }))
+    render(
+      <NextIntlClientProvider locale="en" messages={{ ProfileForm: copy }}>
+        <ProfileForm action={action} saved={saved} email="dana@example.com" askForName />
+      </NextIntlClientProvider>,
+    )
+    expect(screen.getByText(copy.welcomeTitle)).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: copy.save }))
+
+    expect(await screen.findByText(copy.welcomeDoneTitle)).toBeVisible()
+    expect(screen.getByRole('link', { name: copy.continueHome })).toHaveAttribute('href', '/')
+    search.value = ''
+  })
+
   it('shows the saved details, and the email as the sign-in address it cannot change', () => {
     renderForm(vi.fn<Action>())
 

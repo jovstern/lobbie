@@ -151,10 +151,22 @@ export function ProfileSkeleton() {
 export function AdminOverviewSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
       <div className={clsx(cardClassName, 'max-w-xl')}>
         <div className={`${block} h-6 w-40`} />
         <div className={`${block} h-5 w-72 max-w-full`} />
       </div>
+    </div>
+  )
+}
+
+/** An admin page's title and lead, before the role check lets them name the page. */
+function AdminHeaderSkeleton() {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className={`${block} h-8 w-40`} />
+      <div className={`${block} h-6 w-full max-w-prose`} />
+      <div className={`${block} h-6 w-2/3 max-w-prose`} />
     </div>
   )
 }
@@ -176,6 +188,7 @@ export function AdminNavSkeleton() {
 export function BuildingSettingsSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
       <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
         <div className={cardClassName}>
           <div className={`${block} h-6 w-24`} />
@@ -209,6 +222,7 @@ export function BuildingSettingsSkeleton() {
 export function ApartmentsSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className={`${block} h-6 w-44`} />
         <div className={`${block} h-11 w-40`} />
@@ -263,6 +277,31 @@ export function ApartmentsSkeleton() {
   )
 }
 
+/** `/admin/apartments/[id]` before the role check: the way back, the header and both cards. */
+export function ApartmentPageSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className={`${block} h-11 w-36`} />
+      <div className="flex flex-col gap-2">
+        <div className={`${block} h-8 w-32`} />
+        <ApartmentFactsSkeleton />
+      </div>
+      <div className={clsx(cardClassName, 'mt-4 max-w-2xl')}>
+        <div className="flex flex-col gap-1">
+          <div className={`${block} h-7 w-24`} />
+          <div className={`${block} h-6 w-full`} />
+        </div>
+        <ApartmentInviteSkeleton />
+        <div className={`${block} h-10 w-full`} />
+      </div>
+      <div className={clsx(cardClassName, 'max-w-2xl')}>
+        <div className={`${block} h-7 w-28`} />
+        <ApartmentResidentsSkeleton />
+      </div>
+    </div>
+  )
+}
+
 /** An apartment's number in its heading, while it streams. */
 export function ApartmentNumberSkeleton() {
   return <span aria-hidden className={`${block} inline-block h-7 w-10 align-middle`} />
@@ -280,11 +319,11 @@ export function ApartmentFactsSkeleton() {
 
 /**
  * The invite card's status and buttons, shaped like an active invite (its uses and expiry wrap
- * to two lines on phones, its two buttons to two rows), the height the block keeps either way.
+ * to two lines on phones, its two buttons to two rows); an apartment without one is shorter.
  */
 export function ApartmentInviteSkeleton() {
   return (
-    <div aria-hidden className="flex min-h-53 flex-col gap-4 sm:min-h-32">
+    <div aria-hidden className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <div className={`${block} h-6 w-28`} />
         <div className={`${block} h-6 w-64 max-w-full`} />
@@ -381,6 +420,7 @@ export function PeopleListSkeleton() {
 export function PeopleSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
       <div className="flex max-w-md flex-col gap-2">
         <div className={`${block} h-5 w-28`} />
         <div className={`${block} h-11`} />

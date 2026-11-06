@@ -2,16 +2,16 @@
 
 import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { lazy, useActionState, useRef, type ReactNode } from 'react'
+import { useActionState, useRef, type ReactNode } from 'react'
 import type { CreateInviteState } from '@/app/lib/actions/invites'
 import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
 import CreatedInvite from '@/app/ui/admin/created-invite'
-import { LazyDialogSlot, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
+import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName } from '@/app/ui/button-styles'
 import SubmitButton from '@/app/ui/submit-button'
 
 // Appears only after a click.
-const ReplaceInviteDialogContent = lazy(
+const ReplaceInviteDialogContent = lazyWithRetry(
   () => import('@/app/ui/admin/replace-invite-dialog-content'),
 )
 
@@ -95,7 +95,7 @@ export default function InviteControls({
               <ArrowPathIcon aria-hidden className="size-5" />
               {t('replace')}
             </button>
-            <LazyDialogSlot mounted={confirmation.mounted}>
+            <LazyDialogSlot dialog={confirmation}>
               <ReplaceInviteDialogContent
                 {...confirmation.content}
                 number={number}

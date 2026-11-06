@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server'
+import AdminPageHeader from '@/app/ui/admin/admin-page-header'
 import { Suspense } from 'react'
 import { requireRole } from '@/app/lib/authz'
 import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
@@ -21,16 +22,21 @@ export default async function PeopleAdmin({ searchParams }: Props) {
   const [{ q }, t] = await Promise.all([searchParams, getTranslations('People')])
   const query = typeof q === 'string' ? q : ''
 
+  // The header comes after the role check: below admin the page names nothing.
   return (
-    <AdminAnnouncer
-      headingId={peopleHeadingId}
-      // Below the page's static header.
-      header={<SearchField query={query} label={t('searchLabel')} hint={t('searchHint')} />}
-    >
-      {/* Keyed by the search, so each new one shows the skeleton while it loads. */}
-      <Suspense key={query} fallback={<PeopleListSkeleton />}>
-        <PeopleList query={query} />
-      </Suspense>
-    </AdminAnnouncer>
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader title={t('title')} lead={t('lead')} headingId={peopleHeadingId} />
+      {
+        <AdminAnnouncer
+          headingId={peopleHeadingId}
+          header={<SearchField query={query} label={t('searchLabel')} hint={t('searchHint')} />}
+        >
+          {/* Keyed by the search, so each new one shows the skeleton while it loads. */}
+          <Suspense key={query} fallback={<PeopleListSkeleton />}>
+            <PeopleList query={query} />
+          </Suspense>
+        </AdminAnnouncer>
+      }
+    </div>
   )
 }

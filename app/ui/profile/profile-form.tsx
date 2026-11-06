@@ -1,12 +1,14 @@
 'use client'
 
 import { CheckCircleIcon, HandRaisedIcon } from '@heroicons/react/24/outline'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useActionState, useEffect, useRef } from 'react'
 import type { ProfileFormState } from '@/app/lib/actions/users'
 import { focusFirstError } from '@/app/ui/focus-first-error'
 import SubmitButton from '@/app/ui/submit-button'
 import TextField from '@/app/ui/text-field'
+import { Link } from '@/i18n/navigation'
 
 type Values = NonNullable<ProfileFormState['values']>
 
@@ -32,6 +34,12 @@ export default function ProfileForm({ action, saved, email, askForName = false }
   // After an error, what was typed; after a save, what was saved.
   const values = state.values ?? saved
 
+  // The welcome callout is the URL's (`?welcome=1`): it outlives the save that names them,
+  // when the server no longer asks for the name, and then offers the way home.
+  const welcomeInUrl = useSearchParams().get('welcome') === '1'
+  const named = welcomeInUrl && state.savedAt !== undefined
+  const welcome = askForName || named
+
   // Focus is the DOM's, outside React: after a failed save it moves to the first error.
   useEffect(() => {
     focusFirstError(formRef.current, fieldOrder, state.errors)
@@ -39,13 +47,26 @@ export default function ProfileForm({ action, saved, email, askForName = false }
 
   return (
     <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
-      {askForName ? (
+      {welcome ? (
+        // After the save it stays, with the way on: the page does not jump.
         <div className="rounded-control border-accent bg-surface flex items-start gap-3 border p-4">
           <HandRaisedIcon aria-hidden className="text-accent mt-0.5 size-6 shrink-0" />
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold">{t('welcomeTitle')}</p>
-            <p className="text-text-muted text-sm">{t('welcomeLead')}</p>
-          </div>
+          {named ? (
+            <div className="flex flex-col items-start gap-1">
+              <p className="font-semibold">{t('welcomeDoneTitle')}</p>
+              <Link
+                href="/"
+                className="text-accent font-medium underline underline-offset-4 hover:no-underline"
+              >
+                {t('continueHome')}
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <p className="font-semibold">{t('welcomeTitle')}</p>
+              <p className="text-text-muted text-sm">{t('welcomeLead')}</p>
+            </div>
+          )}
         </div>
       ) : null}
       <TextField

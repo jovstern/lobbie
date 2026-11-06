@@ -2,14 +2,14 @@
 
 import { TrashIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { lazy, useRef } from 'react'
+import { useRef } from 'react'
 import type { RemoveApartmentState } from '@/app/lib/actions/apartments'
 import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
 import { ConfirmDialogContent, preloadConfirmDialog } from '@/app/ui/admin/confirm-dialog'
-import { LazyDialogSlot, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
+import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName } from '@/app/ui/button-styles'
 
-const BlockedDialogContent = lazy(() => import('@/app/ui/admin/blocked-dialog-content'))
+const BlockedDialogContent = lazyWithRetry(() => import('@/app/ui/admin/blocked-dialog-content'))
 
 function preloadBlocked() {
   void import('@/app/ui/admin/blocked-dialog-content')
@@ -51,8 +51,9 @@ export default function RemoveApartmentDialog({ action, number, blocked, reasonI
   )
 
   if (blocked) {
+    // In the row's actions: the button beside Edit, the reason on its own line below both.
     return (
-      <div className="flex flex-col items-start gap-1">
+      <>
         <button
           {...dialog.trigger}
           aria-label={label}
@@ -61,7 +62,7 @@ export default function RemoveApartmentDialog({ action, number, blocked, reasonI
         >
           {trigger}
         </button>
-        <LazyDialogSlot mounted={dialog.mounted}>
+        <LazyDialogSlot dialog={dialog}>
           <BlockedDialogContent
             {...dialog.content}
             title={t('blockedTitle', { number })}
@@ -69,10 +70,10 @@ export default function RemoveApartmentDialog({ action, number, blocked, reasonI
             closeLabel={t('blockedClose')}
           />
         </LazyDialogSlot>
-        <p id={reasonId} className="text-text-muted max-w-xs text-sm">
+        <p id={reasonId} className="text-text-muted basis-full text-sm">
           {blocked.summary}
         </p>
-      </div>
+      </>
     )
   }
 
@@ -81,7 +82,7 @@ export default function RemoveApartmentDialog({ action, number, blocked, reasonI
       <button {...dialog.trigger} aria-label={label} className={buttonClassName('secondary')}>
         {trigger}
       </button>
-      <LazyDialogSlot mounted={dialog.mounted}>
+      <LazyDialogSlot dialog={dialog}>
         <ConfirmDialogContent
           {...dialog.content}
           title={t('title', { number })}
