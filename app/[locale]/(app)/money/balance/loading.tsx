@@ -1,12 +1,12 @@
 import MoneyHeader from '@/app/ui/money/money-header'
-import { ApartmentMoneySkeleton } from '@/app/ui/skeletons'
+import { BalanceSkeleton } from '@/app/ui/skeletons'
 
 // The header is static, so the loading state shows it as the page will: nothing shifts.
-export default function MoneyLoading() {
+export default function BalanceLoading() {
   return (
     <div className="flex flex-col gap-6">
-      <MoneyHeader />
-      <ApartmentMoneySkeleton />
+      <MoneyHeader current="fund" />
+      <BalanceSkeleton />
     </div>
   )
 }

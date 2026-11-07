@@ -5,7 +5,7 @@ import { updateTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
-import { demoRefusal } from '@/app/lib/actions/shared'
+import { demoRefusal, refreshFundPages } from '@/app/lib/actions/shared'
 import { authorizeAction } from '@/app/lib/authz'
 import { buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
@@ -219,5 +219,6 @@ export async function addAdjustment(
 
   // The building's tag, as for every write to its money: the balance is cached under it.
   updateTag(buildingTag(member.buildingId))
+  refreshFundPages()
   return { added: true, message: null }
 }

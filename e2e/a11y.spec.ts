@@ -69,6 +69,20 @@ for (const locale of ['he', 'en'] as const) {
       })
     }
 
+    test('Money: the building fund', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'resident1@example.com')
+      await page.goto(`${prefix}/money/balance`)
+      // Once the fund and the year have streamed in, so axe checks them rather than skeletons.
+      await expect(
+        page.getByRole('region', { name: text.Balance.nowTitle, exact: true }),
+      ).toBeVisible()
+      await expect(
+        page.getByRole('region', { name: text.Balance.monthsTitle, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
     test('More', async ({ page }) => {
       await useSessionOf(page, 'resident1@example.com')
       await page.goto(`${prefix}/more`)

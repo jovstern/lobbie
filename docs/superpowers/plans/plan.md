@@ -319,6 +319,13 @@ Requirements: R14–R19, and part of R25.
 6. **Balance page** (medium). `/money/balance`: the balance figure, income and expenses,
    CSS bars by category (`?year=`), and the expense list with receipt links. Tests: category
    sums with voided rows and adjustments.
+   - Done: `data/ledger.yearReport` (range, one `UNION ALL` of sums, the year's list: three
+     queries, cached with the balance's tags); pure `utils/ledger.ledgerYears`/`yearFigures`;
+     residents see only counted expenses (no names, no void reasons); `refreshFundPages`
+     (Home + `/money/balance`) from payment, expense and adjustment writes; `/money` moved into
+     the `(overview)` route group so each page has its own `loading.tsx`; `YearNav` shared
+     with `/admin/payments`. e2e: the fund drops on `/money/balance` and a resident opens the
+     receipt there; a resident's fund and categories in he + en; axe on `/money/balance`.
 - **Acceptance tests:**
   - `e2e/payments.spec.ts`: the committee records a payment for `e2e-2` (overdue → paid);
     voids it (back to overdue);

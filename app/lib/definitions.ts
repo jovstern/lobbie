@@ -126,6 +126,43 @@ export type AdminExpenses = {
   firstDay: string
 }
 
+/**
+ * An expense as every member sees it on `/money/balance` (R19): only those that count, and
+ * never who recorded it.
+ */
+export type BuildingExpense = {
+  id: string
+  category: ExpenseCategory
+  amountAgorot: number
+  /** The calendar date it was spent, `YYYY-MM-DD`. */
+  spentOn: string
+  description: string
+  /** The receipt's storage key, served by `/api/files/[id]`; null without one. */
+  receiptKey: string | null
+}
+
+/** A month of the building fund: what came in (payments) and went out (expenses). */
+export type LedgerMonth = { month: string; incomeAgorot: number; expensesAgorot: number }
+
+/** One year of the building fund (R19), by its payments', expenses' and corrections' dates. */
+export type LedgerYear = {
+  year: number
+  /** The years there is something to show, this one last. */
+  years: YearRange
+  /** The payments that count, paid on a day of the year. */
+  incomeAgorot: number
+  /** The expenses that count, spent on a day of the year. */
+  expensesAgorot: number
+  /** The corrections recorded in the year (in the building's time zone), signed. */
+  adjustmentsAgorot: number
+  /** The year's expenses by category, the largest first; none without expenses. */
+  categories: { category: ExpenseCategory; amountAgorot: number }[]
+  /** The year's months up to this one, January first. */
+  months: LedgerMonth[]
+  /** The year's expenses that count, newest first. */
+  expenses: BuildingExpense[]
+}
+
 /** A payment as the committee sees it on an apartment's page (R15). */
 export type PaymentEntry = {
   id: string

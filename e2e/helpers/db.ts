@@ -358,3 +358,25 @@ export async function voidExpenseInDb(description: string): Promise<void> {
         AND voided_at IS NULL`,
   )
 }
+
+/**
+ * The demo building's expenses that count in a year, by category, straight from the test
+ * database: the oracle for `/money/balance`'s bars.
+ */
+export async function demoExpensesByCategory(
+  year: number,
+): Promise<{ category: string; amountAgorot: number }[]> {
+  return withE2eSql(async (sql) => {
+    const rows = await sql`
+      SELECT category::text AS category, sum(amount_agorot)::text AS amount_agorot
+      FROM expenses
+      WHERE building_id = ${demoBuildingId}
+        AND voided_at IS NULL
+        AND spent_on BETWEEN ${`${year}-01-01`} AND ${`${year}-12-31`}
+      GROUP BY category`
+    return z
+      .array(z.object({ category: z.string(), amount_agorot: z.coerce.number().int() }))
+      .parse(rows)
+      .map(({ category, amount_agorot }) => ({ category, amountAgorot: amount_agorot }))
+  })
+}

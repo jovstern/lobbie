@@ -204,6 +204,7 @@ describe('record', () => {
       expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/expenses', 'page')
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
     },
   )
 
@@ -423,6 +424,7 @@ describe('voidExpense', () => {
     expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/expenses', 'page')
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
   })
 
   it('asks for a reason', async () => {

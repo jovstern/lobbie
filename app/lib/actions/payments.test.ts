@@ -234,6 +234,7 @@ describe('record', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
       // The residents' Money page shows the apartment's months and history.
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
     },
   )
 
@@ -530,6 +531,7 @@ describe('voidPayment', () => {
     expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
   })
 
   it('asks for a reason', async () => {

@@ -12,6 +12,7 @@ const labels = {
   AdminExpenses: { receiptLabel: 'receipt' },
   ApartmentForm: { editLabel: 'edit' },
   ApartmentRemove: { removeLabel: 'remove' },
+  Balance: { receiptLabel: 'receipt' },
   InviteAdminClient: { revokeLabel: 'revoke' },
   InviteAll: { copyLinkLabel: 'copyLink' },
   PersonRemove: { removeLabel: 'remove' },

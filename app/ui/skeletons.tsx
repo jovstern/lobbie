@@ -742,3 +742,65 @@ export function ExpensesSkeleton() {
     </div>
   )
 }
+
+/** `/money/balance`: the fund now, then the year's totals and bars, months and expenses. */
+export function BalanceSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6 lg:gap-8">
+      <CardSkeleton minHeight="min-h-56">
+        <div className={`${block} h-8 w-40`} />
+        <div className={`${block} h-6 w-24`} />
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 pt-4 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((part) => (
+            <div key={part} className="flex flex-col gap-1">
+              <div className={`${block} h-5 w-24`} />
+              <div className={`${block} h-6 w-20`} />
+            </div>
+          ))}
+        </div>
+      </CardSkeleton>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className={`${block} h-7 w-24`} />
+          <div className={`${block} h-11 w-24`} />
+        </div>
+        <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+          <div className={clsx(cardClassName, 'min-h-80')}>
+            <div className="flex gap-8">
+              <div className={`${block} h-12 w-24`} />
+              <div className={`${block} h-12 w-24`} />
+            </div>
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className={`${block} h-6 w-24`} />
+                  <div className={`${block} h-6 w-32`} />
+                </div>
+                <div className={`${block} h-2 w-full`} />
+              </div>
+            ))}
+          </div>
+          <CardSkeleton minHeight="min-h-80">
+            {[0, 1, 2, 3, 4, 5].map((row) => (
+              <div key={row} className="flex items-center justify-between gap-4">
+                <div className={`${block} h-6 w-28`} />
+                <div className={`${block} h-6 w-36`} />
+              </div>
+            ))}
+          </CardSkeleton>
+        </div>
+        <CardSkeleton minHeight="min-h-40">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-4">
+                <div className={`${block} h-6 w-40`} />
+                <div className={`${block} h-6 w-16`} />
+              </div>
+              <div className={`${block} h-5 w-48 max-w-full`} />
+            </div>
+          ))}
+        </CardSkeleton>
+      </div>
+    </div>
+  )
+}

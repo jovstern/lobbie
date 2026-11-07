@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function MoneyPage({ searchParams }: PageProps<'/[locale]/money'>) {
   return (
     <div className="flex flex-col gap-6">
-      <MoneyHeader />
+      <MoneyHeader current="apartment" />
       <Suspense fallback={<ApartmentMoneySkeleton />}>
         <MoneyView searchParams={searchParams} />
       </Suspense>

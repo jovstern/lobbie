@@ -48,21 +48,28 @@ export function refreshFeePages() {
 }
 
 /**
+ * The pages that show the building fund: Home, whose fund card shows the balance, and the
+ * balance page, with the year's money in and out. Every write to the fund refreshes them.
+ */
+export function refreshFundPages() {
+  revalidatePath('/[locale]', 'page')
+  revalidatePath('/[locale]/money/balance', 'page')
+}
+
+/**
  * The pages that show an apartment's payments: its admin page, the arrears overview and the
- * grid, Home, whose status card says whether it is paid up, and the residents' Money page.
+ * grid, Home, whose status card says whether it is paid up, and the residents' Money page;
+ * and the fund the payments go into.
  */
 export function refreshPaymentPages() {
   revalidatePath('/[locale]/admin/apartments/[id]', 'page')
   refreshPaymentOverviews()
-  revalidatePath('/[locale]', 'page')
   revalidatePath('/[locale]/money', 'page')
+  refreshFundPages()
 }
 
-/**
- * The pages that show expenses or the fund they come off: the expenses page and Home, whose
- * fund card shows the balance.
- */
+/** The pages that show expenses or the fund they come off: the expenses page and the fund's. */
 export function refreshExpensePages() {
   revalidatePath('/[locale]/admin/expenses', 'page')
-  revalidatePath('/[locale]', 'page')
+  refreshFundPages()
 }

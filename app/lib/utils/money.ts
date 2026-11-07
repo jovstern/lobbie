@@ -49,3 +49,12 @@ export function agorotToShekelsInput(agorot: number): string {
   const fraction = agorot % agorotPerShekel
   return fraction === 0 ? String(whole) : `${whole}.${String(fraction).padStart(2, '0')}`
 }
+
+/** A part of a whole as a percentage in the locale ("34%"), with a decimal under 1% ("0.4%"). */
+export function formatShare(part: number, whole: number, locale: Locale): string {
+  const share = part / whole
+  return new Intl.NumberFormat(intlLocales[locale], {
+    style: 'percent',
+    maximumFractionDigits: share < 0.01 ? 1 : 0,
+  }).format(share)
+}

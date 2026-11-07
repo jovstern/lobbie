@@ -10,6 +10,7 @@ import {
   receiptKeyOf,
   voidExpenseInDb,
 } from './helpers/db'
+import { refreshFundCache } from './helpers/fund'
 import { removeUpload } from './helpers/uploads'
 
 // The flows are in Hebrew, the app's default language; the a11y spec covers English too.
@@ -36,6 +37,14 @@ async function expectFundOnHome(page: Page, agorot: number) {
   await page.goto('/')
   await expect(
     page.getByRole('region', { name: text.BalanceCard.title, exact: true }),
+  ).toContainText(formatAgorot(agorot, 'he'))
+}
+
+/** The fund now on `/money/balance`, once it has streamed in. */
+async function expectFundOnBalancePage(page: Page, agorot: number) {
+  await page.goto('/money/balance')
+  await expect(
+    page.getByRole('region', { name: text.Balance.nowTitle, exact: true }),
   ).toContainText(formatAgorot(agorot, 'he'))
 }
 
@@ -75,14 +84,7 @@ async function voidIfStillCounted(page: Page, description: string, amount: strin
   return true
 }
 
-/** The admin saves the building details unchanged: a write that updates the building's tag. */
-async function refreshFundCache(page: Page) {
-  await page.goto('/admin/building')
-  await page.getByRole('button', { name: text.BuildingForm.save, exact: true }).click()
-  await expect(page.getByText(text.BuildingForm.saved, { exact: true })).toBeVisible()
-}
-
-test('the committee adds an expense with a receipt: the fund drops, the receipt opens, and voiding it gives the money back', async ({
+test('the committee adds an expense with a receipt: the fund drops on the balance page, a resident opens the receipt there, and voiding it gives the money back', async ({
   page,
   request,
 }, testInfo) => {
@@ -126,8 +128,30 @@ test('the committee adds an expense with a receipt: the fund drops, the receipt 
     // Someone signed out gets nothing (another building's member: the route's unit test).
     expect((await request.get(href)).status()).toBe(404)
 
-    // The fund drops by the expense.
+    // The fund drops by the expense, on Home and on the balance page, which lists it.
     await expectFundOnHome(page, before - 12_345)
+    await expectFundOnBalancePage(page, before - 12_345)
+    const yearExpenses = page.getByRole('region', {
+      name: t('Balance.expensesTitle', { year: today.slice(0, 4) }),
+      exact: true,
+    })
+    // The list on phones, the table on desktop: one of the two is shown.
+    await expect(
+      yearExpenses.getByText(description, { exact: true }).filter({ visible: true }),
+    ).toBeVisible()
+
+    // Any member opens the receipt from there: a resident downloads the same file.
+    await useSessionOf(page, resident)
+    await page.goto('/money/balance')
+    const residentDownload = page.waitForEvent('download')
+    await page
+      .getByRole('link', {
+        name: t('Balance.receiptLabel', { description, date: formatDay(today, 'he') }),
+        exact: true,
+      })
+      .click()
+    expect((await residentDownload).suggestedFilename()).toBe(`receipt-${today}.pdf`)
+    await useSessionOf(page, committee)
 
     // Voiding it gives the money back; it stays listed as voided.
     await voidThroughApp(page, description, amount)
@@ -137,8 +161,12 @@ test('the committee adds an expense with a receipt: the fund drops, the receipt 
     await expect(
       page.getByRole('heading', { level: 1, name: text.AdminExpenses.title, exact: true }),
     ).toBeFocused()
-    await expectFundOnHome(page, before)
+    await expectFundOnBalancePage(page, before)
+    // Residents see only the expenses that count: the voided one is gone from the list.
+    await expect(yearExpenses.getByText(description, { exact: true })).toHaveCount(0)
   } finally {
+    // The committee's session, whichever the test stopped in.
+    await useSessionOf(page, committee)
     // The row stays in the test branch (reset every run), voided, so later fund checks are
     // right; its file goes.
     if (await voidIfStillCounted(page, description, amount)) {

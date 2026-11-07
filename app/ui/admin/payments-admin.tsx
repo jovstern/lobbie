@@ -11,11 +11,11 @@ import ArrearsList from '@/app/ui/admin/arrears-list'
 import ArrivalHeading from '@/app/ui/admin/arrival-heading'
 import PaymentsGridCards from '@/app/ui/admin/payments-grid-cards'
 import PaymentsGridTable from '@/app/ui/admin/payments-grid-table'
-import PaymentsYearNav from '@/app/ui/admin/payments-year-nav'
 import { cardClassName } from '@/app/ui/card'
 import EmptyState from '@/app/ui/empty-state'
 import { moneyFont } from '@/app/ui/money-font'
 import { ApartmentPaymentsSkeleton } from '@/app/ui/skeletons'
+import YearNav from '@/app/ui/year-nav'
 
 /** The page's heading, which takes focus when the button a dialog opened from is gone. */
 const headingId = 'payments-title'
@@ -87,11 +87,13 @@ export default async function PaymentsAdmin({ searchParams }: Props) {
                 </h2>
                 <p className="text-text-muted">{t('gridLead')}</p>
               </div>
-              <PaymentsYearNav
+              <YearNav
                 year={year}
                 years={board.years}
                 hrefFor={(other) => paymentsHref({ year: other, apartment: selected?.id })}
-                t={t}
+                label={t('yearsLabel')}
+                previousLabel={(other) => t('previousYear', { year: other })}
+                nextLabel={(other) => t('nextYear', { year: other })}
               />
             </div>
             <PaymentsGridTable

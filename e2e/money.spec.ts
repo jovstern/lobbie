@@ -9,9 +9,12 @@ import {
   addResidence,
   apartmentIdOf,
   deletePaymentsOf,
+  demoBuildingBalanceAgorot,
+  demoExpensesByCategory,
   removeResidence,
   setBillingStart,
 } from './helpers/db'
+import { refreshFundCache } from './helpers/fund'
 
 // The e2e suite's own resident and apartment: the payments are written here and removed after.
 const resident = 'e2e3@example.com'
@@ -112,6 +115,10 @@ for (const locale of ['he', 'en'] as const) {
     } finally {
       await deletePaymentsOf(number)
       await setBillingStart(number, currentMonth)
+      // The payments were written behind the app's back, and the fund may have been cached
+      // meanwhile (the link to /money/balance prefetches it).
+      await useSessionOf(page, 'admin@example.com')
+      await refreshFundCache(page)
     }
   })
 }
@@ -163,3 +170,92 @@ test("someone else's apartment is a 404", async ({ page }) => {
     page.getByRole('heading', { level: 1, name: messages.he.NotFound.title, exact: true }),
   ).toBeVisible()
 })
+
+for (const locale of ['he', 'en'] as const) {
+  const text = messages[locale]
+  const t = translator(locale)
+  const prefix = localePrefix(locale)
+
+  test(`a resident sees the building fund and where this year's money went, in ${locale}`, async ({
+    page,
+  }, testInfo) => {
+    const isPhone = testInfo.project.name === 'phone'
+    const year = Number(currentMonth.slice(0, 4))
+    const [fund, categories] = await Promise.all([
+      demoBuildingBalanceAgorot(),
+      demoExpensesByCategory(year),
+    ])
+    await useSessionOf(page, 'resident1@example.com')
+
+    // From the apartment's page to the fund's, through the Money pages' own links.
+    await page.goto(`${prefix}/money`)
+    const moneyPages = page.getByRole('navigation', { name: text.MoneyNav.label, exact: true })
+    await moneyPages.getByRole('link', { name: text.Balance.title, exact: true }).click()
+    await expect(page).toHaveURL(`${prefix}/money/balance`)
+    await expect(
+      page.getByRole('heading', { level: 1, name: text.Balance.title, exact: true }),
+    ).toBeVisible()
+    await expect(
+      moneyPages.getByRole('link', { name: text.Balance.title, exact: true }),
+    ).toHaveAttribute('aria-current', 'page')
+    // The Money tab stays the current one.
+    const nav = isPhone ? page.getByTestId('tab-bar') : page.getByTestId('side-nav')
+    await expect(nav.getByRole('link', { name: text.Nav.money, exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+
+    // The fund now, over every year.
+    await expect(
+      page.getByRole('region', { name: text.Balance.nowTitle, exact: true }),
+    ).toContainText(formatAgorot(fund, locale))
+
+    // This year by default; each category in words, with its amount.
+    await expect(
+      page.getByRole('heading', {
+        level: 2,
+        name: t('Balance.yearTitle', { year: String(year) }),
+        exact: true,
+      }),
+    ).toBeVisible()
+    const where = page.getByRole('list', { name: text.Balance.categoriesTitle, exact: true })
+    if (categories.length === 0) {
+      await expect(
+        page.getByText(t('Balance.noExpensesTitle', { year: String(year) })).first(),
+      ).toBeVisible()
+    } else {
+      await expect(where.getByRole('listitem')).toHaveCount(categories.length)
+      for (const { category, amountAgorot } of categories) {
+        await expect(
+          where.getByRole('listitem').filter({
+            hasText: text.ExpenseCategories[category as keyof typeof text.ExpenseCategories],
+          }),
+        ).toContainText(formatAgorot(amountAgorot, locale))
+      }
+    }
+
+    // A year that is not one reads as this year; the previous year is a link away.
+    await page.goto(`${prefix}/money/balance?year=nonsense`)
+    await expect(
+      page.getByRole('heading', {
+        level: 2,
+        name: t('Balance.yearTitle', { year: String(year) }),
+        exact: true,
+      }),
+    ).toBeVisible()
+    await page
+      .getByRole('link', {
+        name: t('Balance.previousYear', { year: String(year - 1) }),
+        exact: true,
+      })
+      .click()
+    await expect(page).toHaveURL(`${prefix}/money/balance?year=${year - 1}`)
+    await expect(
+      page.getByRole('heading', {
+        level: 2,
+        name: t('Balance.yearTitle', { year: String(year - 1) }),
+        exact: true,
+      }),
+    ).toBeVisible()
+  })
+}
