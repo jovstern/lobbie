@@ -200,7 +200,8 @@ export const feeRates = pgTable(
       .references(() => buildings.id, { onDelete: 'restrict' }),
     // Null is the building default; a value is that apartment's override.
     apartmentId: uuid('apartment_id'),
-    amountAgorot: integer('amount_agorot').notNull(),
+    // Null only on an apartment's row: from that month it follows the building's fee again.
+    amountAgorot: integer('amount_agorot'),
     effectiveFrom: month('effective_from').notNull(),
     createdBy: uuid('created_by')
       .notNull()
@@ -218,6 +219,10 @@ export const feeRates = pgTable(
     }).onDelete('restrict'),
     index('fee_rates_building_id_effective_from_idx').on(t.buildingId, t.effectiveFrom),
     check('fee_rates_amount_positive', sql`${t.amountAgorot} > 0`),
+    check(
+      'fee_rates_follow_building_apartment_only',
+      sql`${t.amountAgorot} IS NOT NULL OR ${t.apartmentId} IS NOT NULL`,
+    ),
     check('fee_rates_effective_from_format', sql`${t.effectiveFrom} ~ ${monthPattern}`),
   ],
 )

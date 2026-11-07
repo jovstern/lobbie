@@ -43,6 +43,8 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
             ContactVisibility: messages.ContactVisibility,
             CopyButton: messages.CopyButton,
             ErrorPage: messages.ErrorPage,
+            FeeForm: messages.FeeForm,
+            FollowBuilding: messages.FollowBuilding,
             InviteAdminClient: messages.InviteAdminClient,
             InviteAll: messages.InviteAll,
             JoinCodeForm: messages.JoinCodeForm,

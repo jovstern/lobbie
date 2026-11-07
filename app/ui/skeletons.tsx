@@ -298,6 +298,79 @@ export function ApartmentPageSkeleton() {
         <div className={`${block} h-7 w-28`} />
         <ApartmentResidentsSkeleton />
       </div>
+      <div className={clsx(cardClassName, 'max-w-2xl')}>
+        <div className={`${block} h-7 w-36`} />
+        <ApartmentFeeSkeleton />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The fee card's figure, whose fee it is, its button and the line below, shaped like an
+ * apartment paying the building's fee.
+ */
+export function ApartmentFeeSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <div className={`${block} h-8 w-32`} />
+        <div className={`${block} h-6 w-36`} />
+      </div>
+      <div className={`${block} h-11 w-44`} />
+      <div className={`${block} h-6 w-full max-w-md`} />
+    </div>
+  )
+}
+
+/** `/admin/fees`: its header, then the building's fee beside the apartments' own. */
+export function FeesSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className={cardClassName}>
+          <div className={`${block} h-7 w-36`} />
+          <div className="flex flex-col gap-1">
+            <div className={`${block} h-9 w-40`} />
+            <div className={`${block} h-6 w-36`} />
+          </div>
+          <div className={`${block} h-11 w-40`} />
+          <div className={`${block} h-6 w-20`} />
+          <FeeHistorySkeleton rows={2} />
+        </div>
+        <div className={cardClassName}>
+          <div className="flex flex-col gap-1">
+            <div className={`${block} h-7 w-40`} />
+            <div className={`${block} h-6 w-full`} />
+            <div className={`${block} h-6 w-2/3`} />
+          </div>
+          <div className={`${block} h-11 w-48`} />
+          {[0, 1].map((apartment) => (
+            <div key={apartment} className="flex flex-col gap-3">
+              <div className={`${block} h-6 w-28`} />
+              <FeeHistorySkeleton rows={1} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** A fee history's rows: the months and amount, then who set it. */
+function FeeHistorySkeleton({ rows }: { rows: number }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {Array.from({ length: rows }, (_, row) => (
+        <div key={row} className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className={`${block} h-6 w-40`} />
+            <div className={`${block} h-6 w-16`} />
+          </div>
+          <div className={`${block} h-5 w-48`} />
+        </div>
+      ))}
     </div>
   )
 }

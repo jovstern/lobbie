@@ -172,6 +172,31 @@ for (const locale of ['he', 'en'] as const) {
       await expectNoViolations(page)
     })
 
+    test('Admin: fees as the committee, and the fee dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'committee1@example.com')
+      await page.goto(`${prefix}/admin/fees`)
+      // Once the apartments' own fees have streamed in, so axe checks them too.
+      await expect(
+        page.getByRole('region', {
+          name: translator(locale)('AdminFees.apartment', { number: '10' }),
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await page
+        .getByRole('main')
+        .getByRole('button', { name: text.FeeForm.openApartment, exact: true })
+        .click()
+      await expect(
+        page.getByRole('dialog', { name: text.FeeForm.apartmentTitle, exact: true }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
     test('Building', async ({ page }) => {
       await useSessionOf(page, 'resident1@example.com')
       await page.goto(`${prefix}/building`)

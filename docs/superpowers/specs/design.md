@@ -95,7 +95,10 @@ IDs are referenced by the plan and the PRs.
   unpaid is `overdue`. Partial payments show the remaining amount and keep the status.
   Recording more than the remaining amount for a month is rejected (the form says how much
   is owed); paying several months splits into one payment row per month in one transaction.
-- Fee changes apply from a month onward and never rewrite earlier months.
+- Fee changes apply from a month onward and never rewrite earlier months: once a building or
+  apartment has a fee, a new one starts no earlier than the current month (the first may start
+  at billing start), and at most 12 months ahead. An apartment's own fee can be ended from a
+  month, after which it follows the building fee again.
 - A user signed in without a membership sees only `/join` (enter a code).
 - **Invites:** per apartment, reusable by up to 6 people until expiry (14 days) or revoke;
   the code (10 characters from an unambiguous alphabet) is stored hashed; the link carries
@@ -241,7 +244,7 @@ reference `(apartmentId, buildingId)`.
 | `apartment_residents` | userId, apartmentId, isOwner bool, createdAt | PK (userId, apartmentId); idx apartmentId |
 | `invites` | id, buildingId, apartmentId, codeHash, maxUses (default 6), uses int default 0, createdBy null, expiresAt, revokedAt null | `UNIQUE(codeHash)`; FK (apartmentId, buildingId); createdBy `ON DELETE SET NULL` (an invite outlives the admin who made it); `CHECK uses <= maxUses` |
 | `rate_limits` | key text, windowStart timestamptz, count int | PK (key, windowStart); old windows pruned on write |
-| `fee_rates` | id, buildingId, apartmentId null (null = default), amountAgorot, effectiveFrom month, createdBy, createdAt | `UNIQUE NULLS NOT DISTINCT (buildingId, apartmentId, effectiveFrom)`; FK (apartmentId, buildingId); idx (buildingId, effectiveFrom) |
+| `fee_rates` | id, buildingId, apartmentId null (null = default), amountAgorot null (null = the apartment follows the building fee from this month; apartment rows only, `CHECK`), effectiveFrom month, createdBy, createdAt | `UNIQUE NULLS NOT DISTINCT (buildingId, apartmentId, effectiveFrom)`; FK (apartmentId, buildingId); idx (buildingId, effectiveFrom) |
 | `payments` | id, buildingId, apartmentId, month, amountAgorot, paidOn date, method enum(cash, transfer, check, bit, other), note, recordedBy, createdAt, voidedAt/voidedBy/voidReason null | FK (apartmentId, buildingId); idx (apartmentId, month), (buildingId, month); `CHECK` void columns all-or-none |
 | `expenses` | id, buildingId, category enum, amountAgorot, spentOn date, description, receiptKey null, recordedBy, createdAt, voidedAt/voidedBy/voidReason | idx (buildingId, spentOn) |
 | `payment_reminders` | id, buildingId, apartmentId, sentBy, sentAt | FK (apartmentId, buildingId); idx (apartmentId, sentAt desc) |

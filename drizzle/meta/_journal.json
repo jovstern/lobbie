@@ -22,6 +22,13 @@
       "when": 1793913041809,
       "tag": "0002_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794040881005,
+      "tag": "0003_fee_follow_building",
+      "breakpoints": true
     }
   ]
 }

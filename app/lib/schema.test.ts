@@ -141,6 +141,30 @@ describe('schema constraints', () => {
     )
   })
 
+  it("rejects a building default that follows the building (only an apartment's row may)", async () => {
+    await expectViolation(
+      db.insert(feeRates).values({
+        buildingId,
+        amountAgorot: null,
+        effectiveFrom: '2026-03',
+        createdBy: userId,
+      }),
+      'fee_rates_follow_building_apartment_only',
+    )
+  })
+
+  it("accepts an apartment's row that follows the building again", async () => {
+    await expect(
+      db.insert(feeRates).values({
+        buildingId,
+        apartmentId,
+        amountAgorot: null,
+        effectiveFrom: '2026-03',
+        createdBy: userId,
+      }),
+    ).resolves.toBeDefined()
+  })
+
   it('rejects a second building membership for one user', async () => {
     await db.insert(buildingMembers).values({ userId, buildingId })
     await expectViolation(

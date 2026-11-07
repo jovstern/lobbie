@@ -7,6 +7,52 @@ export type FeeRate = Pick<
   'apartmentId' | 'amountAgorot' | 'effectiveFrom'
 >
 
+/** The fee an apartment owes for a month, and whether it is its own or the building's. */
+export type FeeInForce = { amountAgorot: number; source: 'building' | 'apartment' }
+
+/** Where a fee rate stands against the current month: in force now, before, or later. */
+export type FeePeriodState = 'past' | 'current' | 'upcoming'
+
+/** A fee rate as the committee sees it in the history (R14): what, from when to when, by whom. */
+export type FeePeriod = {
+  id: string
+  /** Null on an apartment's row that ends its own fee: from then it follows the building's. */
+  amountAgorot: number | null
+  effectiveFrom: string
+  /** The month before the next rate starts; null for the latest. */
+  until: string | null
+  state: FeePeriodState
+  setByName: string
+  setAt: Date
+}
+
+/** A building default's period, which always has an amount. */
+export type BuildingFeePeriod = FeePeriod & { amountAgorot: number }
+
+/** The building's fees (R14): its default's history and each apartment's own. */
+export type FeeSchedule = {
+  /** In the building's time zone. */
+  currentMonth: string
+  billingStartMonth: string
+  /** The building default, newest first. */
+  building: BuildingFeePeriod[]
+  /** The apartments with a fee of their own, in natural order, each newest first. */
+  apartments: { apartment: ApartmentRef; periods: FeePeriod[] }[]
+  /** Every apartment of the building, in natural order, to choose one to set a fee for. */
+  choices: ApartmentRef[]
+}
+
+/** One apartment's fee (R14): what it pays this month, and its own fees' history. */
+export type ApartmentFees = {
+  currentMonth: string
+  /** Null when no fee applies yet. */
+  inForce: FeeInForce | null
+  /** Its own fees, newest first; empty when it pays the building's. */
+  periods: FeePeriod[]
+  /** The building's next fee, when one is set for a later month and it pays the building's. */
+  upcomingBuildingFee: { amountAgorot: number; effectiveFrom: string } | null
+}
+
 /** A non-voided payment (or a month's sum of them) toward one month's fee. */
 export type MonthPayment = Pick<typeof payments.$inferSelect, 'month' | 'amountAgorot'>
 

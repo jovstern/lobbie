@@ -193,3 +193,39 @@ export async function savedLocaleOf(email: string): Promise<string | null> {
 export async function setSavedLocaleOf(email: string, locale: 'he' | 'en'): Promise<void> {
   await withE2eSql((sql) => sql`UPDATE "user" SET locale = ${locale} WHERE email = ${email}`)
 }
+
+/** Removes every fee of its own a demo-building apartment has, by its number. */
+export async function deleteFeesOf(number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM fee_rates
+      WHERE apartment_id = (
+        SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+      )`,
+  )
+}
+
+/** How many default fees the demo building has from `month`, read straight from the database. */
+export async function buildingFeeCountFrom(month: string): Promise<number> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT count(*)::int AS rates FROM fee_rates
+      WHERE building_id = ${demoBuildingId} AND apartment_id IS NULL AND effective_from = ${month}`
+    return z.number().int().parse(row?.rates)
+  })
+}
+
+/**
+ * Gives a demo-building apartment a fee of its own from `month`, set by the treasurer as the
+ * seed's fees are, for a test that then ends it.
+ */
+export async function addOwnFee(number: string, amountAgorot: number, month: string) {
+  await withE2eSql(
+    (sql) => sql`
+      INSERT INTO fee_rates (building_id, apartment_id, amount_agorot, effective_from, created_by)
+      SELECT ${demoBuildingId}, a.id, ${amountAgorot}, ${month}, u.id
+      FROM apartments a, "user" u
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number}
+        AND u.email = 'committee2@example.com'`,
+  )
+}

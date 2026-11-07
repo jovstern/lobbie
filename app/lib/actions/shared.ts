@@ -23,3 +23,9 @@ export function refreshPeoplePages() {
   revalidatePath('/[locale]/admin/people', 'page')
   refreshApartmentPages()
 }
+
+/** The pages that show fees: the fees page, and the apartment pages with each one's fee. */
+export function refreshFeePages() {
+  revalidatePath('/[locale]/admin/fees', 'page')
+  refreshApartmentPages()
+}

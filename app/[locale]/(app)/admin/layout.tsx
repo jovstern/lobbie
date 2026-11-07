@@ -7,8 +7,7 @@ import { AdminNavSkeleton } from '@/app/ui/skeletons'
 export default function AdminLayout({ children }: LayoutProps<'/[locale]/admin'>) {
   return (
     <div className="flex flex-col gap-6">
-      {/* The nav's height, so the page below does not drop when it streams in. A committee
-          member, with one section, gets no navigation, and the page moves up once instead. */}
+      {/* The nav's height, so the page below does not drop when it streams in. */}
       <Suspense fallback={<AdminNavSkeleton />}>
         <AdminNav />
       </Suspense>
