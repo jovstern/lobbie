@@ -25,6 +25,8 @@ type Props = {
   months: OpenMonth[]
   /** Today in the building's time zone, `YYYY-MM-DD`: the default and the latest date paid. */
   today: string
+  /** The earliest date paid, `YYYY-MM-DD`: a year before the apartment's billing starts. */
+  firstDay: string
   /** Called with what was recorded. */
   onRecorded: (recorded: PaymentRecorded) => void
   /** The dialog's close button, placed beside the submit button. */
@@ -48,7 +50,14 @@ function owedInput(months: OpenMonth[], chosen: string[]): string {
  * months starts it again at what they owe. The server splits it oldest month first and refuses
  * more than they owe.
  */
-export default function PaymentForm({ action, months, today, onRecorded, cancel }: Props) {
+export default function PaymentForm({
+  action,
+  months,
+  today,
+  firstDay,
+  onRecorded,
+  cancel,
+}: Props) {
   const t = useTranslations('PaymentForm')
   const tMethods = useTranslations('PaymentMethods')
   const locale = useLocale()
@@ -157,6 +166,7 @@ export default function PaymentForm({ action, months, today, onRecorded, cancel 
         defaultValue={values?.paidOn ?? today}
         errors={state.errors?.paidOn}
         type="date"
+        min={firstDay}
         max={today}
         required
       />

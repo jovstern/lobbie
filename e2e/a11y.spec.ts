@@ -5,7 +5,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { signIn, useSessionOf } from './helpers/auth'
 import { messages, translator } from './helpers/copy'
-import { deleteInvitesOf, deleteUser } from './helpers/db'
+import { apartmentIdOf, deleteInvitesOf, deleteUser } from './helpers/db'
 
 // WCAG 2.2 AA (spec §8): zero violations on every page, in both languages.
 const wcag = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -168,6 +168,35 @@ for (const locale of ['he', 'en'] as const) {
         .getByRole('button', { name: t('VoidPayment.openLabel', words), exact: true })
         .click()
       await expect(page.getByRole('alertdialog')).toBeVisible()
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
+    test('Admin: payments as the committee, with an apartment open, and its dialog', async ({
+      page,
+    }) => {
+      const text = messages[locale]
+      const t = translator(locale)
+      await useSessionOf(page, 'committee1@example.com')
+      await page.goto(`${prefix}/admin/payments?apartment=${await apartmentIdOf('9')}`)
+      const opened = page.getByRole('region', {
+        name: t('AdminPayments.apartment', { number: '9' }),
+        exact: true,
+      })
+      // Once its payments have streamed in, so axe checks them rather than the skeleton.
+      await expect(opened.getByRole('listitem').first()).toBeVisible()
+      await expect(
+        page.getByRole('region', { name: text.AdminPayments.arrearsTitle, exact: true }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await opened
+        .getByRole('button', { name: t('PaymentForm.openLabel', { number: '9' }), exact: true })
+        .click()
+      await expect(
+        page.getByRole('dialog', { name: t('PaymentForm.title', { number: '9' }), exact: true }),
+      ).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
       await page.waitForFunction(() => document.getAnimations().length === 0)
       await expectNoViolations(page)
     })

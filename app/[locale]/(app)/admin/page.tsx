@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title') }
 }
 
-// The arrears overview joins in M3; for now, the way into each admin page.
+// Who is behind, the way to record a payment, and the way into each admin page.
 export default function AdminPage() {
   return (
     <Suspense fallback={<AdminOverviewSkeleton />}>

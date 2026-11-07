@@ -24,6 +24,8 @@ type Props = {
   months: OpenMonth[]
   /** Today in the building's time zone, `YYYY-MM-DD`. */
   today: string
+  /** The earliest date paid, `YYYY-MM-DD`: a year before the apartment's billing starts. */
+  firstDay: string
   /** The last month a payment may go to (a year ahead). */
   lastMonth: string
   variant?: ButtonVariant
@@ -40,6 +42,7 @@ export default function PaymentDialog({
   number,
   months,
   today,
+  firstDay,
   lastMonth,
   variant = 'primary',
 }: Props) {
@@ -66,6 +69,7 @@ export default function PaymentDialog({
           number={number}
           months={months}
           today={today}
+          firstDay={firstDay}
           lastMonth={lastMonth}
           onRecorded={(payment) => {
             dialog.setOpen(false)

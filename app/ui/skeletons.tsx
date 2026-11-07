@@ -147,14 +147,70 @@ export function ProfileSkeleton() {
   )
 }
 
-/** The admin overview: its heading, a lead line and one link card. */
+/** The admin overview: its heading, its button, who is behind, then the link cards. */
 export function AdminOverviewSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
+      <div className="flex flex-col items-start gap-4">
+        <AdminHeaderSkeleton />
+        <div className={`${block} h-11 w-44`} />
+      </div>
+      <div className="max-w-2xl">
+        <ArrearsSkeleton />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1].map((card) => (
+          <div key={card} className={cardClassName}>
+            <div className={`${block} h-7 w-32`} />
+            <div className={`${block} h-6 w-full`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Who is behind: its title, the total, and two apartments. */
+export function ArrearsSkeleton() {
+  return (
+    <div aria-hidden className={cardClassName}>
+      <div className={`${block} h-7 w-32`} />
+      <div className={`${block} h-7 w-64 max-w-full`} />
+      {[0, 1].map((row) => (
+        <div key={row} className="flex min-h-11 items-center justify-between gap-4">
+          <div className={`${block} h-6 w-24`} />
+          <div className={`${block} h-6 w-48`} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * `/admin/payments`: its header, who is behind, then the grid's title and rows (a table on
+ * wide screens, cards below).
+ */
+export function PaymentsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
       <AdminHeaderSkeleton />
-      <div className={clsx(cardClassName, 'max-w-xl')}>
-        <div className={`${block} h-6 w-40`} />
-        <div className={`${block} h-5 w-72 max-w-full`} />
+      <div className="grid items-start gap-4 xl:grid-cols-2 xl:gap-6">
+        <ArrearsSkeleton />
+      </div>
+      <div className="rounded-card border-border bg-surface-raised shadow-card border">
+        <div className="flex flex-col gap-2 p-4 sm:p-6">
+          <div className={`${block} h-7 w-40`} />
+          <div className={`${block} h-6 w-72 max-w-full`} />
+        </div>
+        {[0, 1, 2, 3].map((row) => (
+          <div key={row} className="border-border flex flex-col gap-3 border-t p-4 sm:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-28`} />
+              <div className="rounded-chip bg-border h-8 w-20 animate-pulse lg:hidden" />
+            </div>
+            <div className={`${block} h-14 w-full`} />
+          </div>
+        ))}
       </div>
     </div>
   )

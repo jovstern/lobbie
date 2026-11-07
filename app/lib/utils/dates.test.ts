@@ -5,6 +5,7 @@ import {
   formatDate,
   formatDay,
   formatMonth,
+  formatMonthShort,
   isCalendarDate,
   todayIn,
 } from './dates'
@@ -69,6 +70,17 @@ describe('formatMonth', () => {
     ['2026-12', 'en', 'December 2026'],
   ] as const)('%s in %s is %s', (month, locale, expected) => {
     expect(formatMonth(month, locale)).toBe(expected)
+  })
+})
+
+describe('formatMonthShort', () => {
+  it.each([
+    ['2026-01', 'en', 'Jan'],
+    ['2026-12', 'en', 'Dec'],
+    ['2026-01', 'he', 'ינו׳'],
+    ['2026-05', 'he', 'מאי'],
+  ] as const)('%s in %s is %s', (month, locale, expected) => {
+    expect(formatMonthShort(month, locale)).toBe(expected)
   })
 })
 

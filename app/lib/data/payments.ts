@@ -6,9 +6,15 @@ import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
 import { requireRole } from '@/app/lib/authz'
 import { readBilling } from '@/app/lib/billing'
+import { byNumber } from '@/app/lib/data/apartments'
 import { buildingTag, feesTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
-import type { ApartmentPayments, ApartmentStatus } from '@/app/lib/definitions'
+import type {
+  ApartmentPayments,
+  ApartmentStatus,
+  Arrears,
+  PaymentsGrid,
+} from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
 import {
   apartmentResidents,
@@ -20,8 +26,21 @@ import {
   user,
 } from '@/app/lib/schema'
 import { addMonths, currentMonthIn, todayIn } from '@/app/lib/utils/dates'
-import { paymentMonthsAhead } from '@/app/lib/utils/payments'
-import { apartmentStanding, apartmentSummary, openMonths } from '@/app/lib/utils/status'
+import {
+  arrearsOf,
+  earliestPaidOn,
+  gridYear,
+  gridYears,
+  paymentMonthsAhead,
+  yearMonths,
+} from '@/app/lib/utils/payments'
+import {
+  apartmentStanding,
+  apartmentSummary,
+  monthStatus,
+  openMonths,
+  type ApartmentBilling,
+} from '@/app/lib/utils/status'
 
 // postgres-js returns some numeric results as strings; the sum is checked to be an integer.
 const monthPaymentRow = z.object({
@@ -187,6 +206,9 @@ export async function forApartment(
       number: billing.number,
       currentMonth,
       today: todayIn(timeZone, now),
+      firstDay: earliestPaidOn(
+        billing.apartment.billingStartMonth ?? billing.buildingBillingStartMonth,
+      ),
       standing: apartmentStanding(apartmentSummary(billing)),
       lastMonth,
       openMonths: openMonths(billing, lastMonth),
@@ -211,5 +233,144 @@ export async function forApartment(
       err,
     })
     throw new Error('Failed to load the apartment payments')
+  }
+}
+
+// One row per apartment and month it has payments for; an apartment without any has one row
+// with no month. postgres-js may return the sum as a string; it is checked to be an integer.
+const boardRow = z.object({
+  id: z.string(),
+  number: z.string(),
+  billingStartMonth: z.string().nullable(),
+  month: z.string().nullable(),
+  amountAgorot: z.coerce.number().int().nullable(),
+})
+
+/**
+ * Every apartment of the building with what it needs to work out each month's status
+ * (`utils/status`), in natural order (`byNumber`), and the current month. The apartments and
+ * all their payments that count come in one query, whatever the number of apartments (no N+1);
+ * the building's billing start and fee rates come from its cache.
+ */
+async function readBoard(buildingId: string, timeZone: string, now: Date) {
+  const [{ building, rates }, rows] = await Promise.all([
+    buildingBilling(buildingId),
+    db
+      .select({
+        id: apartments.id,
+        number: apartments.number,
+        billingStartMonth: apartments.billingStartMonth,
+        month: payments.month,
+        amountAgorot: sql`cast(sum(${payments.amountAgorot}) as integer)`,
+      })
+      .from(apartments)
+      // Voided payments never count.
+      .leftJoin(
+        payments,
+        and(
+          eq(payments.apartmentId, apartments.id),
+          eq(payments.buildingId, apartments.buildingId),
+          isNull(payments.voidedAt),
+        ),
+      )
+      .where(eq(apartments.buildingId, buildingId))
+      // The id is the key, so the apartment's other columns follow from it.
+      .groupBy(apartments.id, payments.month)
+      .orderBy(...byNumber, payments.month),
+  ])
+  if (!building) throw new Error(`No building ${buildingId}`)
+  const currentMonth = currentMonthIn(timeZone, now)
+
+  const board = new Map<string, ApartmentBilling & { number: string }>()
+  for (const row of z.array(boardRow).parse(rows)) {
+    let billing = board.get(row.id)
+    if (!billing) {
+      billing = {
+        number: row.number,
+        apartment: { id: row.id, billingStartMonth: row.billingStartMonth },
+        buildingBillingStartMonth: building.billingStartMonth,
+        rates,
+        payments: [],
+        currentMonth,
+      }
+      board.set(row.id, billing)
+    }
+    if (row.month !== null && row.amountAgorot !== null) {
+      billing.payments.push({ month: row.month, amountAgorot: row.amountAgorot })
+    }
+  }
+  return { currentMonth, buildingBillingStartMonth: building.billingStartMonth, board }
+}
+
+function arrearsOfBoard(board: Map<string, ApartmentBilling & { number: string }>): Arrears {
+  return arrearsOf(
+    [...board.values()].map((billing) => ({
+      id: billing.apartment.id,
+      number: billing.number,
+      summary: apartmentSummary(billing),
+    })),
+  )
+}
+
+/**
+ * `/admin/payments` (R17): every apartment's twelve months of the year `?year=` asks for (the
+ * current year by default, kept within the years there is something to show), each with its
+ * status, and who is behind. Uncached: payments are read as they are, so a recording or a void
+ * shows at once. The committee and up.
+ */
+export async function grid(
+  requestedYear: string | string[] | undefined,
+  now: Date = new Date(),
+): Promise<PaymentsGrid> {
+  const { buildingId, timeZone } = await requireRole('committee')
+  try {
+    const { currentMonth, buildingBillingStartMonth, board } = await readBoard(
+      buildingId,
+      timeZone,
+      now,
+    )
+    const firstBilling = [...board.values()].reduce(
+      (first, { apartment }) =>
+        apartment.billingStartMonth && apartment.billingStartMonth < first
+          ? apartment.billingStartMonth
+          : first,
+      buildingBillingStartMonth,
+    )
+    const years = gridYears(firstBilling, currentMonth)
+    const year = gridYear(requestedYear, years, Number(currentMonth.slice(0, 4)))
+    const months = yearMonths(year)
+
+    return {
+      year,
+      years,
+      currentMonth,
+      rows: [...board.values()].map((billing) => ({
+        id: billing.apartment.id,
+        number: billing.number,
+        standing: apartmentStanding(apartmentSummary(billing)),
+        months: months.map((month) => ({ month, ...monthStatus(billing, month) })),
+      })),
+      arrears: arrearsOfBoard(board),
+    }
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load the payments grid', { area: 'data/payments', buildingId, err })
+    throw new Error('Failed to load the payments grid')
+  }
+}
+
+/**
+ * Who is behind and by how much (R17), the largest debt first: `/admin` opens on it. The same
+ * one query as the grid. The committee and up.
+ */
+export async function arrears(now: Date = new Date()): Promise<Arrears> {
+  const { buildingId, timeZone } = await requireRole('committee')
+  try {
+    const { board } = await readBoard(buildingId, timeZone, now)
+    return arrearsOfBoard(board)
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load the arrears', { area: 'data/payments', buildingId, err })
+    throw new Error('Failed to load the arrears')
   }
 }

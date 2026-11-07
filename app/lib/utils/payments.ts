@@ -1,5 +1,17 @@
+import type { ApartmentSummary, Arrears, YearRange } from '@/app/lib/definitions'
+import { addMonths } from './dates'
+
 /** How far ahead a payment may go: a building may be paid a year in advance. */
 export const paymentMonthsAhead = 12
+
+/**
+ * The earliest date a payment may carry (`YYYY-MM-DD`): the first day of the month a year before
+ * the apartment's billing starts. Mirrors the year ahead a payment may go: an apartment that
+ * starts paying next month can pay in advance today, and a date far earlier is a typo.
+ */
+export function earliestPaidOn(billingStartMonth: string): string {
+  return `${addMonths(billingStartMonth, -paymentMonthsAhead)}-01`
+}
 
 /** What remains owed for one month a payment is recorded for. */
 type MonthOwed = { month: string; remainingAgorot: number }
@@ -31,4 +43,57 @@ export function splitPayment(amountAgorot: number, months: MonthOwed[]): Payment
     left -= part
   }
   return { ok: true, parts }
+}
+
+/** The twelve months of a year, `YYYY-MM`, January first. */
+export function yearMonths(year: number): string[] {
+  return Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, '0')}`)
+}
+
+const yearOf = (month: string) => Number(month.slice(0, 4))
+
+/**
+ * The years the payments grid offers: from the year the earliest billing starts (or the current
+ * year, if billing starts later) to the year a payment ahead can reach.
+ */
+export function gridYears(firstBillingMonth: string, currentMonth: string): YearRange {
+  return {
+    first: Math.min(yearOf(firstBillingMonth), yearOf(currentMonth)),
+    last: yearOf(addMonths(currentMonth, paymentMonthsAhead)),
+  }
+}
+
+/**
+ * The year `?year=` asks for, within `range`: the nearest year in it when outside, and the
+ * current year when it is not a year at all.
+ */
+export function gridYear(
+  param: string | string[] | undefined,
+  range: YearRange,
+  currentYear: number,
+): number {
+  if (typeof param !== 'string' || !/^[1-9]\d{3}$/.test(param)) return currentYear
+  return Math.min(Math.max(Number(param), range.first), range.last)
+}
+
+/**
+ * Who is behind (an earlier month not fully paid) and by how much, the largest debt first;
+ * equal debts keep the order given. The total is what they owe together.
+ */
+export function arrearsOf(
+  apartments: { id: string; number: string; summary: ApartmentSummary }[],
+): Arrears {
+  const behind = apartments
+    .filter(({ summary }) => summary.monthsBehind > 0)
+    .map(({ id, number, summary }) => ({
+      id,
+      number,
+      monthsBehind: summary.monthsBehind,
+      totalOwedAgorot: summary.totalOwedAgorot,
+    }))
+    .toSorted((a, b) => b.totalOwedAgorot - a.totalOwedAgorot)
+  return {
+    apartments: behind,
+    totalOwedAgorot: behind.reduce((sum, apartment) => sum + apartment.totalOwedAgorot, 0),
+  }
 }

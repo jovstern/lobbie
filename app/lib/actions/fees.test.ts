@@ -179,6 +179,8 @@ describe('setDefault', () => {
       // The building's billing (fee rates) is cached under its tag.
       expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/fees', 'page')
+      // The payments grid owes each month the fee in force.
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
     },
   )
 

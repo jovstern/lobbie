@@ -24,17 +24,28 @@ export function refreshPeoplePages() {
   refreshApartmentPages()
 }
 
-/** The pages that show fees: the fees page, and the apartment pages with each one's fee. */
-export function refreshFeePages() {
-  revalidatePath('/[locale]/admin/fees', 'page')
-  refreshApartmentPages()
+/** The committee's payment pages: the arrears overview and the grid, which show amounts owed. */
+function refreshPaymentOverviews() {
+  revalidatePath('/[locale]/admin', 'page')
+  revalidatePath('/[locale]/admin/payments', 'page')
 }
 
 /**
- * The pages that show an apartment's payments: its admin page, and Home, whose status card
- * says whether it is paid up.
+ * The pages that show fees: the fees page, the apartment pages with each one's fee, and the
+ * payment pages, whose months owe the fee in force.
+ */
+export function refreshFeePages() {
+  revalidatePath('/[locale]/admin/fees', 'page')
+  refreshApartmentPages()
+  refreshPaymentOverviews()
+}
+
+/**
+ * The pages that show an apartment's payments: its admin page, the arrears overview and the
+ * grid, and Home, whose status card says whether it is paid up.
  */
 export function refreshPaymentPages() {
   revalidatePath('/[locale]/admin/apartments/[id]', 'page')
+  refreshPaymentOverviews()
   revalidatePath('/[locale]', 'page')
 }

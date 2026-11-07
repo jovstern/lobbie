@@ -36,6 +36,7 @@ function renderDialog(
         number="4"
         months={open}
         today="2026-11-02"
+        firstDay="2024-11-01"
         lastMonth="2027-11"
       />
     </NextIntlClientProvider>,
@@ -61,6 +62,9 @@ describe('PaymentDialog', () => {
     // ₪250 left of October and ₪350 of November.
     expect(screen.getByLabelText(copy.amount)).toHaveValue('600')
     expect(screen.getByLabelText(copy.paidOn)).toHaveValue('2026-11-02')
+    // Never more than a year before billing starts, never after today.
+    expect(screen.getByLabelText(copy.paidOn)).toHaveAttribute('min', '2024-11-01')
+    expect(screen.getByLabelText(copy.paidOn)).toHaveAttribute('max', '2026-11-02')
   })
 
   it('fills in what the months owe again when the choice changes', async () => {

@@ -120,6 +120,8 @@ export type ApartmentPayments = {
   currentMonth: string
   /** `YYYY-MM-DD` in the building's time zone: a payment is paid on it or earlier. */
   today: string
+  /** `YYYY-MM-DD`: the earliest date a payment may carry, a year before billing starts. */
+  firstDay: string
   standing: ApartmentStanding
   /** The last month a payment may go to: a year ahead. */
   lastMonth: string
@@ -130,6 +132,45 @@ export type ApartmentPayments = {
   /** Whether it has more payments than `history` lists. */
   historyLimited: boolean
 }
+
+/** An apartment behind on its payments, as the committee's arrears list shows it (R17). */
+export type ArrearsEntry = {
+  id: string
+  number: string
+  /** Earlier months not fully paid. */
+  monthsBehind: number
+  /** What remains of those months and the current one. */
+  totalOwedAgorot: number
+}
+
+/** Who is behind, the largest debt first, and what they owe together. */
+export type Arrears = { apartments: ArrearsEntry[]; totalOwedAgorot: number }
+
+/** One cell of the payments grid: a month of one apartment and its status. */
+export type GridMonth = MonthStatus & { month: string }
+
+/** One apartment's row of the payments grid. */
+export type GridRow = {
+  id: string
+  number: string
+  standing: ApartmentStanding
+  /** The twelve months of the year shown, January first. */
+  months: GridMonth[]
+}
+
+/** `/admin/payments` (R17): every apartment's months of one year, and who is behind. */
+export type PaymentsGrid = {
+  year: number
+  /** The years the grid can show: from the earliest billing start to a year ahead. */
+  years: YearRange
+  /** In the building's time zone. */
+  currentMonth: string
+  /** In natural order (2 before 10). */
+  rows: GridRow[]
+  arrears: Arrears
+}
+
+export type YearRange = { first: number; last: number }
 
 export type BuildingBalance = {
   openingBalanceAgorot: number

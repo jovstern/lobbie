@@ -23,7 +23,7 @@ import {
 } from '@/app/lib/utils/dates'
 import { typed, type Translate } from '@/app/lib/utils/form'
 import { formatAgorot, parseShekelsToAgorot } from '@/app/lib/utils/money'
-import { paymentMonthsAhead, splitPayment } from '@/app/lib/utils/payments'
+import { earliestPaidOn, paymentMonthsAhead, splitPayment } from '@/app/lib/utils/payments'
 import { monthStatus, type ApartmentBilling } from '@/app/lib/utils/status'
 import { resolveLocale } from '@/i18n/locale'
 import type { Locale } from '@/i18n/routing'
@@ -98,7 +98,13 @@ function monthRefusal(
 
 type Recording =
   | { kind: 'missing' }
-  | { kind: 'refused'; field: 'months' | 'amount'; error: string }
+  | {
+      kind: 'refused'
+      field: 'months' | 'amount' | 'paidOn'
+      error: string
+      /** Another recording changed what is owed since the form opened: its pages are stale. */
+      stale: boolean
+    }
   | { kind: 'recorded'; apartmentNumber: string }
 
 /**
@@ -158,11 +164,24 @@ export async function record(
       if (!billing) return { kind: 'missing' }
       const lastMonth = addMonths(currentMonth, paymentMonthsAhead)
 
+      // Paid in advance at most a year before billing starts; an earlier date is a typo (2002
+      // for 2026).
+      const firstDay = earliestPaidOn(
+        billing.apartment.billingStartMonth ?? billing.buildingBillingStartMonth,
+      )
+      if (paidOn < firstDay) {
+        const error = t('paidOnTooEarly', { month: formatMonth(firstDay.slice(0, 7), lang) })
+        return { kind: 'refused', field: 'paidOn', error, stale: false }
+      }
+
       const owed: { month: string; remainingAgorot: number }[] = []
       for (const month of months.toSorted()) {
         const status = monthStatus(billing, month)
         const refusal = monthRefusal(t, lang, billing, month, status.kind, lastMonth)
-        if (refusal) return { kind: 'refused', field: 'months', error: refusal }
+        // A month paid since the form opened: another recording got there first.
+        if (refusal) {
+          return { kind: 'refused', field: 'months', error: refusal, stale: status.kind === 'paid' }
+        }
         if ('remainingAgorot' in status)
           owed.push({ month, remainingAgorot: status.remainingAgorot })
       }
@@ -173,7 +192,8 @@ export async function record(
           split.reason === 'tooMuch'
             ? t('tooMuch', { amount: formatAgorot(split.owedAgorot, lang) })
             : t('tooLittle', { month: formatMonth(split.month, lang) })
-        return { kind: 'refused', field: 'amount', error }
+        // More than is left can only mean the form's amounts are out of date.
+        return { kind: 'refused', field: 'amount', error, stale: split.reason === 'tooMuch' }
       }
 
       await tx.insert(payments).values(
@@ -194,7 +214,7 @@ export async function record(
     unstable_rethrow(err)
     logger.error('Failed to record a payment', {
       area: 'actions/payments',
-      route: '/admin/apartments/[id]',
+      route: '/admin/payments | /admin/apartments/[id]',
       buildingId: member.buildingId,
       apartmentId,
       err,
@@ -204,6 +224,8 @@ export async function record(
 
   if (recording.kind === 'missing') return { values, message: t('notFound') }
   if (recording.kind === 'refused') {
+    // The dialog's months and amounts update from the refreshed page; the error stays shown.
+    if (recording.stale) refreshPaymentPages()
     return { values, errors: { [recording.field]: [recording.error] }, message: null }
   }
 
@@ -286,7 +308,7 @@ export async function voidPayment(
     unstable_rethrow(err)
     logger.error('Failed to void a payment', {
       area: 'actions/payments',
-      route: '/admin/apartments/[id]',
+      route: '/admin/payments | /admin/apartments/[id]',
       buildingId: member.buildingId,
       paymentId,
       err,

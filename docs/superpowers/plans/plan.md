@@ -73,7 +73,7 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `resend` (M7) | `app/lib/mail.ts` | Production magic-link email |
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |
-| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages, `/admin/people` and `/admin/fees`, each its own instance. No app-level use. |
+| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages, `/admin/people`, `/admin/fees` and `/admin/payments`, each its own instance. No app-level use. |
 | `CreatedInvitesProvider` (section-scoped React context) | `app/ui/admin/created-invites-provider.tsx`, held by `admin/apartments/layout.tsx` | The one-time result of "Invite every apartment": plaintext codes that can never be fetched again. Apartments section only; in memory only, never stored, sent back or put in the URL; cleared on Done or on leaving the section. |
 
 **Route Handlers.** Each one is called by something other than this app's own forms:
@@ -280,7 +280,7 @@ Requirements: R14–R19, and part of R25.
 2. **Recording and voiding payments** (medium-large).
    - `actions/payments.record`: one or several months, split per month in one
      transaction, and never more than is owed.
-   - `actions/payments.void`, with a reason.
+   - `actions/payments.voidPayment` (`void` is a reserved word), with a reason.
    - The record dialog (amount pre-filled with what is owed) and the void AlertDialog.
    - Tests: multi-month atomicity; overpayment rejected; voiding restores `overdue`; authz;
      demo refused.

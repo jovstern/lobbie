@@ -37,6 +37,14 @@ export function formatMonth(month: string, locale: Locale): string {
   }).format(new Date(Date.UTC(year, monthOfYear - 1, 1)))
 }
 
+/** A `YYYY-MM` month's short name, without the year ("Jan", "ינו׳"): a grid's column. */
+export function formatMonthShort(month: string, locale: Locale): string {
+  const [year, monthOfYear] = month.split('-').map(Number)
+  return new Intl.DateTimeFormat(intlLocales[locale], { month: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(year, monthOfYear - 1, 1)),
+  )
+}
+
 /** The calendar date of an instant in the building's time zone, in the locale's words. */
 export function formatDate(instant: Date, timeZone: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeZone }).format(

@@ -15,6 +15,7 @@ type Props = LazyDialogProps & {
   number: string
   months: OpenMonth[]
   today: string
+  firstDay: string
   /** The last month a payment may go to, named when none is left to pay. */
   lastMonth: string
   onRecorded: (recorded: PaymentRecorded) => void
@@ -32,6 +33,7 @@ export default function PaymentDialogContent({
   number,
   months,
   today,
+  firstDay,
   lastMonth,
   onRecorded,
 }: Props) {
@@ -79,6 +81,7 @@ export default function PaymentDialogContent({
               action={action}
               months={months}
               today={today}
+              firstDay={firstDay}
               onRecorded={onRecorded}
               cancel={close}
             />

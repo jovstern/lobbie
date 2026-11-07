@@ -13,15 +13,17 @@ import VoidPaymentDialog from '@/app/ui/admin/void-payment-dialog'
 import StatusChip from '@/app/ui/home/status-chip'
 
 /**
- * The apartment's payments (R15), inside the page's static Payments card: how it stands, the
- * button that records a payment, and its latest payments, each one that counts with its Void.
- * A voided payment stays listed, struck through, with who voided it and why.
+ * The apartment's payments (R15), inside its admin page's Payments card or the apartment opened
+ * on `/admin/payments`: how it stands, the button that records a payment, and its latest
+ * payments, each one that counts with its Void. A voided payment stays listed, struck through,
+ * with who voided it and why.
  */
 export default async function ApartmentPayments({ apartmentId }: { apartmentId: Promise<string> }) {
   const id = await apartmentId
   const [{ timeZone }, payments, t, tStatus, tMethods, locale] = await Promise.all([
-    // The page's role; the payments themselves are the committee's (`forApartment`).
-    requireRole('admin'),
+    // The committee's, as the payments are: the apartment's admin page and `/admin/payments`
+    // each check their own role too.
+    requireRole('committee'),
     forApartment(id),
     getTranslations('ApartmentPayments'),
     getTranslations('StatusCard'),
@@ -61,6 +63,7 @@ export default async function ApartmentPayments({ apartmentId }: { apartmentId: 
         number={payments.number}
         months={payments.openMonths}
         today={payments.today}
+        firstDay={payments.firstDay}
         lastMonth={payments.lastMonth}
       />
       <section aria-labelledby="apartment-payments-history" className="flex flex-col gap-3">

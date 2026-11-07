@@ -228,6 +228,9 @@ describe('record', () => {
       // The building's balance is cached under its tag.
       expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+      // The committee's overview and grid show who owes what.
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
     },
   )
 
@@ -325,6 +328,100 @@ describe('record', () => {
     expect(state.errors?.months).toEqual([
       errors('notBilled', { month: formatMonth('2025-11', 'en') }),
     ])
+  })
+
+  it('refreshes the pages when a month was paid meanwhile, and still says why', async () => {
+    await signInAs('committee1@example.com')
+    const october = { ...valid, months: ['2026-10'], amount: '350' }
+    await record('en', idOf('4'), noState, form(october))
+    vi.mocked(revalidatePath).mockClear()
+
+    // Someone else recorded October since this form opened: its months are out of date.
+    const state = await record('en', idOf('4'), noState, form(october))
+
+    expect(state.errors?.months).toEqual([errors('paid', { month: formatMonth('2026-10', 'en') })])
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+  })
+
+  it('refreshes the pages when the amount is more than is now left', async () => {
+    await signInAs('committee1@example.com')
+    await record('en', idOf('4'), noState, form({ ...valid, months: ['2026-10'], amount: '100' }))
+    vi.mocked(revalidatePath).mockClear()
+
+    const state = await record(
+      'en',
+      idOf('4'),
+      noState,
+      form({ ...valid, months: ['2026-10'], amount: '350' }),
+    )
+
+    expect(state.errors?.amount).toEqual([
+      errors('tooMuch', { amount: formatAgorot(25_000, 'en') }),
+    ])
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+    expect(updateTag).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not refresh for a refusal the form itself caused', async () => {
+    await signInAs('committee1@example.com')
+
+    await record('en', idOf('4'), noState, form({ ...valid, amount: '350' }))
+
+    expect(revalidatePath).not.toHaveBeenCalled()
+  })
+
+  it('takes a payment dated up to a year before billing starts, and nothing earlier', async () => {
+    await signInAs('committee1@example.com')
+    const october = { ...valid, months: ['2026-10'], amount: '350' }
+
+    // The building bills from November 2025: November 2024 is the earliest date.
+    const state = await record('en', idOf('4'), noState, form({ ...october, paidOn: '2024-10-31' }))
+
+    expect(state.errors?.paidOn).toEqual([
+      errors('paidOnTooEarly', { month: formatMonth('2024-11', 'en') }),
+    ])
+    expect(await unpaidMonthPayments()).toHaveLength(0)
+    expect(
+      (await record('en', idOf('4'), noState, form({ ...october, paidOn: '2024-11-01' }))).recorded,
+    ).toEqual({ apartmentNumber: '4', amountAgorot: fee, months: ['2026-10'] })
+  })
+
+  it('takes a payment in advance for an apartment billed from next month', async () => {
+    await signInAs('committee1@example.com')
+    await db
+      .update(apartments)
+      .set({ billingStartMonth: '2026-12' })
+      .where(eq(apartments.id, idOf('4')))
+    try {
+      const state = await record(
+        'en',
+        idOf('4'),
+        noState,
+        form({ ...valid, months: ['2026-12'], amount: '350', paidOn: '2026-11-02' }),
+      )
+
+      expect(state.recorded).toEqual({
+        apartmentNumber: '4',
+        amountAgorot: fee,
+        months: ['2026-12'],
+      })
+      // Its own billing start counts, not the building's: a year before December 2026.
+      const early = await record(
+        'en',
+        idOf('4'),
+        noState,
+        form({ ...valid, months: ['2027-01'], amount: '350', paidOn: '2025-11-30' }),
+      )
+      expect(early.errors?.paidOn).toEqual([
+        errors('paidOnTooEarly', { month: formatMonth('2025-12', 'en') }),
+      ])
+    } finally {
+      await db
+        .update(apartments)
+        .set({ billingStartMonth: null })
+        .where(eq(apartments.id, idOf('4')))
+    }
   })
 
   it.each([
@@ -428,6 +525,7 @@ describe('voidPayment', () => {
       kind: 'overdue',
     })
     expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
   })
 
   it('asks for a reason', async () => {
