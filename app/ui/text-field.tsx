@@ -1,7 +1,8 @@
 import clsx from 'clsx'
 import type { InputHTMLAttributes } from 'react'
 
-const inputClassName =
+/** The look of every text input, shared with selects. */
+export const inputClassName =
   'rounded-control border-text-muted bg-surface text-text hover:border-text focus-visible:border-accent aria-invalid:border-danger min-h-11 w-full border px-3 text-base transition-[background-color,border-color,color]'
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'aria-describedby'> & {

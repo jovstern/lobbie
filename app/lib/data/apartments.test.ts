@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { requireRole } from '@/app/lib/authz'
+import { requireMember, requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
 import {
@@ -12,7 +12,7 @@ import {
   payments,
   user,
 } from '@/app/lib/schema'
-import { get, list, residentsOf } from './apartments'
+import { get, list, mine, residentsOf } from './apartments'
 
 const testDb = await vi.hoisted(async () => {
   const { createTestDb } = await import('@/app/lib/test/db')
@@ -20,7 +20,7 @@ const testDb = await vi.hoisted(async () => {
 })
 vi.mock('@/app/lib/db', () => ({ db: testDb.db }))
 vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }))
-vi.mock('@/app/lib/authz', () => ({ requireRole: vi.fn() }))
+vi.mock('@/app/lib/authz', () => ({ requireMember: vi.fn(), requireRole: vi.fn() }))
 afterAll(() => testDb.close())
 
 let buildingId: string
@@ -40,6 +40,7 @@ function signInAsAdminOf(id: string) {
   vi.mocked(requireRole).mockResolvedValue(member)
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   const [building, other] = await db
     .insert(buildings)
@@ -117,7 +118,7 @@ beforeAll(async () => {
       }),
     ),
   )
-})
+}, 30_000)
 
 describe('list', () => {
   it('is the building’s apartments by floor, then naturally by number', async () => {
@@ -297,5 +298,39 @@ describe('residentsOf', () => {
     } finally {
       query.mockRestore()
     }
+  })
+})
+
+describe('mine', () => {
+  function signInAsResidentOf(apartmentIds: string[], building = buildingId) {
+    vi.mocked(requireMember).mockResolvedValue({
+      userId: 'not-read',
+      buildingId: building,
+      role: 'resident',
+      apartmentIds,
+      isDemo: false,
+      timeZone: 'Asia/Jerusalem',
+      buildingName: 'not-read',
+    })
+  }
+  const apartment = (number: string) => ids.get(number) ?? ''
+
+  it("is the person's own apartments, shorter numbers first, as the membership lists them", async () => {
+    signInAsResidentOf([apartment('10'), apartment('2')])
+    expect(await mine()).toEqual([
+      { id: apartment('2'), number: '2' },
+      { id: apartment('10'), number: '10' },
+    ])
+    expect(requireMember).toHaveBeenCalled()
+  })
+
+  it('never lists an apartment of another building', async () => {
+    signInAsResidentOf([apartment('2')], otherBuildingId)
+    expect(await mine()).toEqual([])
+  })
+
+  it('is empty for someone without an apartment', async () => {
+    signInAsResidentOf([])
+    expect(await mine()).toEqual([])
   })
 })

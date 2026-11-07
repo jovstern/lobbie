@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { FeeRate, MonthPayment } from '@/app/lib/definitions'
 import { currentMonthIn } from './dates'
-import { apartmentStanding, apartmentSummary, monthStatus, type ApartmentBilling } from './status'
+import {
+  apartmentStanding,
+  apartmentSummary,
+  monthStatus,
+  openMonths,
+  residentMonths,
+  type ApartmentBilling,
+} from './status'
 
 const apartmentId = 'apt-1'
 const fee = 35_000
@@ -270,17 +277,26 @@ describe('apartmentStanding', () => {
     [
       'behind, with the current month due',
       { current: due, monthsBehind: 2, totalOwedAgorot: 3 * fee },
-      { kind: 'overdue', monthsBehind: 2, totalOwedAgorot: 3 * fee },
+      { kind: 'overdue', monthsBehind: 2, totalOwedAgorot: 3 * fee, overdueAgorot: 2 * fee },
     ],
     [
       'behind, though the current month is paid',
       { current: paidMonth, monthsBehind: 1, totalOwedAgorot: fee },
-      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee, overdueAgorot: fee },
     ],
     [
       'behind, in a month with no fee',
       { current: { kind: 'no-fee' }, monthsBehind: 1, totalOwedAgorot: fee },
-      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee, overdueAgorot: fee },
+    ],
+    [
+      'behind, with the current month partly paid',
+      {
+        current: { ...due, paidAgorot: 10_000, remainingAgorot: 25_000 },
+        monthsBehind: 1,
+        totalOwedAgorot: fee + 25_000,
+      },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee + 25_000, overdueAgorot: fee },
     ],
     [
       'no fee this month',
@@ -294,5 +310,131 @@ describe('apartmentStanding', () => {
     ],
   ] as const)('%s', (_name, summary, expected) => {
     expect(apartmentStanding(summary)).toEqual(expected)
+  })
+})
+
+describe('openMonths', () => {
+  const open = (month: string, kind: 'overdue' | 'due' | 'upcoming', paidAgorot = 0) => ({
+    month,
+    kind,
+    dueAgorot: fee,
+    paidAgorot,
+    remainingAgorot: fee - paidAgorot,
+  })
+
+  it('lists every month not fully paid, from billing start to the last month, oldest first', () => {
+    const paidUpTo = ['2026-01', '2026-02', '2026-03', '2026-05'].map((month) => paid(month))
+    expect(openMonths(billing({ payments: paidUpTo }), '2026-08')).toEqual([
+      open('2026-04', 'overdue'),
+      open('2026-06', 'due'),
+      open('2026-07', 'upcoming'),
+      open('2026-08', 'upcoming'),
+    ])
+  })
+
+  it('keeps a partly paid month with what remains', () => {
+    expect(
+      openMonths(
+        billing({ payments: [paid('2026-06', 10_000)], currentMonth: '2026-06' }),
+        '2026-06',
+      ).at(-1),
+    ).toEqual(open('2026-06', 'due', 10_000))
+  })
+
+  it('leaves out months without a fee and months before billing starts', () => {
+    const rates = [{ apartmentId: null, amountAgorot: fee, effectiveFrom: '2026-05' }]
+    expect(
+      openMonths(
+        billing({ apartment: { id: apartmentId, billingStartMonth: '2026-03' }, rates }),
+        '2026-06',
+      ).map(({ month }) => month),
+    ).toEqual(['2026-05', '2026-06'])
+  })
+
+  it('is empty when everything is paid', () => {
+    const payments = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].map(
+      (month) => paid(month),
+    )
+    expect(openMonths(billing({ payments }), '2026-06')).toEqual([])
+  })
+})
+
+describe('residentMonths', () => {
+  const owing = (month: string, kind: 'overdue' | 'due' | 'upcoming', paidAgorot = 0) => ({
+    month,
+    kind,
+    dueAgorot: fee,
+    paidAgorot,
+    remainingAgorot: fee - paidAgorot,
+  })
+  const settled = (month: string) => ({ month, kind: 'paid', dueAgorot: fee, paidAgorot: fee })
+
+  it("is the current year's twelve months, January first, each with its status", () => {
+    const result = residentMonths(
+      billing({
+        buildingBillingStartMonth: '2026-03',
+        payments: [paid('2026-03'), paid('2026-04'), paid('2026-06', 10_000), paid('2026-08')],
+      }),
+    )
+
+    expect(result).toEqual([
+      { month: '2026-01', kind: 'not-billed' },
+      { month: '2026-02', kind: 'not-billed' },
+      settled('2026-03'),
+      settled('2026-04'),
+      owing('2026-05', 'overdue'),
+      owing('2026-06', 'due', 10_000),
+      owing('2026-07', 'upcoming'),
+      // Paid ahead.
+      settled('2026-08'),
+      owing('2026-09', 'upcoming'),
+      owing('2026-10', 'upcoming'),
+      owing('2026-11', 'upcoming'),
+      owing('2026-12', 'upcoming'),
+    ])
+  })
+
+  it('puts the months still owed from earlier years first, oldest first', () => {
+    const result = residentMonths(
+      billing({
+        buildingBillingStartMonth: '2025-10',
+        rates: [{ apartmentId: null, amountAgorot: fee, effectiveFrom: '2025-10' }],
+        payments: [paid('2025-11'), paid('2025-12', 5_000), paid('2026-01')],
+        currentMonth: '2026-01',
+      }),
+    )
+
+    expect(result.slice(0, 4)).toEqual([
+      owing('2025-10', 'overdue'),
+      owing('2025-12', 'overdue', 5_000),
+      settled('2026-01'),
+      owing('2026-02', 'upcoming'),
+    ])
+    expect(result).toHaveLength(14)
+  })
+
+  it("adds next year's months paid ahead, in full or in part, after this year's", () => {
+    const result = residentMonths(
+      billing({
+        currentMonth: '2026-12',
+        payments: [paid('2027-01'), paid('2027-02', 10_000)],
+      }),
+    )
+
+    expect(result.slice(11)).toEqual([
+      owing('2026-12', 'due'),
+      settled('2027-01'),
+      owing('2027-02', 'upcoming', 10_000),
+    ])
+    // Months ahead with nothing paid are left out.
+    expect(result).toHaveLength(14)
+  })
+
+  it('shows months without a fee as such', () => {
+    const rates = [{ apartmentId: null, amountAgorot: fee, effectiveFrom: '2026-06' }]
+    expect(residentMonths(billing({ rates })).slice(4, 6)).toEqual([
+      { month: '2026-05', kind: 'no-fee' },
+      owing('2026-06', 'due'),
+    ])
   })
 })

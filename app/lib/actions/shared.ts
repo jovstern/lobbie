@@ -5,6 +5,10 @@ import type { Locale } from '@/i18n/routing'
 
 // Helpers the Server Actions share. Not a 'use server' module: that may export only async
 // functions, and each export would become an endpoint.
+//
+// A page pattern is the page file's path under app/, route groups included: Next tags each
+// rendered page `<file path>/page` (e.g. `/[locale]/(app)/money/(overview)/page`), so a
+// pattern without its groups matches nothing. shared.test.ts checks each names a page file.
 
 /** What a write in a demo building answers instead: the demo is read-only. */
 export async function demoRefusal(locale: Locale): Promise<string> {
@@ -12,14 +16,64 @@ export async function demoRefusal(locale: Locale): Promise<string> {
   return t('readOnly')
 }
 
-/** The admin pages that show apartments (with their residents and invites). */
+/**
+ * The admin pages that show apartments (with their residents and invites), and the payments
+ * grid, whose rows are the apartments and whose months owe from each one's billing start.
+ */
 export function refreshApartmentPages() {
-  revalidatePath('/[locale]/admin/apartments', 'page')
-  revalidatePath('/[locale]/admin/apartments/[id]', 'page')
+  revalidatePath('/[locale]/(app)/admin/apartments', 'page')
+  revalidatePath('/[locale]/(app)/admin/apartments/[id]', 'page')
+  revalidatePath('/[locale]/(app)/admin/payments', 'page')
 }
 
 /** The admin pages that show people: the people list and the apartment pages. */
 export function refreshPeoplePages() {
-  revalidatePath('/[locale]/admin/people', 'page')
+  revalidatePath('/[locale]/(app)/admin/people', 'page')
   refreshApartmentPages()
+}
+
+/** The committee's payment pages: the arrears overview and the grid, which show amounts owed. */
+function refreshPaymentOverviews() {
+  revalidatePath('/[locale]/(app)/admin', 'page')
+  revalidatePath('/[locale]/(app)/admin/payments', 'page')
+}
+
+/**
+ * The pages that show fees: the fees page, the apartment pages with each one's fee, and the
+ * pages whose months owe the fee in force: the committee's payment pages, Home's status card
+ * and the residents' Money page.
+ */
+export function refreshFeePages() {
+  revalidatePath('/[locale]/(app)/admin/fees', 'page')
+  refreshApartmentPages()
+  refreshPaymentOverviews()
+  revalidatePath('/[locale]/(app)/(home)', 'page')
+  revalidatePath('/[locale]/(app)/money/(overview)', 'page')
+}
+
+/**
+ * The pages that show the building fund: Home, whose fund card shows the balance, and the
+ * balance page, with the year's money in and out. Every write to the fund refreshes them.
+ */
+export function refreshFundPages() {
+  revalidatePath('/[locale]/(app)/(home)', 'page')
+  revalidatePath('/[locale]/(app)/money/balance', 'page')
+}
+
+/**
+ * The pages that show an apartment's payments: its admin page, the arrears overview and the
+ * grid, Home, whose status card says whether it is paid up, and the residents' Money page;
+ * and the fund the payments go into.
+ */
+export function refreshPaymentPages() {
+  revalidatePath('/[locale]/(app)/admin/apartments/[id]', 'page')
+  refreshPaymentOverviews()
+  revalidatePath('/[locale]/(app)/money/(overview)', 'page')
+  refreshFundPages()
+}
+
+/** The pages that show expenses or the fund they come off: the expenses page and the fund's. */
+export function refreshExpensePages() {
+  revalidatePath('/[locale]/(app)/admin/expenses', 'page')
+  refreshFundPages()
 }

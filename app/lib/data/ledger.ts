@@ -3,12 +3,16 @@ import { and, eq, isNull, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
+import { requireMember } from '@/app/lib/authz'
 import { balanceTag, buildingTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
-import type { BuildingBalance } from '@/app/lib/definitions'
+import type { BuildingBalance, LedgerYear } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
+import { ledgerRange, ledgerYear } from '@/app/lib/data/ledger-year'
 import { balanceAdjustments, buildings, expenses, payments } from '@/app/lib/schema'
+import { currentMonthIn } from '@/app/lib/utils/dates'
 import { balance as computeBalance } from '@/app/lib/utils/ledger'
+import { gridYear } from '@/app/lib/utils/payments'
 
 // A building's lifetime sums can outgrow a 32-bit integer, so they are bigint, which
 // postgres-js returns as a string; each is parsed back to a safe integer.
@@ -59,4 +63,25 @@ export async function balance(buildingId: string): Promise<BuildingBalance> {
     logger.error('Failed to load the balance', { area: 'data/ledger', buildingId, err })
     throw new Error('Failed to load the balance')
   }
+}
+
+/**
+ * One year of the member's building's fund (R19), the one `?year=` names (this year by
+ * default, kept within the years there is something to show): what came in, what went out
+ * by category and month, the corrections, and the expenses themselves with their receipts.
+ * Voided payments and expenses do not count, and residents see only those that do. Every
+ * member; the same for each of them, so it is cached per building and year like the balance.
+ * Only the year it is clamped to keys the cache, never what the visitor typed.
+ */
+export async function yearReport(
+  requestedYear: string | string[] | undefined,
+  now: Date = new Date(),
+): Promise<LedgerYear> {
+  const { buildingId, timeZone } = await requireMember()
+  const currentMonth = currentMonthIn(timeZone, now)
+  const currentYear = Number(currentMonth.slice(0, 4))
+  const { billingStartMonth, years } = await ledgerRange(buildingId, timeZone, currentYear)
+  const year = gridYear(requestedYear, years, currentYear)
+  const report = await ledgerYear(buildingId, timeZone, year, billingStartMonth, currentMonth)
+  return { ...report, years }
 }

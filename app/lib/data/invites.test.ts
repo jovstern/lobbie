@@ -58,6 +58,7 @@ async function invite(
   return { code, row }
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   const [building, other] = await db
     .insert(buildings)
@@ -82,7 +83,7 @@ beforeAll(async () => {
     .returning()
   apartmentId = mine.id
   otherApartmentId = theirs.id
-})
+}, 30_000)
 
 describe('preview', () => {
   it('names the building and apartment of a usable invite, from the code as typed', async () => {

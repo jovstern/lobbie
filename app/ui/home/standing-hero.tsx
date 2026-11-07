@@ -2,6 +2,7 @@ import { CalendarIcon } from '@heroicons/react/24/outline'
 import { useLocale, useTranslations } from 'next-intl'
 import type { ApartmentStanding } from '@/app/lib/definitions'
 import { formatAgorot } from '@/app/lib/utils/money'
+import { overdueText } from '@/app/ui/home/overdue-text'
 import StatusChip from '@/app/ui/home/status-chip'
 
 type Props = { standing: ApartmentStanding; monthName: string }
@@ -18,7 +19,9 @@ export default function StandingHero({ standing, monthName }: Props) {
       return (
         <>
           <StatusChip kind="paid" />
-          <p className="text-2xl font-semibold">{t('paidUpFor', { month: monthName })}</p>
+          {/* One line on a phone: a larger sentence, streamed in late, became the page's
+              largest paint and delayed /money's LCP past the shell. */}
+          <p className="text-lg font-semibold">{t('paidUpFor', { month: monthName })}</p>
         </>
       )
     case 'due':
@@ -40,8 +43,8 @@ export default function StandingHero({ standing, monthName }: Props) {
           <div className="flex flex-col gap-1">
             <p className="text-text-muted">{t('totalOwed')}</p>
             <p className={figure}>{formatAgorot(standing.totalOwedAgorot, locale)}</p>
-            <p className="text-danger font-medium">
-              {t('monthsBehind', { count: standing.monthsBehind })}
+            <p className="text-danger font-medium tabular-nums">
+              {overdueText(standing, t, locale)}
             </p>
           </div>
         </>

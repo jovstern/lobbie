@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAgorot, parseShekelsToAgorot } from './money'
+import { agorotToShekelsInput, formatAgorot, formatShare, parseShekelsToAgorot } from './money'
 
 // The Hebrew format carries a right-to-left mark and a non-breaking space, so expectations
 // come from Intl itself rather than from hard-coded invisible characters.
@@ -90,5 +90,46 @@ describe('parseShekelsToAgorot', () => {
     ['99999999999'],
   ])('rejects %j', (input) => {
     expect(parseShekelsToAgorot(input)).toBeNull()
+  })
+})
+
+describe('agorotToShekelsInput', () => {
+  it.each([
+    [35_000, '350'],
+    [35_050, '350.50'],
+    [35_005, '350.05'],
+    [123_456, '1234.56'],
+    [1, '0.01'],
+    [70_000, '700'],
+  ])('%i agorot is typed as %j', (agorot, expected) => {
+    expect(agorotToShekelsInput(agorot)).toBe(expected)
+  })
+
+  it('reads back as the same agorot', () => {
+    for (const agorot of [1, 99, 100, 35_050, 123_456, 1_000_000_000]) {
+      expect(parseShekelsToAgorot(agorotToShekelsInput(agorot))).toBe(agorot)
+    }
+  })
+})
+
+describe('formatShare', () => {
+  const percent = (locale: string, share: number, fractionDigits = 0) =>
+    new Intl.NumberFormat(locale, {
+      style: 'percent',
+      maximumFractionDigits: fractionDigits,
+    }).format(share)
+
+  it.each([
+    ['a whole share', 20_000, 25_000, 0.8],
+    ['rounded to a whole percent', 1, 3, 1 / 3],
+    ['everything', 5_000, 5_000, 1],
+  ])('%s', (_, part, whole, share) => {
+    expect(formatShare(part, whole, 'en')).toBe(percent('en-IL', share))
+    expect(formatShare(part, whole, 'he')).toBe(percent('he-IL', share))
+  })
+
+  it('keeps a decimal under 1%, so a part that is there does not read as 0%', () => {
+    expect(formatShare(4, 1_000, 'en')).toBe(percent('en-IL', 0.004, 1))
+    expect(formatShare(4, 1_000, 'en')).not.toBe(percent('en-IL', 0))
   })
 })

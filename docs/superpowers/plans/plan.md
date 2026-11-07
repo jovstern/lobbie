@@ -73,12 +73,15 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `resend` (M7) | `app/lib/mail.ts` | Production magic-link email |
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |
-| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages and `/admin/people`, each its own instance. No app-level use. |
+| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages, `/admin/people`, `/admin/fees`, `/admin/payments` and `/admin/expenses` (whose record form announces there too), each its own instance. No app-level use. |
 | `CreatedInvitesProvider` (section-scoped React context) | `app/ui/admin/created-invites-provider.tsx`, held by `admin/apartments/layout.tsx` | The one-time result of "Invite every apartment": plaintext codes that can never be fetched again. Apartments section only; in memory only, never stored, sent back or put in the URL; cleared on Done or on leaving the section. |
 
 **Route Handlers.** Each one is called by something other than this app's own forms:
 - `/api/auth/[...all]`: the magic link in the email.
-- `/api/files/[id]`: an `<a>` or `<img>` has to GET a receipt.
+- `/api/files/[id]`: an `<a>` or `<img>` has to GET a receipt. Only a member of the
+  building whose expense names the key gets it (everyone else the same 404), with the stored
+  type, `nosniff`, `Cache-Control: private, no-store`, a sandboxing CSP, and PDFs as
+  attachments (M3).
 - `/api/cameras/[id]/snapshot`: an `<img>` has to GET it. It also hides the camera URL and
   its credentials, and avoids mixed content.
 - `/api/meetings/[id]/ics`: calendar apps download it.
@@ -91,8 +94,8 @@ both outside React.
 
 - `next.config.ts`:
   - the next-intl plugin (M1);
-  - `experimental.serverActions.bodySizeLimit: '5mb'` (M3, receipts), or the key the
-    installed docs name;
+  - `experimental.serverActions.bodySizeLimit: '5mb'` (M3, receipts; the key Next 16.4's
+    installed docs name);
   - security headers and a CSP **without nonces** (M7). Nonces would force dynamic
     rendering and disable the static shell and partial prefetching, per the installed CSP
     guide. `frame-src` is `'none'` except on `/building/cameras`, which allows `https:`;
@@ -280,7 +283,7 @@ Requirements: R14–R19, and part of R25.
 2. **Recording and voiding payments** (medium-large).
    - `actions/payments.record`: one or several months, split per month in one
      transaction, and never more than is owed.
-   - `actions/payments.void`, with a reason.
+   - `actions/payments.voidPayment` (`void` is a reserved word), with a reason.
    - The record dialog (amount pre-filled with what is owed) and the void AlertDialog.
    - Tests: multi-month atomicity; overpayment rejected; voiding restores `overdue`; authz;
      demo refused.
@@ -290,8 +293,10 @@ Requirements: R14–R19, and part of R25.
    - `/admin` opens on the arrears overview and quick links.
    - Tests: the grid query for a full year in one query (no N+1).
 4. **Resident Money page** (medium). `/money`: a status hero, a month list and the history,
-   with `?apartment=` when there are several (the Money tab appears). Tests: data tests for
-   history order.
+   with `?apartment=` when there are several (the Money tab appears, for every member). The
+   full history, no cap; residents see a voided payment's date and reason, never committee
+   names or notes (the void dialog's hint tells the committee so). Tests: data tests for history order (with a deterministic tie-break),
+   authz (own apartments only, another building's → none) and voided rows.
 5. **Storage and expenses** (large).
    - `app/lib/storage.ts`: the local driver; keys, not paths; magic-byte type check; 4 MB.
    - `/api/files/[id]`: members of that building only, with `nosniff`,
@@ -300,9 +305,27 @@ Requirements: R14–R19, and part of R25.
    - The `bodySizeLimit` config change.
    - Tests: storage unit tests; a route test that another building's member gets 404; a
      disguised file rejected.
+   - Done: magic bytes in `utils/receipt-file.ts` (no dependency); keys a UUID and the type's
+     extension, never input; local files per database (`utils/uploads-root.ts`), so e2e and
+     dev never mix; the file is written first, then the row, and removed if the row fails;
+     `expenses.receipt_key` unique with a format `CHECK` (migration 0004); expenses dated no
+     earlier than the first day of the billing start month; the record form on the page, the
+     void AlertDialog shared with payments (`void-dialog-content.tsx`); Expenses in the admin
+     nav and the overview's links; the seed removes the receipt files of the expenses it
+     replaces. Tests: utils, storage, schema, data, actions (authz,
+     validation, demo, disguised files, orphan removal, void), the route (headers, another
+     building's member, signed out, unknown keys → 404), Testing Library (form, void dialog);
+     e2e `expenses.spec.ts` and axe on `/admin/expenses` with its void dialog, he + en.
 6. **Balance page** (medium). `/money/balance`: the balance figure, income and expenses,
    CSS bars by category (`?year=`), and the expense list with receipt links. Tests: category
    sums with voided rows and adjustments.
+   - Done: `data/ledger.yearReport` (range, one `UNION ALL` of sums, the year's list: three
+     queries, cached with the balance's tags); pure `utils/ledger.ledgerYears`/`yearFigures`;
+     residents see only counted expenses (no names, no void reasons); `refreshFundPages`
+     (Home + `/money/balance`) from payment, expense and adjustment writes; `/money` moved into
+     the `(overview)` route group so each page has its own `loading.tsx`; `YearNav` shared
+     with `/admin/payments`. e2e: the fund drops on `/money/balance` and a resident opens the
+     receipt there; a resident's fund and categories in he + en; axe on `/money/balance`.
 - **Acceptance tests:**
   - `e2e/payments.spec.ts`: the committee records a payment for `e2e-2` (overdue → paid);
     voids it (back to overdue);
@@ -509,7 +532,7 @@ M1's PR.
 | Milestone | Estimated | Actual | Why it differed |
 |---|---|---|---|
 | M1 | 2 h 45 min | ~3 h 30 min agent (ratio 1.28); wall clock 3 days | Security and latency findings needed real fixes (HTTP magic-link bypass, plain tokens, session-cache renewal, one-round-trip status); workarounds for Better Auth + Cache Components + next-intl; three fix rounds. Wall clock: two usage-limit pauses and a Neon branch recreation. Remaining milestones re-scaled ×1.28 (M2–M7 ≈ 13 h) |
-| M2 | 1 h 45 min | | |
+| M2 | 1 h 45 min (2 h 15 min re-scaled) | ~8 h agent (ratio ≈ 3.5 against the re-scaled figure) | The Neon `dev` and `test` branches vanished twice, so six tasks were built without e2e and debugged together (20 failures in the first run); ~2 h 10 min of performance work (prepared statements tried and reverted, lazy dialogs, message precompile, ADR 0002); every review layer found real security, privacy, accessibility and locking issues; three fix rounds. M1 + M2 ran 2.3× over (11.5 h vs 5 h), so M3–M7 re-scaled from 8 h 20 min to ≈ 19 h |
 | M3 | 2 h | | |
 | M4 | 1 h 40 min | | |
 | M5 | 1 h 30 min | | |

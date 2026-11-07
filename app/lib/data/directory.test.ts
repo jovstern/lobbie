@@ -75,6 +75,7 @@ async function addPeople(
   }
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   const [building, other] = await db
     .insert(buildings)
@@ -168,7 +169,7 @@ beforeAll(async () => {
   await db
     .insert(apartmentResidents)
     .values({ userId: stranger.id, apartmentId: ids.get('20') ?? '' })
-})
+}, 30_000)
 
 /** The rows the database sent back for each query `run` makes, as text. */
 async function rawRowsOf(run: () => Promise<unknown>): Promise<string> {
@@ -401,6 +402,7 @@ describe('committee', () => {
 describe('people who joined without a name', () => {
   let namelessBuildingId: string
 
+  // PGlite's migrations and seed can outlast the default 10 s on a busy machine.
   beforeAll(async () => {
     const [building] = await db
       .insert(buildings)
@@ -429,7 +431,7 @@ describe('people who joined without a name', () => {
         committeeEmail: 'money@committee.example',
       },
     ])
-  })
+  }, 30_000)
 
   it('lists them in the directory after the named, never with an email they keep hidden', async () => {
     signInAs(namelessBuildingId)

@@ -95,7 +95,12 @@ IDs are referenced by the plan and the PRs.
   unpaid is `overdue`. Partial payments show the remaining amount and keep the status.
   Recording more than the remaining amount for a month is rejected (the form says how much
   is owed); paying several months splits into one payment row per month in one transaction.
-- Fee changes apply from a month onward and never rewrite earlier months.
+  A payment is dated today or earlier, and no earlier than a year before its apartment's
+  billing start month (advance payments, mirroring the year ahead it may go).
+- Fee changes apply from a month onward and never rewrite earlier months: once a building or
+  apartment has a fee, a new one starts no earlier than the current month (the first may start
+  at billing start), and at most 12 months ahead. An apartment's own fee can be ended from a
+  month, after which it follows the building fee again.
 - A user signed in without a membership sees only `/join` (enter a code).
 - **Invites:** per apartment, reusable by up to 6 people until expiry (14 days) or revoke;
   the code (10 characters from an unambiguous alphabet) is stored hashed; the link carries
@@ -103,7 +108,13 @@ IDs are referenced by the plan and the PRs.
 - Expense categories are a fixed list: cleaning, garden, elevator, electricity, water,
   repairs, insurance, other.
 - Receipts: JPEG, PNG, WebP or PDF, at most 4 MB (Vercel's request limit is 4.5 MB),
-  type checked by magic bytes; PDFs served as attachments.
+  type checked by magic bytes (never the name or the declared type; no HEIC: browsers cannot
+  show it, and iOS converts photos to JPEG for this picker); PDFs served as attachments. Only
+  members of the expense's building open a receipt; anyone else, signed out included, gets
+  the same 404. A receipt is optional. An expense is dated today or earlier, and no earlier
+  than the first day of the building's billing start month (spending before it is part of the
+  opening balance; only payments may go a year earlier, paid ahead). An upload whose expense
+  cannot be saved is removed again; voiding keeps the file.
 - Camera kinds in v1: `embed` (an `https` iframe URL, rendered with `sandbox="allow-scripts
   allow-same-origin"` and `referrerpolicy="no-referrer"`) and `snapshot` (an `http(s)` image
   URL, credentials allowed, fetched only by the server proxy every 10 s while the page is
@@ -130,7 +141,7 @@ Per ADR 0001. Stack-conventions files that apply: **`SKILL.md`, `nextjs.md`, `sq
 | i18n | next-intl 4, `localePrefix: 'as-needed'`, `he` default, `en`; `localeDetection: false` (Hebrew whatever the browser), the proxy redirects unprefixed URLs to `/en` when the `NEXT_LOCALE` cookie is `en` |
 | Styling | Tailwind v4, tokens in `@theme`, logical utilities only; Radix (`radix-ui`); `@heroicons/react` |
 | Mail | `app/lib/mail.ts`: `outbox` transport only when `MAIL_TRANSPORT=outbox` (refuses to start if `VERCEL_ENV` is set); Resend at launch |
-| Files | `app/lib/storage.ts` (`put`, `get`, `remove` by key): local disk under `.data/uploads/` now; Vercel Blob at launch; always served through an authorized Route Handler |
+| Files | `app/lib/storage.ts` (`put`, `get`, `remove` by key, over a driver): keys are generated server-side (a random UUID and the type's extension, checked on every use and by a `CHECK` on `expenses.receipt_key`), and only a file `checkFile` accepted can be put. Local disk under `.data/uploads/<hash of DATABASE_URL>/` now (one folder per database, so the e2e server never writes among dev's files); a Vercel Blob driver at launch; always served through an authorized Route Handler |
 | Logging | `app/lib/logger.ts`: JSON lines (level, msg, route, durationMs, err); `app/ui/web-vitals.tsx` from M1 |
 | Hosting | Local until M7; Vercel at launch |
 
@@ -162,6 +173,8 @@ app/
     admin-guard.ts                lockMember: the row locks and last-admin guard of role
                                   changes and removals
     join-limits.ts                the rate limits of joining (per person, and misses per IP)
+    billing.ts                    readBilling: what one apartment owes, read fresh (inside a
+                                  recording's transaction too)
     data/<area>.ts                one async function per query, building-scoped
     data/cache-tags.ts            the `building:<id>` tags of the cached building-wide reads
     actions/<area>.ts             'use server'; Zod schemas and State types next to each action
@@ -170,7 +183,8 @@ app/
     utils/money.ts fees.ts status.ts ledger.ts recurrence.ts meeting.ts ics.ts
           dates.ts redirect.ts app-sections.ts roles.ts contrast.ts session-cache.ts
           invite-code.ts join-view.ts pg-error.ts phone.ts search.ts directory.ts
-          apartment-blockers.ts client-ip.ts form.ts
+          apartment-blockers.ts client-ip.ts form.ts payments.ts
+          receipt-file.ts (magic bytes, keys) uploads-root.ts
     test/db.ts                    PGlite + migrations, per test file
   ui/<area>/*.tsx  ui/skeletons.tsx  ui/web-vitals.tsx
   ui/tokens.ts                    the palette in TypeScript (emails, contrast test)
@@ -241,9 +255,9 @@ reference `(apartmentId, buildingId)`.
 | `apartment_residents` | userId, apartmentId, isOwner bool, createdAt | PK (userId, apartmentId); idx apartmentId |
 | `invites` | id, buildingId, apartmentId, codeHash, maxUses (default 6), uses int default 0, createdBy null, expiresAt, revokedAt null | `UNIQUE(codeHash)`; FK (apartmentId, buildingId); createdBy `ON DELETE SET NULL` (an invite outlives the admin who made it); `CHECK uses <= maxUses` |
 | `rate_limits` | key text, windowStart timestamptz, count int | PK (key, windowStart); old windows pruned on write |
-| `fee_rates` | id, buildingId, apartmentId null (null = default), amountAgorot, effectiveFrom month, createdBy, createdAt | `UNIQUE NULLS NOT DISTINCT (buildingId, apartmentId, effectiveFrom)`; FK (apartmentId, buildingId); idx (buildingId, effectiveFrom) |
+| `fee_rates` | id, buildingId, apartmentId null (null = default), amountAgorot null (null = the apartment follows the building fee from this month; apartment rows only, `CHECK`), effectiveFrom month, createdBy, createdAt | `UNIQUE NULLS NOT DISTINCT (buildingId, apartmentId, effectiveFrom)`; FK (apartmentId, buildingId); idx (buildingId, effectiveFrom) |
 | `payments` | id, buildingId, apartmentId, month, amountAgorot, paidOn date, method enum(cash, transfer, check, bit, other), note, recordedBy, createdAt, voidedAt/voidedBy/voidReason null | FK (apartmentId, buildingId); idx (apartmentId, month), (buildingId, month); `CHECK` void columns all-or-none |
-| `expenses` | id, buildingId, category enum, amountAgorot, spentOn date, description, receiptKey null, recordedBy, createdAt, voidedAt/voidedBy/voidReason | idx (buildingId, spentOn) |
+| `expenses` | id, buildingId, category enum, amountAgorot, spentOn date, description, receiptKey null, recordedBy, createdAt, voidedAt/voidedBy/voidReason | idx (buildingId, spentOn); `UNIQUE(receiptKey)`; `CHECK` receiptKey has the storage key's shape; `CHECK` void columns all-or-none |
 | `payment_reminders` | id, buildingId, apartmentId, sentBy, sentAt | FK (apartmentId, buildingId); idx (apartmentId, sentAt desc) |
 | `schedules` | id, buildingId, kind enum(cleaning, garden, garbage, recycling, other), title null, weekdays smallint[], intervalWeeks smallint, startsOn date, endsOn null, time time null, notes, createdAt, archivedAt null | `CHECK cardinality(weekdays) > 0 AND weekdays <@ '{0,1,2,3,4,5,6}'`, `CHECK intervalWeeks BETWEEN 1 AND 4`, `CHECK endsOn >= startsOn`; idx buildingId |
 | `schedule_exceptions` | id, scheduleId (cascade), date, kind enum(cancelled, moved), movedTo date null, note | `UNIQUE(scheduleId, date)`; `CHECK (kind = 'moved') = (movedTo IS NOT NULL)` |
@@ -282,8 +296,8 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 | Route | Job | Primary action | States | Read / write | Phone / desktop |
 |---|---|---|---|---|---|
 | `/` Home | Five-second overview | the most urgent item (pay / vote / none) | Suspense per card group, not billed yet, empty week, reminder banner, poll open | `data/payments.statusForUser`, `data/ledger.balance`, `data/schedules.nextPerKind`, `data/announcements.latest`, `data/meeting.openPoll` | stacked cards, status + balance first; desktop 2-column grid |
-| `/money` | My apartment's payments | — (status is the point) | paid, due, overdue, partial, not billed, several apartments (`?apartment=`) | `data/payments.monthlyStatus`, `history` | status hero + month list; desktop table |
-| `/money/balance` | Where the money goes | open a receipt | opening balance only, `?year=` | `data/ledger.balance`, `byCategory`, `data/expenses.list` | balance figure, CSS category bars (no chart library), expense list |
+| `/money` | My apartment's payments | — (status is the point) | paid, due, overdue, partial (what's left), not billed, no fee, empty history, no apartment, several apartments (`?apartment=`, the first by default; an apartment not the person's → 404) | `data/payments.monthlyStatus` (this year's months, after any earlier one still owed and before any later one paid ahead), `history` (every payment, newest paid first, voided ones with when and why; never who recorded or voided, nor the committee's note), `data/apartments.mine` | apartment choice, then status hero beside the month list; history as a list on phones, a table on desktop |
+| `/money/balance` | Where the money goes | open a receipt | opening balance only, a year with no expenses, `?year=` (this year in the building's time zone by default or when not a year; kept between the first year the fund moved and this year) | `data/ledger.balance` (all-time), `data/ledger.yearReport` (one year by paid-on / spent-on dates and adjustments' day in the building's time zone, in three queries, cached under `:balance`: totals, categories, months, and the year's expenses that count; voided expenses, who recorded them and void reasons are never shown here, the committee sees them on `/admin/expenses`) | Money pages' links (`/money` ↔ `/money/balance`, the Money tab current on both); balance figure with its parts, then the year: totals and CSS category bars (amount and share as text, bars decorative), month table, expense list with receipt links (list on phones, table on desktop) |
 | `/schedule` | What happens this week | prev/next week (`?week=YYYY-MM-DD`, a Sunday) | empty week, cancelled/moved marked | `data/schedules.occurrences(range)` | phone day list; desktop 7 columns |
 | `/building` | Hub | open a section | cameras link only if any visible | `data/cameras.visibleCount` | link list; desktop shows the latest announcements beside it |
 | `/building/announcements` | Read posts | "Load more" (`?before=` cursor) | empty, pinned first | `data/announcements.feed` | single column, 65ch |
@@ -299,14 +313,14 @@ or says when to expect content (to residents). Pages a role cannot see return 40
 
 | Route | Job | Primary action | Read / write |
 |---|---|---|---|
-| `/admin` | Overview: who's behind and by how much, quick links | "Record a payment" | `data/payments.arrears`, counts |
+| `/admin` | Overview: who's behind and by how much (its own Suspense and error boundary), quick links | "Record a payment" (to `/admin/payments`) | `data/payments.arrears` (the grid's one query) |
 | `/admin/building` ★ | Building details, balance adjustments | Save | `data/buildings.get` / `actions/buildings.update`, `addAdjustment` |
 | `/admin/apartments` ★ | Apartments and invites | Add apartment; "Create invites for all" | `data/apartments.list` / `actions/apartments.*`, `actions/invites.createAll` |
-| `/admin/apartments/[id]` ★ | One apartment: residents, invite, fee override | Create invite | `data/apartments.get`, `residentsOf`, `data/invites.forApartment` / `actions/invites.create`, `revoke`, `actions/residents.setOwnership`, `removeFromApartment`, `actions/fees.setOverride` |
+| `/admin/apartments/[id]` ★ | One apartment: residents, invite, monthly fee, payments | Create invite | `data/apartments.get`, `residentsOf`, `data/invites.forApartment`, `data/fees.forApartment`, `data/payments.forApartment` / `actions/invites.create`, `revoke`, `actions/residents.setOwnership`, `removeFromApartment`, `actions/fees.setOverride`, `followBuilding`, `actions/payments.record`, `voidPayment` |
 | `/admin/people` ★ | Everyone in the building: role, title, apartments | Change role | `data/members.list` / `actions/members.setRole`, `removeFromBuilding` |
 | `/admin/fees` | Building fee and overrides | Set fee from month | `data/fees.list` / `actions/fees.setDefault` |
-| `/admin/payments` | Apartment × month grid (`?year=`), arrears, record, void, remind | Record payment | `data/payments.grid` / `actions/payments.record`, `void`, `actions/reminders.send` |
-| `/admin/expenses` | Expenses with receipts | Add expense | `data/expenses.list` / `actions/expenses.record`, `void` |
+| `/admin/payments` | Apartment × month grid (`?year=`, from the earliest billing start to a year ahead), arrears, and the apartment opened from either (`?apartment=`): record, void, remind | Record payment (in the open apartment) | `data/payments.grid`, `data/payments.forApartment` / `actions/payments.record`, `voidPayment`, `actions/reminders.send` |
+| `/admin/expenses` | Add an expense (the form on the page, with the receipt) and every expense, newest first: a list on phones, a table from 1024 px, each with its receipt link, voided ones struck through with who, when and why | Add expense | `data/expenses.list` / `actions/expenses.record`, `voidExpense` (`void` is a reserved word); `/api/files/[id]` reads `data/expenses.receipt` |
 | `/admin/schedules` | Schedules and exceptions | New schedule | `data/schedules.list` / `actions/schedules.*` |
 | `/admin/announcements` | Posts | New post | `data/announcements.adminList` / `actions/announcements.*` |
 | `/admin/parking` | Spots | Add spot | `data/parking.list` / `actions/parking.*` |

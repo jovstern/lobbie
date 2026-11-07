@@ -13,6 +13,8 @@ type Props<State extends Answer> = {
   onDone: () => void
   confirmLabel: string
   pendingLabel: string
+  /** Danger by default; the accent for a choice that can be changed again later. */
+  variant?: 'primary' | 'danger'
   /** The dialog's cancel button, placed beside the confirming one. */
   cancel: ReactNode
 }
@@ -28,6 +30,7 @@ export default function ConfirmForm<State extends Answer>({
   onDone,
   confirmLabel,
   pendingLabel,
+  variant = 'danger',
   cancel,
 }: Props<State>) {
   const initialState: State | null = null
@@ -44,7 +47,7 @@ export default function ConfirmForm<State extends Answer>({
       </div>
       <div className="flex flex-wrap justify-end gap-3">
         {cancel}
-        <SubmitButton variant="danger" pendingLabel={pendingLabel}>
+        <SubmitButton variant={variant} pendingLabel={pendingLabel}>
           {confirmLabel}
         </SubmitButton>
       </div>

@@ -1,0 +1,2 @@
+ALTER TABLE "fee_rates" ALTER COLUMN "amount_agorot" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "fee_rates" ADD CONSTRAINT "fee_rates_follow_building_apartment_only" CHECK ("fee_rates"."amount_agorot" IS NOT NULL OR "fee_rates"."apartment_id" IS NOT NULL);

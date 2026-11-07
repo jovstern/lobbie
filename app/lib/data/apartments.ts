@@ -1,11 +1,11 @@
 import 'server-only'
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import { unstable_rethrow } from 'next/navigation'
 import { cache } from 'react'
 import { z } from 'zod'
-import { requireRole } from '@/app/lib/authz'
+import { requireMember, requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
-import type { Apartment, ApartmentListItem, Resident } from '@/app/lib/definitions'
+import type { Apartment, ApartmentListItem, ApartmentRef, Resident } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
 import { isActiveInvite } from '@/app/lib/data/invites'
 import { apartmentResidents, apartments, feeRates, invites, payments, user } from '@/app/lib/schema'
@@ -197,5 +197,25 @@ export async function residentsOf(apartmentId: string): Promise<Resident[]> {
       err,
     })
     throw new Error('Failed to load the residents')
+  }
+}
+
+/**
+ * The person's own apartments in their building, to choose one on `/money`: in the
+ * membership's order (shorter numbers first, then by text), as Home lists them. Every member.
+ */
+export async function mine(): Promise<ApartmentRef[]> {
+  const { buildingId, apartmentIds } = await requireMember()
+  if (apartmentIds.length === 0) return []
+  try {
+    return await db
+      .select({ id: apartments.id, number: apartments.number })
+      .from(apartments)
+      .where(and(eq(apartments.buildingId, buildingId), inArray(apartments.id, apartmentIds)))
+      .orderBy(sql`length(${apartments.number})`, apartments.number)
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load your apartments', { area: 'data/apartments', buildingId, err })
+    throw new Error('Failed to load your apartments')
   }
 }

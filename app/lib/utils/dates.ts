@@ -37,10 +37,41 @@ export function formatMonth(month: string, locale: Locale): string {
   }).format(new Date(Date.UTC(year, monthOfYear - 1, 1)))
 }
 
+/** A `YYYY-MM` month's short name, without the year ("Jan", "ינו׳"): a grid's column. */
+export function formatMonthShort(month: string, locale: Locale): string {
+  const [year, monthOfYear] = month.split('-').map(Number)
+  return new Intl.DateTimeFormat(intlLocales[locale], { month: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(year, monthOfYear - 1, 1)),
+  )
+}
+
 /** The calendar date of an instant in the building's time zone, in the locale's words. */
 export function formatDate(instant: Date, timeZone: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocales[locale], { dateStyle: 'medium', timeZone }).format(
     instant,
+  )
+}
+
+/** A calendar date (`YYYY-MM-DD`, as Postgres returns a `date`) in the locale's words. */
+export function formatDay(date: string, locale: Locale): string {
+  const [year, month, day] = date.split('-').map(Number)
+  // Formatted in UTC, the zone of the date built here, so no offset moves it to another day.
+  return new Intl.DateTimeFormat(intlLocales[locale], {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+const datePattern = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/** Whether a value is a real calendar date written as `YYYY-MM-DD` (no 31 April). */
+export function isCalendarDate(value: string): boolean {
+  const match = datePattern.exec(value)
+  if (!match) return false
+  const [year, month, day] = match.slice(1).map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
   )
 }
 

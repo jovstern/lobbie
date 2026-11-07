@@ -31,6 +31,7 @@ let otherBuildingId: string
 let danaId: string
 let benId: string
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   const [building, other] = await db
     .insert(buildings)
@@ -63,7 +64,7 @@ beforeAll(async () => {
     },
     { userId: benId, buildingId: otherBuildingId },
   ])
-})
+}, 30_000)
 
 describe('me', () => {
   it('reads the member’s own profile and building settings', async () => {

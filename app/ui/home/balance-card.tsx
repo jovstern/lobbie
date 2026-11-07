@@ -3,6 +3,7 @@ import { requireMember } from '@/app/lib/authz'
 import { balance } from '@/app/lib/data/ledger'
 import { formatAgorot } from '@/app/lib/utils/money'
 import Card, { homeCardHeights } from '@/app/ui/card'
+import CardLink from '@/app/ui/home/card-link'
 
 /** The building fund of the member's own building. */
 export default async function BalanceCard() {
@@ -20,6 +21,7 @@ export default async function BalanceCard() {
         <p className="text-xl font-semibold tabular-nums">{formatAgorot(totalAgorot, locale)}</p>
         <p className="text-text-muted">{t('asOf')}</p>
       </div>
+      <CardLink href="/money/balance">{t('details')}</CardLink>
     </Card>
   )
 }

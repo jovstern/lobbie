@@ -139,6 +139,54 @@
   }
 }
 
+/*
+ * A month's status mark (app/ui/month-status-looks.ts), drawn in the text colour through a mask:
+ * the payments grid has hundreds of cells, and an inline SVG in each made its page heavy. The
+ * shapes are Heroicons' 20 px solid set (MIT): check-circle, clock, exclamation-triangle,
+ * ellipsis-horizontal-circle, calendar, minus-circle.
+ */
+@layer components {
+  .status-mark {
+    display: inline-block;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    background-color: currentColor;
+    mask: var(--mark) center / contain no-repeat;
+  }
+
+  /* High contrast modes replace backgrounds: keep the mark, in the text colour. */
+  @media (forced-colors: active) {
+    .status-mark {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+  }
+
+  .status-mark[data-status='paid'] {
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z'/%3E%3C/svg%3E");
+  }
+
+  .status-mark[data-status='due'] {
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z'/%3E%3C/svg%3E");
+  }
+
+  .status-mark[data-status='overdue'] {
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z'/%3E%3C/svg%3E");
+  }
+
+  .status-mark[data-status='upcoming'] {
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M2 10a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm8 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm-3-1a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm7 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z'/%3E%3C/svg%3E");
+  }
+
+  .status-mark[data-status='not-billed'] {
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z'/%3E%3C/svg%3E");
+  }
+
+  .status-mark[data-status='no-fee'] {
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM6.75 9.25a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z'/%3E%3C/svg%3E");
+  }
+}
+
 /* Near-zero rather than none, so transitionend and animationend still fire (Radix waits on them). */
 @media (prefers-reduced-motion: reduce) {
   *,

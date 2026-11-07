@@ -19,7 +19,7 @@ export default function AdminPageHeader({ title, lead, headingId }: Props) {
       <h1
         id={headingId}
         tabIndex={headingId ? -1 : undefined}
-        className="text-2xl font-semibold text-balance"
+        className="text-2xl font-semibold text-balance focus:outline-none"
       >
         {title}
       </h1>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
+import ClientMessages from '@/app/ui/client-messages'
 import { requireRole } from '@/app/lib/authz'
 import BuildingSettings from '@/app/ui/admin/building-settings'
 import { BuildingSettingsSkeleton } from '@/app/ui/skeletons'
@@ -16,8 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
 // Admins only (★): BuildingSettings checks the role and answers 404 to anyone else.
 export default function AdminBuildingPage() {
   return (
-    <Suspense fallback={<BuildingSettingsSkeleton />}>
-      <BuildingSettings />
-    </Suspense>
+    <ClientMessages namespaces={['AdjustmentForm', 'BuildingForm']}>
+      <Suspense fallback={<BuildingSettingsSkeleton />}>
+        <BuildingSettings />
+      </Suspense>
+    </ClientMessages>
   )
 }

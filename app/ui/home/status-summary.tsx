@@ -4,6 +4,7 @@ import type { ApartmentStatus } from '@/app/lib/definitions'
 import { formatMonth } from '@/app/lib/utils/dates'
 import { apartmentStanding } from '@/app/lib/utils/status'
 import Card, { homeCardHeights } from '@/app/ui/card'
+import CardLink from '@/app/ui/home/card-link'
 import StandingHero from '@/app/ui/home/standing-hero'
 import StandingRow from '@/app/ui/home/standing-row'
 
@@ -44,6 +45,7 @@ export default function StatusSummary({ month, apartments }: Props) {
           ))}
         </ul>
       )}
+      {apartments.length > 0 ? <CardLink href="/money">{t('details')}</CardLink> : null}
     </Card>
   )
 }

@@ -1,5 +1,5 @@
 import { count, eq, isNotNull, isNull, like } from 'drizzle-orm'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { demoBuildingId, demoBuildingName } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
 import type { Db } from './db-client'
@@ -26,6 +26,7 @@ const sharedEmail = 'resident13@example.com'
 let otherBuildingId: string
 let otherBefore: Awaited<ReturnType<typeof otherBuildingRows>>
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   ;({ db, close } = await createTestDb())
   const [other] = await db
@@ -69,7 +70,7 @@ beforeAll(async () => {
     recordedBy: member.id,
   })
   otherBefore = await otherBuildingRows()
-})
+}, 30_000)
 afterAll(() => close())
 
 async function otherBuildingRows() {
@@ -133,6 +134,52 @@ describe('seed', () => {
 
     await seed(db, { now })
     expect(await rowCounts()).toEqual(first)
+  })
+
+  it("removes the receipt files of the demo building's expenses it replaces, after committing", async () => {
+    const [treasurer] = await db.select().from(user).where(eq(user.email, 'committee2@example.com'))
+    const key = '0b4c1a3e-7d2f-4e8a-9b6c-1f2e3d4c5b6a.pdf'
+    await db.insert(expenses).values({
+      buildingId: demoBuildingId,
+      category: 'repairs',
+      amountAgorot: 1_000,
+      spentOn: '2026-11-01',
+      description: 'With a receipt',
+      receiptKey: key,
+      recordedBy: treasurer.id,
+    })
+    const removed: { key: string; rowGone: boolean }[] = []
+    const removeReceipt = vi.fn(async (gone: string) => {
+      const rows = await db.select().from(expenses).where(eq(expenses.receiptKey, gone))
+      removed.push({ key: gone, rowGone: rows.length === 0 })
+    })
+
+    await seed(db, { now, removeReceipt })
+
+    // Once per receipt, and only once the row is gone for good.
+    expect(removed).toEqual([{ key, rowGone: true }])
+  })
+
+  it('still seeds when a replaced receipt cannot be removed, and says so', async () => {
+    const [treasurer] = await db.select().from(user).where(eq(user.email, 'committee2@example.com'))
+    await db.insert(expenses).values({
+      buildingId: demoBuildingId,
+      category: 'repairs',
+      amountAgorot: 1_000,
+      spentOn: '2026-11-01',
+      description: 'With a receipt',
+      receiptKey: '7c9d2e1f-3a4b-4c5d-8e6f-0a1b2c3d4e5f.png',
+      recordedBy: treasurer.id,
+    })
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await seed(db, { now, removeReceipt: async () => Promise.reject(new Error('disk')) })
+
+    expect(JSON.parse(String(consoleWarn.mock.calls[0][0]))).toMatchObject({ level: 'warn' })
+    expect(
+      await db.select().from(expenses).where(eq(expenses.description, 'With a receipt')),
+    ).toEqual([])
+    consoleWarn.mockRestore()
   })
 
   it('leaves every row of another building untouched', async () => {

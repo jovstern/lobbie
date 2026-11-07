@@ -111,6 +111,7 @@ async function newResident(buildingId = demoBuildingId, homes = 1) {
 
 let otherBuildingId: string
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now })
   const [other] = await db
@@ -118,7 +119,7 @@ beforeAll(async () => {
     .values({ name: 'Other', address: 'Elsewhere 1', billingStartMonth: '2026-01' })
     .returning()
   otherBuildingId = other.id
-})
+}, 30_000)
 
 beforeEach(() => {
   vi.mocked(updateTag).mockClear()
@@ -225,7 +226,7 @@ describe('setOwnership', () => {
       message: null,
     })
     expect(await link(person.id, home.id)).toMatchObject({ isOwner: true })
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
     expect(updateTag).not.toHaveBeenCalled()
 
     await setOwnership('en', person.id, home.id, {}, ownership('false'))
@@ -272,8 +273,8 @@ describe('removeFromApartment', () => {
     expect(await link(person.id, first.id)).toBeUndefined()
     expect(await link(person.id, second.id)).toBeDefined()
     expect(await membershipOf(person.id)).toBeDefined()
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/people', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/people', 'page')
   })
 
   it('takes them out of the building with their last apartment, account kept', async () => {

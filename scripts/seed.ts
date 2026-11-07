@@ -14,6 +14,7 @@ import {
 } from '@/app/lib/schema'
 import { addMonths, todayIn } from '@/app/lib/utils/dates'
 import { logger } from '@/app/lib/logger'
+import { remove } from '@/app/lib/storage'
 import { demoBuildingId, demoBuildingName } from './demo-building'
 import { isEntryPoint, runScript } from './run'
 
@@ -275,6 +276,11 @@ type SeedOptions = {
    * (`--e2e`). Only `scripts/reset-test-db.ts` asks for them; dev gets none.
    */
   e2e?: boolean
+  /**
+   * Removes a receipt file of an expense the seed replaced; the app's storage (for
+   * DATABASE_URL, the database `db:seed` writes) by default.
+   */
+  removeReceipt?: (key: string) => Promise<void>
 }
 
 /**
@@ -286,7 +292,7 @@ type SeedOptions = {
  */
 export async function seed(
   db: Db,
-  { now = new Date(), demo: isDemo = false, e2e = false }: SeedOptions = {},
+  { now = new Date(), demo: isDemo = false, e2e = false, removeReceipt = remove }: SeedOptions = {},
 ): Promise<void> {
   const seeded = e2e ? [...people, ...e2ePeople] : people
   const today = todayIn(timeZone, now)
@@ -295,7 +301,8 @@ export async function seed(
   const billingStartMonth = addMonths(currentMonth, -12)
   const billedMonths = Array.from({ length: 13 }, (_, i) => addMonths(billingStartMonth, i))
 
-  await db.transaction(async (tx) => {
+  // The receipts of the expenses replaced, removed once the transaction has committed.
+  const replacedReceipts = await db.transaction(async (tx) => {
     const demo = {
       name: demoBuildingName,
       address: 'הרימון 12, רמת גן',
@@ -314,7 +321,10 @@ export async function seed(
       .onConflictDoUpdate({ target: buildings.id, set: demo })
 
     await tx.delete(payments).where(eq(payments.buildingId, buildingId))
-    await tx.delete(expenses).where(eq(expenses.buildingId, buildingId))
+    const receipts = await tx
+      .delete(expenses)
+      .where(eq(expenses.buildingId, buildingId))
+      .returning({ key: expenses.receiptKey })
     await tx.delete(feeRates).where(eq(feeRates.buildingId, buildingId))
     await tx.delete(balanceAdjustments).where(eq(balanceAdjustments.buildingId, buildingId))
 
@@ -488,7 +498,18 @@ export async function seed(
         recordedBy: treasurer,
       })),
     )
+    return receipts.flatMap(({ key }) => (key === null ? [] : [key]))
   })
+
+  // After the commit: a rollback would have kept the rows, and so their files.
+  for (const key of replacedReceipts) {
+    try {
+      await removeReceipt(key)
+    } catch (err) {
+      // The seed itself succeeded; the file is only left over.
+      logger.warn('db:seed: could not remove a replaced receipt', { key, err })
+    }
+  }
 }
 
 if (isEntryPoint(import.meta.url)) {

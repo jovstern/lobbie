@@ -21,6 +21,7 @@ let apartmentId: string
 let otherApartmentId: string
 let userId: string
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   ;({ db, close } = await createTestDb())
   const [building, otherBuilding] = await db
@@ -46,7 +47,7 @@ beforeAll(async () => {
     .values({ name: 'Dana', email: 'dana@example.com' })
     .returning()
   userId = person.id
-})
+}, 30_000)
 
 afterAll(() => close())
 
@@ -141,6 +142,30 @@ describe('schema constraints', () => {
     )
   })
 
+  it("rejects a building default that follows the building (only an apartment's row may)", async () => {
+    await expectViolation(
+      db.insert(feeRates).values({
+        buildingId,
+        amountAgorot: null,
+        effectiveFrom: '2026-03',
+        createdBy: userId,
+      }),
+      'fee_rates_follow_building_apartment_only',
+    )
+  })
+
+  it("accepts an apartment's row that follows the building again", async () => {
+    await expect(
+      db.insert(feeRates).values({
+        buildingId,
+        apartmentId,
+        amountAgorot: null,
+        effectiveFrom: '2026-03',
+        createdBy: userId,
+      }),
+    ).resolves.toBeDefined()
+  })
+
   it('rejects a second building membership for one user', async () => {
     await db.insert(buildingMembers).values({ userId, buildingId })
     await expectViolation(
@@ -186,6 +211,29 @@ describe('schema constraints', () => {
       }),
       'expenses_void_all_or_none',
     )
+  })
+
+  const expense = (receiptKey: string) => ({
+    buildingId,
+    category: 'repairs' as const,
+    amountAgorot: 10000,
+    spentOn: '2026-01-10',
+    description: 'Door',
+    receiptKey,
+    recordedBy: userId,
+  })
+
+  it.each(['../.env.local', '0b4c1a3e-7d2f-4e8a-9b6c-1f2e3d4c5b6a.html', 'receipt.pdf'])(
+    'rejects a receipt key storage never generates: %s',
+    async (key) => {
+      await expectViolation(db.insert(expenses).values(expense(key)), 'expenses_receipt_key_format')
+    },
+  )
+
+  it('rejects a second expense with the same receipt', async () => {
+    const key = '0b4c1a3e-7d2f-4e8a-9b6c-1f2e3d4c5b6a.pdf'
+    await db.insert(expenses).values(expense(key))
+    await expectViolation(db.insert(expenses).values(expense(key)), 'expenses_receipt_key_unique')
   })
 })
 

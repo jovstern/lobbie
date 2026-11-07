@@ -63,12 +63,13 @@ async function signInAs(email: string) {
 
 let outsiderEmail: string
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   // As a demo building, so the member's `isDemo` is shown to come from the building.
   await seed(db, { now: new Date('2026-11-02T10:00:00Z'), demo: true })
   outsiderEmail = 'new@example.com'
   await db.insert(user).values({ name: '', email: outsiderEmail, emailVerified: true })
-})
+}, 30_000)
 
 beforeEach(() => {
   vi.mocked(getSession).mockReset()

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, currentMonthIn, formatDate, formatMonth, todayIn } from './dates'
+import {
+  addMonths,
+  currentMonthIn,
+  formatDate,
+  formatDay,
+  formatMonth,
+  formatMonthShort,
+  isCalendarDate,
+  todayIn,
+} from './dates'
 
 describe('todayIn', () => {
   it.each([
@@ -64,6 +73,17 @@ describe('formatMonth', () => {
   })
 })
 
+describe('formatMonthShort', () => {
+  it.each([
+    ['2026-01', 'en', 'Jan'],
+    ['2026-12', 'en', 'Dec'],
+    ['2026-01', 'he', 'ינו׳'],
+    ['2026-05', 'he', 'מאי'],
+  ] as const)('%s in %s is %s', (month, locale, expected) => {
+    expect(formatMonthShort(month, locale)).toBe(expected)
+  })
+})
+
 describe('formatDate', () => {
   // 22:30 UTC on 31 October is already 1 November in Jerusalem.
   const lateEvening = new Date('2026-10-31T22:30:00Z')
@@ -78,5 +98,29 @@ describe('formatDate', () => {
 
   it('writes the date in Hebrew on the Hebrew page', () => {
     expect(formatDate(lateEvening, 'Asia/Jerusalem', 'he')).toContain('בנוב׳')
+  })
+})
+
+describe('isCalendarDate', () => {
+  it.each(['2026-11-02', '2024-02-29', '2026-12-31', '2000-01-01'])('%s is a date', (value) => {
+    expect(isCalendarDate(value)).toBe(true)
+  })
+
+  it.each(['', '2026-11', '2026-11-2', '2026-13-01', '2026-02-29', '2026-04-31', '02/11/2026'])(
+    '%j is not',
+    (value) => {
+      expect(isCalendarDate(value)).toBe(false)
+    },
+  )
+})
+
+describe('formatDay', () => {
+  it('formats a calendar date in the locale, whatever the time zone', () => {
+    const expected = (locale: string) =>
+      new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }).format(
+        new Date(Date.UTC(2026, 10, 2)),
+      )
+    expect(formatDay('2026-11-02', 'en')).toBe(expected('en-IL'))
+    expect(formatDay('2026-11-02', 'he')).toBe(expected('he-IL'))
   })
 })

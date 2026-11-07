@@ -20,6 +20,8 @@ type Props = LazyDialogProps & {
   confirmLabel: string
   pendingLabel: string
   cancelLabel: string
+  /** Danger by default; the accent for a choice that can be changed again later. */
+  confirmVariant?: 'primary' | 'danger'
 }
 
 /**
@@ -38,6 +40,7 @@ export default function ConfirmDialogContent({
   confirmLabel,
   pendingLabel,
   cancelLabel,
+  confirmVariant,
 }: Props) {
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -60,6 +63,7 @@ export default function ConfirmDialogContent({
             onDone={onDone}
             confirmLabel={confirmLabel}
             pendingLabel={pendingLabel}
+            variant={confirmVariant}
             cancel={
               <AlertDialog.Cancel type="button" className={buttonClassName('secondary')}>
                 {cancelLabel}

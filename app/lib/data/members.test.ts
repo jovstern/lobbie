@@ -29,9 +29,10 @@ function signInAsAdminOf(buildingId: string) {
   vi.mocked(requireRole).mockResolvedValue(member)
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now: new Date('2026-11-02T10:00:00Z'), e2e: true })
-})
+}, 30_000)
 
 describe('memberForUser', () => {
   it('lists apartments in natural order: 2, then 10, then 11', async () => {
@@ -70,6 +71,7 @@ describe('memberForUser', () => {
 describe('list', () => {
   let otherBuildingId: string
 
+  // PGlite's migrations and seed can outlast the default 10 s on a busy machine.
   beforeAll(async () => {
     const [other] = await db
       .insert(buildings)
@@ -86,7 +88,7 @@ describe('list', () => {
       .returning()
     await db.insert(buildingMembers).values({ userId: stranger.id, buildingId: other.id })
     await db.insert(apartmentResidents).values({ userId: stranger.id, apartmentId: apartment.id })
-  })
+  }, 30_000)
 
   it('lists everyone in the building, by name, with role, title and apartments only', async () => {
     signInAsAdminOf(demoBuildingId)

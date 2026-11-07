@@ -193,3 +193,191 @@ export async function savedLocaleOf(email: string): Promise<string | null> {
 export async function setSavedLocaleOf(email: string, locale: 'he' | 'en'): Promise<void> {
   await withE2eSql((sql) => sql`UPDATE "user" SET locale = ${locale} WHERE email = ${email}`)
 }
+
+/** Removes every fee of its own a demo-building apartment has, by its number. */
+export async function deleteFeesOf(number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM fee_rates
+      WHERE apartment_id = (
+        SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+      )`,
+  )
+}
+
+/** How many default fees the demo building has from `month`, read straight from the database. */
+export async function buildingFeeCountFrom(month: string): Promise<number> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT count(*)::int AS rates FROM fee_rates
+      WHERE building_id = ${demoBuildingId} AND apartment_id IS NULL AND effective_from = ${month}`
+    return z.number().int().parse(row?.rates)
+  })
+}
+
+/**
+ * Gives a demo-building apartment a fee of its own from `month`, set by the treasurer as the
+ * seed's fees are, for a test that then ends it.
+ */
+export async function addOwnFee(number: string, amountAgorot: number, month: string) {
+  await withE2eSql(
+    (sql) => sql`
+      INSERT INTO fee_rates (building_id, apartment_id, amount_agorot, effective_from, created_by)
+      SELECT ${demoBuildingId}, a.id, ${amountAgorot}, ${month}, u.id
+      FROM apartments a, "user" u
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number}
+        AND u.email = 'committee2@example.com'`,
+  )
+}
+
+/**
+ * Sets the month a demo-building apartment's billing starts, by its number; null follows the
+ * building's. The seed starts the e2e apartments this month. Read fresh by every page (only
+ * the building's billing is cached), so a cleanup here leaves no stale copy behind.
+ */
+export async function setBillingStart(number: string, month: string | null): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE apartments SET billing_start_month = ${month}
+      WHERE building_id = ${demoBuildingId} AND number = ${number}`,
+  )
+}
+
+/** Removes every payment of a demo-building apartment, voided or not, by its number. */
+export async function deletePaymentsOf(number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM payments
+      WHERE apartment_id = (
+        SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+      )`,
+  )
+}
+
+/** How many payments a demo-building apartment has for a month, voided or not. */
+export async function paymentCountOf(number: string, month: string): Promise<number> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT count(*)::int AS payments FROM payments p
+      JOIN apartments a ON a.id = p.apartment_id
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number} AND p.month = ${month}`
+    return z.number().int().parse(row?.payments)
+  })
+}
+
+/**
+ * Records a payment for a demo-building apartment straight in the test database, as the
+ * treasurer, voided with `voidReason` when one is given. Behind the app's back: an apartment's
+ * payments are read fresh, but the building fund counts them and is cached, so after adding
+ * (or removing, with `deletePaymentsOf`) a counted payment, call `refreshFundCache`.
+ */
+export async function addPayment(
+  number: string,
+  payment: {
+    month: string
+    amountAgorot: number
+    paidOn: string
+    method: 'cash' | 'transfer' | 'check' | 'bit' | 'other'
+    voidReason?: string
+  },
+): Promise<void> {
+  const voidReason = payment.voidReason ?? null
+  await withE2eSql(
+    (sql) => sql`
+      INSERT INTO payments
+        (building_id, apartment_id, month, amount_agorot, paid_on, method, recorded_by,
+         voided_at, voided_by, void_reason)
+      SELECT ${demoBuildingId}, a.id, ${payment.month}, ${payment.amountAgorot}, ${payment.paidOn},
+        ${payment.method}, u.id,
+        CASE WHEN ${voidReason}::text IS NULL THEN NULL ELSE now() END,
+        CASE WHEN ${voidReason}::text IS NULL THEN NULL ELSE u.id END,
+        ${voidReason}
+      FROM apartments a, "user" u
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number}
+        AND u.email = 'committee2@example.com'`,
+  )
+}
+
+/** Makes someone also live in a demo-building apartment, by their email and its number. */
+export async function addResidence(email: string, number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      INSERT INTO apartment_residents (user_id, apartment_id)
+      SELECT u.id, a.id FROM "user" u, apartments a
+      WHERE u.email = ${email} AND a.building_id = ${demoBuildingId} AND a.number = ${number}
+      ON CONFLICT DO NOTHING`,
+  )
+}
+
+/** Takes someone out of a demo-building apartment, by their email and its number. */
+export async function removeResidence(email: string, number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM apartment_residents
+      WHERE user_id = (SELECT id FROM "user" WHERE email = ${email})
+        AND apartment_id = (
+          SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+        )`,
+  )
+}
+
+/** The storage key of the receipt of a demo-building expense, by its description; null without. */
+export async function receiptKeyOf(description: string): Promise<string | null> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT receipt_key FROM expenses
+      WHERE building_id = ${demoBuildingId} AND description = ${description}`
+    return z
+      .string()
+      .nullable()
+      .parse(row?.receipt_key ?? null)
+  })
+}
+
+/** Whether a demo-building expense, by its description, exists and still counts. */
+export async function expenseCounts(description: string): Promise<boolean> {
+  return withE2eSql(async (sql) => {
+    const rows = await sql`
+      SELECT 1 FROM expenses
+      WHERE building_id = ${demoBuildingId} AND description = ${description} AND voided_at IS NULL`
+    return rows.length > 0
+  })
+}
+
+/**
+ * Voids a demo-building expense, by its description, straight in the test database, as the
+ * treasurer. Behind the app's back: the cached fund keeps counting it until a write updates the
+ * building's tag, so the caller must make one.
+ */
+export async function voidExpenseInDb(description: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE expenses
+      SET voided_at = now(), void_reason = 'e2e cleanup',
+        voided_by = (SELECT id FROM "user" WHERE email = 'committee2@example.com')
+      WHERE building_id = ${demoBuildingId} AND description = ${description}
+        AND voided_at IS NULL`,
+  )
+}
+
+/**
+ * The demo building's expenses that count in a year, by category, straight from the test
+ * database: the oracle for `/money/balance`'s bars.
+ */
+export async function demoExpensesByCategory(
+  year: number,
+): Promise<{ category: string; amountAgorot: number }[]> {
+  return withE2eSql(async (sql) => {
+    const rows = await sql`
+      SELECT category::text AS category, sum(amount_agorot)::text AS amount_agorot
+      FROM expenses
+      WHERE building_id = ${demoBuildingId}
+        AND voided_at IS NULL
+        AND spent_on BETWEEN ${`${year}-01-01`} AND ${`${year}-12-31`}
+      GROUP BY category`
+    return z
+      .array(z.object({ category: z.string(), amount_agorot: z.coerce.number().int() }))
+      .parse(rows)
+      .map(({ category, amount_agorot }) => ({ category, amountAgorot: amount_agorot }))
+  })
+}

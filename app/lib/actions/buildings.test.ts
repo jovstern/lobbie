@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
-import { updateTag } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { createTranslator } from 'next-intl'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -29,7 +29,12 @@ vi.mock('@/app/lib/session', () => ({ getSession: vi.fn() }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
 vi.mock('@/i18n/navigation', () => ({ redirect: vi.fn() }))
 // Outside Next, `'use cache'` is an inert string and the cache functions only record calls.
-vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn(), updateTag: vi.fn() }))
+vi.mock('next/cache', () => ({
+  cacheTag: vi.fn(),
+  cacheLife: vi.fn(),
+  updateTag: vi.fn(),
+  revalidatePath: vi.fn(),
+}))
 vi.mock('next-intl/server', () => ({
   getTranslations: async ({
     locale,
@@ -88,11 +93,12 @@ const adjustmentRows = () =>
     .where(eq(balanceAdjustments.buildingId, buildingId))
     .orderBy(desc(balanceAdjustments.createdAt))
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
   buildingId = demo.id
-})
+}, 30_000)
 
 beforeEach(() => {
   vi.mocked(updateTag).mockClear()
@@ -282,6 +288,9 @@ describe('addAdjustment', () => {
       }),
     ])
     expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
+    // The pages that show the fund: Home's card and the balance page.
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/(home)', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/balance', 'page')
     expect(await balance(buildingId)).toEqual({
       ...before,
       adjustmentsAgorot: before.adjustmentsAgorot - 12_050,

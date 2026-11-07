@@ -147,14 +147,75 @@ export function ProfileSkeleton() {
   )
 }
 
-/** The admin overview: its heading, a lead line and one link card. */
+/** The admin overview: its heading, its button, who is behind, then the link cards. */
 export function AdminOverviewSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
+      <div className="flex flex-col items-start gap-4">
+        <AdminHeaderSkeleton />
+        <div className={`${block} h-11 w-44`} />
+      </div>
+      <div className="max-w-2xl">
+        <ArrearsSkeleton />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1].map((card) => (
+          <div key={card} className={cardClassName}>
+            <div className={`${block} h-7 w-32`} />
+            <div className={`${block} h-6 w-full`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Who is behind: its title, the total, and two apartments. */
+export function ArrearsSkeleton() {
+  return (
+    <div aria-hidden className={cardClassName}>
+      <div className={`${block} h-7 w-32`} />
+      <div className={`${block} h-7 w-64 max-w-full`} />
+      {[0, 1].map((row) => (
+        <div key={row} className="flex min-h-11 items-center justify-between gap-4">
+          <div className={`${block} h-6 w-24`} />
+          <div className={`${block} h-6 w-48`} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** `/admin/payments`: its header, then the board below it. */
+export function PaymentsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
       <AdminHeaderSkeleton />
-      <div className={clsx(cardClassName, 'max-w-xl')}>
-        <div className={`${block} h-6 w-40`} />
-        <div className={`${block} h-5 w-72 max-w-full`} />
+      <PaymentsBoardSkeleton />
+    </div>
+  )
+}
+
+/** `/admin/payments` below its header: who is behind, then the grid's title and its rows. */
+export function PaymentsBoardSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2 xl:gap-6">
+        <ArrearsSkeleton />
+      </div>
+      <div className="rounded-card border-border bg-surface-raised shadow-card border">
+        <div className="flex flex-col gap-2 p-4 sm:p-6">
+          <div className={`${block} h-7 w-40`} />
+          <div className={`${block} h-6 w-72 max-w-full`} />
+        </div>
+        <div className="border-border divide-border flex flex-col divide-y border-t">
+          {[0, 1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="flex items-center gap-4 px-4 py-2">
+              <div className={`${block} h-7 w-8 shrink-0`} />
+              <div className={`${block} h-7 w-full`} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -298,6 +359,109 @@ export function ApartmentPageSkeleton() {
         <div className={`${block} h-7 w-28`} />
         <ApartmentResidentsSkeleton />
       </div>
+      <div className={clsx(cardClassName, 'max-w-2xl')}>
+        <div className={`${block} h-7 w-36`} />
+        <ApartmentFeeSkeleton />
+      </div>
+      <div className={clsx(cardClassName, 'max-w-2xl')}>
+        <div className={`${block} h-7 w-28`} />
+        <ApartmentPaymentsSkeleton />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The fee card's figure, whose fee it is, its button and the line below, shaped like an
+ * apartment paying the building's fee.
+ */
+export function ApartmentFeeSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <div className={`${block} h-8 w-32`} />
+        <div className={`${block} h-6 w-36`} />
+      </div>
+      <div className={`${block} h-11 w-44`} />
+      <div className={`${block} h-6 w-full max-w-md`} />
+    </div>
+  )
+}
+
+/**
+ * The payments card's status chip and line, its button, and a short history, shaped like an
+ * apartment that pays every month.
+ */
+export function ApartmentPaymentsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <div className="rounded-chip bg-border h-8 w-20 animate-pulse" />
+        <div className={`${block} h-6 w-48`} />
+      </div>
+      <div className={`${block} h-11 w-44`} />
+      <div className={`${block} h-6 w-36`} />
+      {[0, 1, 2].map((row) => (
+        <div key={row} className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className={`${block} h-6 w-40`} />
+            <div className={`${block} h-11 w-24`} />
+          </div>
+          <div className={`${block} h-5 w-full max-w-sm`} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** `/admin/fees`: its header, then the building's fee beside the apartments' own. */
+export function FeesSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className={cardClassName}>
+          <div className={`${block} h-7 w-36`} />
+          <div className="flex flex-col gap-1">
+            <div className={`${block} h-9 w-40`} />
+            <div className={`${block} h-6 w-36`} />
+          </div>
+          <div className={`${block} h-11 w-40`} />
+          <div className={`${block} h-6 w-20`} />
+          <FeeHistorySkeleton rows={2} />
+        </div>
+        <div className={cardClassName}>
+          <div className="flex flex-col gap-1">
+            <div className={`${block} h-7 w-40`} />
+            <div className={`${block} h-6 w-full`} />
+            <div className={`${block} h-6 w-2/3`} />
+          </div>
+          <div className={`${block} h-11 w-48`} />
+          {[0, 1].map((apartment) => (
+            <div key={apartment} className="flex flex-col gap-3">
+              <div className={`${block} h-6 w-28`} />
+              <FeeHistorySkeleton rows={1} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** A fee history's rows: the months and amount, then who set it. */
+function FeeHistorySkeleton({ rows }: { rows: number }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {Array.from({ length: rows }, (_, row) => (
+        <div key={row} className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className={`${block} h-6 w-40`} />
+            <div className={`${block} h-6 w-16`} />
+          </div>
+          <div className={`${block} h-5 w-48`} />
+        </div>
+      ))}
     </div>
   )
 }
@@ -491,6 +655,156 @@ export function CommitteeSkeleton() {
           <div className={`${block} h-11 w-44`} />
         </div>
       ))}
+    </div>
+  )
+}
+
+/** `/money`'s apartment choice, one pill per apartment. */
+export function ApartmentSwitcherSkeleton({ count }: { count: number }) {
+  return (
+    <div aria-hidden className="flex flex-wrap gap-2">
+      {Array.from({ length: count }, (_, pill) => (
+        <div key={pill} className="rounded-chip bg-border h-11 w-28 animate-pulse" />
+      ))}
+    </div>
+  )
+}
+
+/**
+ * One apartment on `/money`: its standing beside its months, then its payment history, shaped
+ * like an apartment that is due this month.
+ */
+export function ApartmentMoneySkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4 lg:gap-6">
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+        <CardSkeleton minHeight="min-h-56">
+          <div className="rounded-chip bg-border h-8 w-24 animate-pulse" />
+          <div className={`${block} h-12 w-40`} />
+          <div className={`${block} h-6 w-48`} />
+        </CardSkeleton>
+        <CardSkeleton minHeight="min-h-56">
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-32`} />
+              <div className="flex flex-col items-end gap-1">
+                <div className={`${block} h-6 w-20`} />
+                <div className={`${block} h-5 w-24`} />
+              </div>
+            </div>
+          ))}
+        </CardSkeleton>
+      </div>
+      <CardSkeleton minHeight="min-h-40">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-32`} />
+              <div className={`${block} h-6 w-16`} />
+            </div>
+            <div className={`${block} h-5 w-56 max-w-full`} />
+          </div>
+        ))}
+      </CardSkeleton>
+    </div>
+  )
+}
+
+/** `/admin/expenses`: its header, the form to add an expense, then the expenses. */
+export function ExpensesSkeleton() {
+  const field = (
+    <div className="flex flex-col gap-2">
+      <div className={`${block} h-5 w-24`} />
+      <div className={`${block} h-11 w-full`} />
+    </div>
+  )
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
+      <div className={clsx(cardClassName, 'max-w-3xl')}>
+        <div className={`${block} h-7 w-40`} />
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+          {field}
+          {field}
+          {field}
+          {field}
+          <div className="sm:col-span-2">{field}</div>
+        </div>
+        <div className={`${block} h-11 w-36 max-sm:w-full`} />
+      </div>
+      <div className={cardClassName}>
+        <div className={`${block} h-7 w-28`} />
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-48`} />
+              <div className={`${block} h-6 w-20`} />
+            </div>
+            <div className={`${block} h-5 w-56`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** `/money/balance`: the fund now, then the year's totals and bars, months and expenses. */
+export function BalanceSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6 lg:gap-8">
+      <CardSkeleton minHeight="min-h-56">
+        <div className={`${block} h-8 w-40`} />
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 pt-4 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((part) => (
+            <div key={part} className="flex flex-col gap-1">
+              <div className={`${block} h-5 w-24`} />
+              <div className={`${block} h-6 w-20`} />
+            </div>
+          ))}
+        </div>
+      </CardSkeleton>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className={`${block} h-7 w-24`} />
+          <div className={`${block} h-11 w-24`} />
+        </div>
+        <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+          <div className={clsx(cardClassName, 'min-h-80')}>
+            <div className="flex gap-8">
+              <div className={`${block} h-12 w-24`} />
+              <div className={`${block} h-12 w-24`} />
+            </div>
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className={`${block} h-6 w-24`} />
+                  <div className={`${block} h-6 w-32`} />
+                </div>
+                <div className={`${block} h-2 w-full`} />
+              </div>
+            ))}
+          </div>
+          <CardSkeleton minHeight="min-h-80">
+            {[0, 1, 2, 3, 4, 5].map((row) => (
+              <div key={row} className="flex items-center justify-between gap-4">
+                <div className={`${block} h-6 w-28`} />
+                <div className={`${block} h-6 w-36`} />
+              </div>
+            ))}
+          </CardSkeleton>
+        </div>
+        <CardSkeleton minHeight="min-h-40">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-4">
+                <div className={`${block} h-6 w-40`} />
+                <div className={`${block} h-6 w-16`} />
+              </div>
+              <div className={`${block} h-5 w-48 max-w-full`} />
+            </div>
+          ))}
+        </CardSkeleton>
+      </div>
     </div>
   )
 }

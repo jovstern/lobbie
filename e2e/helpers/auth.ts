@@ -7,7 +7,7 @@
  * | ---------------------- | -------------------------------------------------- | ----- |
  * | e2e1@example.com       | sign-in.spec (resident lands on Home), ×2 projects |     2 |
  * | e2e2@example.com       | admin-people.spec, useSessionOf                    |     1 |
- * | e2e3@example.com       | directory.spec, useSessionOf                       |     1 |
+ * | e2e3@example.com       | directory.spec, money.spec, useSessionOf           |     1 |
  * | resident1@example.com  | useSessionOf (a11y, auth, home, directory, ...)    |     1 |
  * | resident9@example.com  | useSessionOf (a11y, home)                          |     1 |
  * | admin@example.com      | useSessionOf (admin-*, a11y, invite)               |     1 |
