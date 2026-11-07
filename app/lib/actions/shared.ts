@@ -57,3 +57,12 @@ export function refreshPaymentPages() {
   revalidatePath('/[locale]', 'page')
   revalidatePath('/[locale]/money', 'page')
 }
+
+/**
+ * The pages that show expenses or the fund they come off: the expenses page and Home, whose
+ * fund card shows the balance.
+ */
+export function refreshExpensePages() {
+  revalidatePath('/[locale]/admin/expenses', 'page')
+  revalidatePath('/[locale]', 'page')
+}

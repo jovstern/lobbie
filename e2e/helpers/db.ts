@@ -319,3 +319,42 @@ export async function removeResidence(email: string, number: string): Promise<vo
         )`,
   )
 }
+
+/** The storage key of the receipt of a demo-building expense, by its description; null without. */
+export async function receiptKeyOf(description: string): Promise<string | null> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT receipt_key FROM expenses
+      WHERE building_id = ${demoBuildingId} AND description = ${description}`
+    return z
+      .string()
+      .nullable()
+      .parse(row?.receipt_key ?? null)
+  })
+}
+
+/** Whether a demo-building expense, by its description, exists and still counts. */
+export async function expenseCounts(description: string): Promise<boolean> {
+  return withE2eSql(async (sql) => {
+    const rows = await sql`
+      SELECT 1 FROM expenses
+      WHERE building_id = ${demoBuildingId} AND description = ${description} AND voided_at IS NULL`
+    return rows.length > 0
+  })
+}
+
+/**
+ * Voids a demo-building expense, by its description, straight in the test database, as the
+ * treasurer. Behind the app's back: the cached fund keeps counting it until a write updates the
+ * building's tag, so the caller must make one.
+ */
+export async function voidExpenseInDb(description: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE expenses
+      SET voided_at = now(), void_reason = 'e2e cleanup',
+        voided_by = (SELECT id FROM "user" WHERE email = 'committee2@example.com')
+      WHERE building_id = ${demoBuildingId} AND description = ${description}
+        AND voided_at IS NULL`,
+  )
+}

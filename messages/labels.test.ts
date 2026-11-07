@@ -9,6 +9,7 @@ import he from '@/messages/he.json'
  * namespace; a new aria-label on a visible control belongs here.
  */
 const labels = {
+  AdminExpenses: { receiptLabel: 'receipt' },
   ApartmentForm: { editLabel: 'edit' },
   ApartmentRemove: { removeLabel: 'remove' },
   InviteAdminClient: { revokeLabel: 'revoke' },
@@ -17,6 +18,7 @@ const labels = {
   PersonRole: { editLabel: 'edit' },
   ResidentsClient: { removeLabel: 'remove' },
   Search: { clearLabel: 'clear' },
+  VoidExpense: { openLabel: 'open' },
 } as const
 
 type Catalog = typeof en

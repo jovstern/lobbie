@@ -284,6 +284,27 @@ for (const locale of ['he', 'en'] as const) {
       await expectNoViolations(page)
     })
 
+    test('Admin: expenses as the committee, and the void dialog', async ({ page }) => {
+      const text = messages[locale]
+      await useSessionOf(page, 'committee1@example.com')
+      await page.goto(`${prefix}/admin/expenses`)
+      const list = page.getByRole('region', { name: text.AdminExpenses.listTitle, exact: true })
+      // Once the expenses have streamed in, so axe checks them rather than the skeleton.
+      await expect(
+        list.getByRole('button', { name: new RegExp(`^${text.VoidExpense.open}`) }).first(),
+      ).toBeVisible()
+      await expectNoViolations(page)
+
+      await list
+        .getByRole('button', { name: new RegExp(`^${text.VoidExpense.open}`) })
+        .first()
+        .click()
+      await expect(page.getByRole('alertdialog')).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+    })
+
     test('Building', async ({ page }) => {
       await useSessionOf(page, 'resident1@example.com')
       await page.goto(`${prefix}/building`)

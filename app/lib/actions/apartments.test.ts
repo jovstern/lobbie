@@ -96,6 +96,7 @@ async function freshApartment(number: string, billingStartMonth: string | null =
   return row
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
   const [other] = await db
@@ -110,7 +111,7 @@ beforeAll(async () => {
   otherApartmentId = otherApartment.id
   const [admin] = await db.select().from(user).where(eq(user.email, 'admin@example.com'))
   adminId = admin.id
-})
+}, 30_000)
 
 beforeEach(() => {
   vi.mocked(updateTag).mockClear()

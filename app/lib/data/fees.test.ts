@@ -65,6 +65,7 @@ const rate = (amountAgorot: number, effectiveFrom: string, apartmentId: string |
   createdBy: treasurer.id,
 })
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
@@ -91,7 +92,7 @@ beforeAll(async () => {
     { ...rate(99_000, '2026-01'), buildingId: other.id },
     { ...rate(98_000, '2026-01', elsewhere.id), buildingId: other.id },
   ])
-})
+}, 30_000)
 
 afterEach(async () => {
   // Back to the seed's rates.

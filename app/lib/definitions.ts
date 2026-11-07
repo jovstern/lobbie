@@ -1,5 +1,5 @@
 import type { Locale } from '@/i18n/routing'
-import type { feeRates, paymentMethodEnum, payments, roleEnum } from './schema'
+import type { expenseCategoryEnum, feeRates, paymentMethodEnum, payments, roleEnum } from './schema'
 
 /** A fee rate as the fee logic needs it; `apartmentId` null is the building default. */
 export type FeeRate = Pick<
@@ -98,6 +98,33 @@ export type ApartmentStanding =
   | { kind: 'overdue'; monthsBehind: number; totalOwedAgorot: number }
 
 export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number]
+
+export type ExpenseCategory = (typeof expenseCategoryEnum.enumValues)[number]
+
+/** An expense as the committee sees it on `/admin/expenses` (R18). */
+export type AdminExpense = {
+  id: string
+  category: ExpenseCategory
+  amountAgorot: number
+  /** The calendar date it was spent, `YYYY-MM-DD`. */
+  spentOn: string
+  description: string
+  /** The receipt's storage key, served by `/api/files/[id]`; null without one. */
+  receiptKey: string | null
+  recordedByName: string
+  /** Null while it counts; a voided expense stays listed, never edited. */
+  voided: { at: Date; byName: string; reason: string } | null
+}
+
+/** The building's expenses for the committee, with the dates a new one may carry. */
+export type AdminExpenses = {
+  /** Newest first, voided ones included. */
+  expenses: AdminExpense[]
+  /** `YYYY-MM-DD` in the building's time zone: an expense is spent on it or earlier. */
+  today: string
+  /** `YYYY-MM-DD`: the earliest date an expense may carry, the day billing starts. */
+  firstDay: string
+}
 
 /** A payment as the committee sees it on an apartment's page (R15). */
 export type PaymentEntry = {

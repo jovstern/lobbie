@@ -7,20 +7,18 @@ import { formatMonth } from '@/app/lib/utils/dates'
 import { formatAgorot } from '@/app/lib/utils/money'
 import { useAnnouncer } from '@/app/ui/admin/admin-announcer'
 import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
-import type { VoidPaymentAction } from '@/app/ui/admin/void-payment-dialog-content'
+import type { VoidAction } from '@/app/ui/admin/void-dialog-content'
 import { buttonClassName } from '@/app/ui/button-styles'
 
-const VoidPaymentDialogContent = lazyWithRetry(
-  () => import('@/app/ui/admin/void-payment-dialog-content'),
-)
+const VoidDialogContent = lazyWithRetry(() => import('@/app/ui/admin/void-dialog-content'))
 
 function preload() {
-  void import('@/app/ui/admin/void-payment-dialog-content')
+  void import('@/app/ui/admin/void-dialog-content')
 }
 
 type Props = {
   /** `voidPayment` with the locale and the payment bound. */
-  action: VoidPaymentAction
+  action: VoidAction
   /** The payment's month, `YYYY-MM`, and amount, to name it. */
   month: string
   amountAgorot: number
@@ -57,11 +55,18 @@ export default function VoidPaymentDialog({ action, month, amountAgorot }: Props
         {t('open')}
       </button>
       <LazyDialogSlot dialog={dialog}>
-        <VoidPaymentDialogContent
+        <VoidDialogContent
           {...dialog.content}
           action={action}
           title={t('title', words)}
           description={t('body', words)}
+          labels={{
+            reason: t('reason'),
+            reasonHint: t('reasonHint'),
+            confirm: t('confirm'),
+            pending: t('pending'),
+            cancel: t('cancel'),
+          }}
           onVoided={() => {
             voided.current = true
             dialog.setOpen(false)

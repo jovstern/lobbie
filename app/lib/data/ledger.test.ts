@@ -23,6 +23,7 @@ let otherBuildingId: string
 const sumOf = (rows: { amountAgorot: number }[]) =>
   rows.reduce((sum, row) => sum + row.amountAgorot, 0)
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
@@ -70,7 +71,7 @@ beforeAll(async () => {
   await db
     .insert(balanceAdjustments)
     .values({ buildingId: other.id, amountAgorot: 500, reason: 'x', recordedBy: treasurer.id })
-})
+}, 30_000)
 
 describe('balance', () => {
   it('is the opening balance plus adjustments and payments, less expenses, without voids', async () => {

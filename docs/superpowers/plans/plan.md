@@ -73,12 +73,15 @@ Stack files: `stack-conventions/SKILL.md`, `nextjs.md`, `sql.md`, `styling.md` (
 | `resend` (M7) | `app/lib/mail.ts` | Production magic-link email |
 | `@vercel/blob` (M7) | `app/lib/storage.ts` | Production receipt storage (server-side `put`; uploads stay ≤ 4 MB through the action) |
 | `@vercel/analytics`, `@vercel/speed-insights` (M7) | root layout | Production analytics and real-user vitals |
-| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages, `/admin/people`, `/admin/fees` and `/admin/payments`, each its own instance. No app-level use. |
+| `AdminAnnouncer` (page-scoped React context) | `app/ui/admin/admin-announcer.tsx` | One status region and heading focus for dialogs mounted by server-rendered rows that unmount on success: the apartments pages, `/admin/people`, `/admin/fees`, `/admin/payments` and `/admin/expenses` (whose record form announces there too), each its own instance. No app-level use. |
 | `CreatedInvitesProvider` (section-scoped React context) | `app/ui/admin/created-invites-provider.tsx`, held by `admin/apartments/layout.tsx` | The one-time result of "Invite every apartment": plaintext codes that can never be fetched again. Apartments section only; in memory only, never stored, sent back or put in the URL; cleared on Done or on leaving the section. |
 
 **Route Handlers.** Each one is called by something other than this app's own forms:
 - `/api/auth/[...all]`: the magic link in the email.
-- `/api/files/[id]`: an `<a>` or `<img>` has to GET a receipt.
+- `/api/files/[id]`: an `<a>` or `<img>` has to GET a receipt. Only a member of the
+  building whose expense names the key gets it (everyone else the same 404), with the stored
+  type, `nosniff`, `Cache-Control: private, no-store`, a sandboxing CSP, and PDFs as
+  attachments (M3).
 - `/api/cameras/[id]/snapshot`: an `<img>` has to GET it. It also hides the camera URL and
   its credentials, and avoids mixed content.
 - `/api/meetings/[id]/ics`: calendar apps download it.
@@ -91,8 +94,8 @@ both outside React.
 
 - `next.config.ts`:
   - the next-intl plugin (M1);
-  - `experimental.serverActions.bodySizeLimit: '5mb'` (M3, receipts), or the key the
-    installed docs name;
+  - `experimental.serverActions.bodySizeLimit: '5mb'` (M3, receipts; the key Next 16.4's
+    installed docs name);
   - security headers and a CSP **without nonces** (M7). Nonces would force dynamic
     rendering and disable the static shell and partial prefetching, per the installed CSP
     guide. `frame-src` is `'none'` except on `/building/cameras`, which allows `https:`;
@@ -302,6 +305,17 @@ Requirements: R14–R19, and part of R25.
    - The `bodySizeLimit` config change.
    - Tests: storage unit tests; a route test that another building's member gets 404; a
      disguised file rejected.
+   - Done: magic bytes in `utils/receipt-file.ts` (no dependency); keys a UUID and the type's
+     extension, never input; local files per database (`utils/uploads-root.ts`), so e2e and
+     dev never mix; the file is written first, then the row, and removed if the row fails;
+     `expenses.receipt_key` unique with a format `CHECK` (migration 0004); expenses dated no
+     earlier than the first day of the billing start month; the record form on the page, the
+     void AlertDialog shared with payments (`void-dialog-content.tsx`); Expenses in the admin
+     nav and the overview's links; the seed removes the receipt files of the expenses it
+     replaces. Tests: utils, storage, schema, data, actions (authz,
+     validation, demo, disguised files, orphan removal, void), the route (headers, another
+     building's member, signed out, unknown keys → 404), Testing Library (form, void dialog);
+     e2e `expenses.spec.ts` and axe on `/admin/expenses` with its void dialog, he + en.
 6. **Balance page** (medium). `/money/balance`: the balance figure, income and expenses,
    CSS bars by category (`?year=`), and the expense list with receipt links. Tests: category
    sums with voided rows and adjustments.

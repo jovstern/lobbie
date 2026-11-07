@@ -66,6 +66,7 @@ async function residentOf(apartmentIdsToJoin: string[], building = buildingId) {
 const statusesOf = async (numbers: string[]) =>
   statusForUser(await residentOf(numbers.map(idOf)), now)
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now, e2e: true })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
@@ -75,7 +76,7 @@ beforeAll(async () => {
     .from(apartments)
     .where(eq(apartments.buildingId, buildingId))
   apartmentIds = new Map(rows.map((row) => [row.number, row.id]))
-})
+}, 30_000)
 
 describe('statusForUser', () => {
   it("caches only the building's part, under the building's tags", async () => {

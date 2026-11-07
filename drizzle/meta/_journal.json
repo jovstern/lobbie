@@ -29,6 +29,13 @@
       "when": 1794040881005,
       "tag": "0003_fee_follow_building",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794049291120,
+      "tag": "0004_expense_receipt_key",
+      "breakpoints": true
     }
   ]
 }

@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from 'vitest'
 import type { VoidPaymentState } from '@/app/lib/actions/payments'
 import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import VoidPaymentDialog from '@/app/ui/admin/void-payment-dialog'
-import type { VoidPaymentAction } from '@/app/ui/admin/void-payment-dialog-content'
+import type { VoidAction } from '@/app/ui/admin/void-dialog-content'
 import en from '@/messages/en.json'
 
 const copy = en.VoidPayment
 
-function renderDialog(action: VoidPaymentAction) {
+function renderDialog(action: VoidAction) {
   render(
     <NextIntlClientProvider locale="en" messages={{ VoidPayment: copy, Common: en.Common }}>
       <AdminAnnouncer

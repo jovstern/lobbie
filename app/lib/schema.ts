@@ -277,7 +277,8 @@ export const expenses = pgTable(
     amountAgorot: integer('amount_agorot').notNull(),
     spentOn: date('spent_on').notNull(),
     description: text('description').notNull(),
-    receiptKey: text('receipt_key'),
+    // A storage key (app/lib/storage.ts), never a path; at most one expense per file.
+    receiptKey: text('receipt_key').unique('expenses_receipt_key_unique'),
     recordedBy: uuid('recorded_by')
       .notNull()
       .references(() => user.id, { onDelete: 'restrict' }),
@@ -289,6 +290,11 @@ export const expenses = pgTable(
   (t) => [
     index('expenses_building_id_spent_on_idx').on(t.buildingId, t.spentOn),
     check('expenses_amount_positive', sql`${t.amountAgorot} > 0`),
+    // The shape storage generates (utils/receipt-file.ts), so a key can never name a path.
+    check(
+      'expenses_receipt_key_format',
+      sql`${t.receiptKey} ~ '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(jpg|png|webp|pdf)$'`,
+    ),
     check(
       'expenses_void_all_or_none',
       sql`(${t.voidedAt} IS NULL AND ${t.voidedBy} IS NULL AND ${t.voidReason} IS NULL)

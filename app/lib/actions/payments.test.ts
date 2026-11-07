@@ -131,6 +131,7 @@ const unpaidMonthPayments = () =>
       and(eq(payments.apartmentId, idOf('4')), inArray(payments.month, ['2026-10', '2026-11'])),
     )
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
@@ -164,7 +165,7 @@ beforeAll(async () => {
     })
     .returning()
   otherPaymentId = payment.id
-})
+}, 30_000)
 
 beforeEach(() => {
   // Only Date: the database client keeps its real timers.

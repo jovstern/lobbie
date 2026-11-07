@@ -40,6 +40,7 @@ function signInAsAdminOf(id: string) {
   vi.mocked(requireRole).mockResolvedValue(member)
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   const [building, other] = await db
     .insert(buildings)
@@ -117,7 +118,7 @@ beforeAll(async () => {
       }),
     ),
   )
-})
+}, 30_000)
 
 describe('list', () => {
   it('is the building’s apartments by floor, then naturally by number', async () => {

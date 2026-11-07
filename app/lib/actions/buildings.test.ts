@@ -88,11 +88,12 @@ const adjustmentRows = () =>
     .where(eq(balanceAdjustments.buildingId, buildingId))
     .orderBy(desc(balanceAdjustments.createdAt))
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
   buildingId = demo.id
-})
+}, 30_000)
 
 beforeEach(() => {
   vi.mocked(updateTag).mockClear()

@@ -4,6 +4,7 @@ import {
   ChevronRightIcon,
   CreditCardIcon,
   HomeModernIcon,
+  ReceiptPercentIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline'
 import { getTranslations } from 'next-intl/server'
@@ -24,9 +25,11 @@ import { Link } from '@/i18n/navigation'
 type OverviewLink = {
   href: string
   id: string
-  label: 'paymentsLink' | 'buildingLink' | 'apartmentsLink' | 'peopleLink' | 'feesLink'
+  label:
+    'paymentsLink' | 'expensesLink' | 'buildingLink' | 'apartmentsLink' | 'peopleLink' | 'feesLink'
   body:
     | 'paymentsLinkBody'
+    | 'expensesLinkBody'
     | 'buildingLinkBody'
     | 'apartmentsLinkBody'
     | 'peopleLinkBody'
@@ -36,7 +39,8 @@ type OverviewLink = {
   minRole: Role
 }
 
-// Every role that reaches the overview (the committee and up) has at least payments and fees.
+// Every role that reaches the overview (the committee and up) has at least payments, expenses
+// and fees.
 const overviewLinks: OverviewLink[] = [
   {
     href: '/admin/payments',
@@ -45,6 +49,14 @@ const overviewLinks: OverviewLink[] = [
     body: 'paymentsLinkBody',
     minRole: 'committee',
     icon: CreditCardIcon,
+  },
+  {
+    href: '/admin/expenses',
+    id: 'admin-expenses-link',
+    label: 'expensesLink',
+    body: 'expensesLinkBody',
+    minRole: 'committee',
+    icon: ReceiptPercentIcon,
   },
   {
     href: '/admin/building',

@@ -142,6 +142,7 @@ function form(fields: Record<string, string>) {
   return data
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   vi.stubEnv('BETTER_AUTH_URL', `${appUrl}/some/path`)
   await seed(db, { now: new Date('2026-11-02T10:00:00Z'), e2e: true })
@@ -153,7 +154,7 @@ beforeAll(async () => {
     .returning()
   otherBuildingId = other.id
   otherApartmentId = (await freshApartment(other.id)).id
-})
+}, 30_000)
 
 beforeEach(async () => {
   vi.mocked(updateTag).mockClear()

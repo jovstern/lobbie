@@ -43,6 +43,8 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
             ContactVisibility: messages.ContactVisibility,
             CopyButton: messages.CopyButton,
             ErrorPage: messages.ErrorPage,
+            ExpenseCategories: messages.ExpenseCategories,
+            ExpenseForm: messages.ExpenseForm,
             FeeForm: messages.FeeForm,
             FollowBuilding: messages.FollowBuilding,
             InviteAdminClient: messages.InviteAdminClient,
@@ -59,6 +61,7 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
             Roles: messages.Roles,
             Search: messages.Search,
             SignInForm: messages.SignInForm,
+            VoidExpense: messages.VoidExpense,
             VoidPayment: messages.VoidPayment,
           }}
         >

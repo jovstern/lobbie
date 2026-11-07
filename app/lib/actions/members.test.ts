@@ -114,6 +114,7 @@ async function newResident(buildingId = demoBuildingId) {
 
 let otherBuildingId: string
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now })
   const [other] = await db
@@ -121,7 +122,7 @@ beforeAll(async () => {
     .values({ name: 'Other', address: 'Elsewhere 1', billingStartMonth: '2026-01' })
     .returning()
   otherBuildingId = other.id
-})
+}, 30_000)
 
 beforeEach(() => {
   vi.mocked(updateTag).mockClear()

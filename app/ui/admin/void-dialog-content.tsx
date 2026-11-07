@@ -1,40 +1,52 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
 import { AlertDialog } from 'radix-ui'
 import { useActionState, useEffect, useRef } from 'react'
-import type { VoidPaymentState } from '@/app/lib/actions/payments'
 import type { LazyDialogProps } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName } from '@/app/ui/button-styles'
 import { focusFirstError } from '@/app/ui/focus-first-error'
 import SubmitButton from '@/app/ui/submit-button'
 import TextField from '@/app/ui/text-field'
 
-export type VoidPaymentAction = (
-  state: VoidPaymentState,
-  formData: FormData,
-) => Promise<VoidPaymentState>
+/**
+ * What a void answers (`VoidPaymentState`, `VoidExpenseState`): what was typed and why it was
+ * refused, or neither once it is done.
+ */
+export type VoidState = {
+  values?: { reason: string }
+  errors?: { reason?: string[] }
+  message?: string | null
+}
+
+/** A void action with the locale and the row bound. */
+export type VoidAction = (state: VoidState, formData: FormData) => Promise<VoidState>
+
+/** The words of a void's form, in the record's own terms. */
+export type VoidLabels = {
+  reason: string
+  reasonHint: string
+  confirm: string
+  pending: string
+  cancel: string
+}
 
 type Props = LazyDialogProps & {
-  /** `voidPayment` with the locale and the payment bound. */
-  action: VoidPaymentAction
+  action: VoidAction
   title: string
   description: string
+  labels: VoidLabels
   onVoided: () => void
 }
 
 /** The reason, then the voiding itself: the server may still refuse, and says why. */
-function VoidForm({ action, onVoided }: Pick<Props, 'action' | 'onVoided'>) {
-  const t = useTranslations('VoidPayment')
-  const initialState: VoidPaymentState = {}
-  const [state, formAction] = useActionState(
-    async (previous: VoidPaymentState, formData: FormData) => {
-      const next = await action(previous, formData)
-      if (next.voided) onVoided()
-      return next
-    },
-    initialState,
-  )
+function VoidForm({ action, labels, onVoided }: Pick<Props, 'action' | 'labels' | 'onVoided'>) {
+  const initialState: VoidState = {}
+  const [state, formAction] = useActionState(async (previous: VoidState, formData: FormData) => {
+    const next = await action(previous, formData)
+    // Neither an error nor a refusal: it is voided.
+    if (!next.errors && !next.message) onVoided()
+    return next
+  }, initialState)
   const formRef = useRef<HTMLFormElement>(null)
 
   // Focus is the DOM's, outside React: after a failed attempt it moves back to the reason.
@@ -47,8 +59,8 @@ function VoidForm({ action, onVoided }: Pick<Props, 'action' | 'onVoided'>) {
     <form ref={formRef} action={formAction} noValidate className="flex flex-col gap-5">
       <TextField
         name="reason"
-        label={t('reason')}
-        hint={t('reasonHint')}
+        label={labels.reason}
+        hint={labels.reasonHint}
         defaultValue={state.values?.reason}
         errors={state.errors?.reason}
         minLength={3}
@@ -61,10 +73,10 @@ function VoidForm({ action, onVoided }: Pick<Props, 'action' | 'onVoided'>) {
       </div>
       <div className="flex flex-wrap justify-end gap-3">
         <AlertDialog.Cancel type="button" className={buttonClassName('secondary')}>
-          {t('cancel')}
+          {labels.cancel}
         </AlertDialog.Cancel>
-        <SubmitButton variant="danger" pendingLabel={t('pending')}>
-          {t('confirm')}
+        <SubmitButton variant="danger" pendingLabel={labels.pending}>
+          {labels.confirm}
         </SubmitButton>
       </div>
     </form>
@@ -72,18 +84,20 @@ function VoidForm({ action, onVoided }: Pick<Props, 'action' | 'onVoided'>) {
 }
 
 /**
- * `VoidPaymentDialog`'s confirmation, loaded on first open (`lazy-dialog`). An AlertDialog, as
+ * The confirmation of `VoidPaymentDialog` and `VoidExpenseDialog`, loaded on first open
+ * (`lazy-dialog`). An AlertDialog, as
  * every destructive action's is, with the reason the void needs: focus starts in it, and
  * Escape or "Keep it" closes the dialog. The form unmounts on close, so a refusal does not
  * greet the next opening.
  */
-export default function VoidPaymentDialogContent({
+export default function VoidDialogContent({
   open,
   onOpenChange,
   onCloseAutoFocus,
   action,
   title,
   description,
+  labels,
   onVoided,
 }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
@@ -108,7 +122,7 @@ export default function VoidPaymentDialogContent({
               {description}
             </AlertDialog.Description>
           </div>
-          <VoidForm action={action} onVoided={onVoided} />
+          <VoidForm action={action} labels={labels} onVoided={onVoided} />
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balance } from './ledger'
+import { balance, earliestSpentOn } from './ledger'
 
 describe('balance', () => {
   it.each([
@@ -13,5 +13,14 @@ describe('balance', () => {
     expect(
       balance({ openingBalanceAgorot, adjustmentsAgorot, paymentsAgorot, expensesAgorot }),
     ).toBe(total)
+  })
+})
+
+describe('earliestSpentOn', () => {
+  it.each([
+    ['2025-11', '2025-11-01'],
+    ['2026-01', '2026-01-01'],
+  ])('billing from %s: an expense from %s on', (billingStartMonth, day) => {
+    expect(earliestSpentOn(billingStartMonth)).toBe(day)
   })
 })

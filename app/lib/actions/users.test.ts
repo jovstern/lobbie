@@ -122,6 +122,7 @@ let demoBuildingId: string
 /** A neighbour in the same building and someone in another one: no action may touch them. */
 let bystanders: string[]
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   const [building, other, demo] = await db
     .insert(buildings)
@@ -134,7 +135,7 @@ beforeAll(async () => {
   buildingId = building.id
   demoBuildingId = demo.id
   bystanders = [await newMember(buildingId, 'committee'), await newMember(other.id, 'committee')]
-})
+}, 30_000)
 
 let bystandersBefore: Awaited<ReturnType<typeof rowsOf>>[]
 

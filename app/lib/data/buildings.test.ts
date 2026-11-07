@@ -34,6 +34,7 @@ function signInAsAdminOf(id: string) {
   vi.mocked(requireRole).mockResolvedValue(member)
 }
 
+// PGlite's migrations and seed can outlast the default 10 s on a busy machine.
 beforeAll(async () => {
   await seed(db, { now: new Date('2026-11-02T10:00:00Z') })
   const [demo] = await db.select().from(buildings).where(eq(buildings.id, demoBuildingId))
@@ -61,7 +62,7 @@ beforeAll(async () => {
     },
     { buildingId: other.id, amountAgorot: 100, reason: 'elsewhere', recordedBy: admin.id },
   ])
-})
+}, 30_000)
 
 describe('get', () => {
   it("is the admin's own building, cached under its tag", async () => {

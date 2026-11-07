@@ -704,3 +704,41 @@ export function ApartmentMoneySkeleton() {
     </div>
   )
 }
+
+/** `/admin/expenses`: its header, the form to add an expense, then the expenses. */
+export function ExpensesSkeleton() {
+  const field = (
+    <div className="flex flex-col gap-2">
+      <div className={`${block} h-5 w-24`} />
+      <div className={`${block} h-11 w-full`} />
+    </div>
+  )
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <AdminHeaderSkeleton />
+      <div className={clsx(cardClassName, 'max-w-3xl')}>
+        <div className={`${block} h-7 w-40`} />
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+          {field}
+          {field}
+          {field}
+          {field}
+          <div className="sm:col-span-2">{field}</div>
+        </div>
+        <div className={`${block} h-11 w-36 max-sm:w-full`} />
+      </div>
+      <div className={cardClassName}>
+        <div className={`${block} h-7 w-28`} />
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-48`} />
+              <div className={`${block} h-6 w-20`} />
+            </div>
+            <div className={`${block} h-5 w-56`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
