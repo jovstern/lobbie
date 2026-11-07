@@ -21,12 +21,16 @@ type Props = {
   locale: Locale
 }
 
+const captionId = 'payments-grid-caption'
+
 /**
- * The payments grid as a table, on wide screens; narrower ones get `PaymentsGridCards`. A
- * row's header is its apartment, a link that opens its payments; it stays in view while the
- * months scroll sideways.
+ * The payments grid: one table at every width, one line per apartment. A row's header is its
+ * apartment, a link that opens its payments; it stays in view while the months scroll sideways
+ * under it, in a region the keyboard can scroll too. Paid and upcoming months are a small mark
+ * (their word is for screen readers and the legend), so what is owed stands out and a phone
+ * shows half a year at a glance; the current month is tinted and scrolled into view.
  */
-export default function PaymentsGridTable({
+export default function PaymentsGrid({
   year,
   months,
   currentMonth,
@@ -38,16 +42,26 @@ export default function PaymentsGridTable({
 }: Props) {
   // The first column stays put over the months as they scroll under it.
   const sticky = 'sticky start-0 z-10'
+  // The current month's column, tinted from top to bottom.
+  const current = 'bg-accent/8'
 
   return (
-    <div className="border-border hidden overflow-x-auto rounded-[inherit] border-t lg:block">
+    <div
+      role="region"
+      aria-labelledby={captionId}
+      // Scrollable from the keyboard when the months do not fit.
+      tabIndex={0}
+      className="border-border overflow-x-auto rounded-b-[inherit] border-t"
+    >
       <table className="w-full border-collapse">
-        <caption className="sr-only">{t('tableLabel', { year: String(year) })}</caption>
+        <caption id={captionId} className="sr-only">
+          {t('tableLabel', { year: String(year) })}
+        </caption>
         <thead>
           <tr className="border-border border-b">
             <th
               scope="col"
-              className={`${sticky} bg-surface-raised text-text-muted px-4 py-3 text-start text-sm font-medium whitespace-nowrap`}
+              className={`${sticky} bg-surface-raised text-text-muted px-3 py-3 text-start text-sm font-medium whitespace-nowrap sm:px-4`}
             >
               {t('apartmentColumn')}
             </th>
@@ -56,7 +70,11 @@ export default function PaymentsGridTable({
                 key={month}
                 scope="col"
                 aria-current={month === currentMonth ? 'date' : undefined}
-                className="text-text-muted aria-[current=date]:text-text min-w-16 px-1 py-3 text-center text-sm font-medium whitespace-nowrap aria-[current=date]:font-semibold"
+                className={clsx(
+                  'text-text-muted aria-[current=date]:text-text min-w-12 px-1 py-3 text-center text-sm font-medium whitespace-nowrap aria-[current=date]:font-semibold',
+                  // Where the months start scrolled to, in browsers that support it.
+                  month === currentMonth && `${current} [scroll-initial-target:nearest]`,
+                )}
               >
                 {formatMonthShort(month, locale)}
               </th>
@@ -73,7 +91,7 @@ export default function PaymentsGridTable({
                   className={clsx(
                     sticky,
                     selected ? 'bg-surface' : 'bg-surface-raised',
-                    'px-2 py-2 text-start',
+                    'px-1 py-0.5 text-start sm:px-2',
                   )}
                 >
                   <Link
@@ -88,7 +106,13 @@ export default function PaymentsGridTable({
                   </Link>
                 </th>
                 {row.months.map((status) => (
-                  <td key={status.month} className="px-1 py-2 align-top">
+                  <td
+                    key={status.month}
+                    className={clsx(
+                      'px-1 py-1.5 text-center align-middle',
+                      status.month === currentMonth && current,
+                    )}
+                  >
                     <GridStatus status={status} t={t} locale={locale} />
                   </td>
                 ))}

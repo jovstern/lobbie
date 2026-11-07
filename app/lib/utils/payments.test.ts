@@ -133,10 +133,11 @@ describe('arrearsOf', () => {
 
     expect(arrears).toEqual({
       apartments: [
-        { id: 'a9', number: '9', monthsBehind: 2, totalOwedAgorot: 105_000 },
+        // What is overdue leaves out what remains of the current month.
+        { id: 'a9', number: '9', monthsBehind: 2, totalOwedAgorot: 105_000, overdueAgorot: 70_000 },
         // Equal debts keep the order they came in (natural order).
-        { id: 'a4', number: '4', monthsBehind: 1, totalOwedAgorot: 70_000 },
-        { id: 'a5', number: '5', monthsBehind: 1, totalOwedAgorot: 70_000 },
+        { id: 'a4', number: '4', monthsBehind: 1, totalOwedAgorot: 70_000, overdueAgorot: 35_000 },
+        { id: 'a5', number: '5', monthsBehind: 1, totalOwedAgorot: 70_000, overdueAgorot: 35_000 },
       ],
       totalOwedAgorot: 245_000,
     })

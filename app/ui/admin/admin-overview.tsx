@@ -18,7 +18,6 @@ import ArrearsBoundary from '@/app/ui/admin/arrears-boundary'
 import ArrearsList from '@/app/ui/admin/arrears-list'
 import { buttonClassName } from '@/app/ui/button-styles'
 import { cardClassName } from '@/app/ui/card'
-import { moneyFont } from '@/app/ui/money-font'
 import { ArrearsSkeleton } from '@/app/ui/skeletons'
 import { Link } from '@/i18n/navigation'
 
@@ -125,8 +124,7 @@ export default async function AdminOverview() {
           {t('recordPayment')}
         </Link>
       </div>
-      {/* Amounts: the font instance that preloads ₪'s file. */}
-      <div className={`${moneyFont.className} max-w-2xl`}>
+      <div className="max-w-2xl">
         <ArrearsBoundary title={tPayments('arrearsTitle')} message={tPayments('arrearsFailed')}>
           <Suspense fallback={<ArrearsSkeleton />}>
             <OverviewArrears />

@@ -277,17 +277,26 @@ describe('apartmentStanding', () => {
     [
       'behind, with the current month due',
       { current: due, monthsBehind: 2, totalOwedAgorot: 3 * fee },
-      { kind: 'overdue', monthsBehind: 2, totalOwedAgorot: 3 * fee },
+      { kind: 'overdue', monthsBehind: 2, totalOwedAgorot: 3 * fee, overdueAgorot: 2 * fee },
     ],
     [
       'behind, though the current month is paid',
       { current: paidMonth, monthsBehind: 1, totalOwedAgorot: fee },
-      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee, overdueAgorot: fee },
     ],
     [
       'behind, in a month with no fee',
       { current: { kind: 'no-fee' }, monthsBehind: 1, totalOwedAgorot: fee },
-      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee, overdueAgorot: fee },
+    ],
+    [
+      'behind, with the current month partly paid',
+      {
+        current: { ...due, paidAgorot: 10_000, remainingAgorot: 25_000 },
+        monthsBehind: 1,
+        totalOwedAgorot: fee + 25_000,
+      },
+      { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: fee + 25_000, overdueAgorot: fee },
     ],
     [
       'no fee this month',

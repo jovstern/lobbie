@@ -19,7 +19,17 @@ export type Db = PgDatabase<PgQueryResultHKT, typeof schema>
  * round trips (describe, then execute), so writes keep their statements few.
  */
 export function createDbClient(url: string) {
-  // Notices ("schema already exists, skipping") are not errors and would bypass the logger.
-  const client = postgres(url, { prepare: false, onnotice: () => {} })
+  const client = postgres(url, {
+    prepare: false,
+    // An idle connection is closed after 20 s, before anything between here and Neon (its
+    // proxy, a NAT) drops it silently: a query on a connection dropped that way waited for
+    // the OS and failed with `read ETIMEDOUT` after a quiet spell. Seconds, as are the rest.
+    idle_timeout: 20,
+    // And each is renewed after half an hour, however busy (postgres-js's default is a random
+    // 30 to 60 minutes).
+    max_lifetime: 30 * 60,
+    // Notices ("schema already exists, skipping") are not errors and would bypass the logger.
+    onnotice: () => {},
+  })
   return { db: drizzle(client, { schema }), close: () => client.end() }
 }

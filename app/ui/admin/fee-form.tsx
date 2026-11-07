@@ -1,10 +1,11 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useActionState, useEffect, useRef, type ReactNode } from 'react'
+import { useActionState, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { FeeFormState } from '@/app/lib/actions/fees'
 import type { ApartmentRef } from '@/app/lib/definitions'
 import { focusFirstError } from '@/app/ui/focus-first-error'
+import { hasMonthPicker } from '@/app/ui/month-picker'
 import SubmitButton from '@/app/ui/submit-button'
 import TextField, { inputClassName } from '@/app/ui/text-field'
 
@@ -39,6 +40,9 @@ export default function FeeForm({
   cancel,
 }: Props) {
   const t = useTranslations('FeeForm')
+  const tCommon = useTranslations('Common')
+  // Rendered only in its dialog, in the browser: the DOM can be asked once.
+  const [monthPicker] = useState(hasMonthPicker)
   const initialState: FeeFormState = {}
   const [state, formAction] = useActionState(async (previous: FeeFormState, formData: FormData) => {
     const next = await action(previous, formData)
@@ -104,11 +108,15 @@ export default function FeeForm({
       <TextField
         name="effectiveFrom"
         label={t('effectiveFrom')}
-        hint={t('effectiveFromHint')}
+        hint={
+          monthPicker
+            ? t('effectiveFromHint')
+            : `${t('effectiveFromHint')} ${tCommon('monthFormat', { example: '2027-01' })}`
+        }
         defaultValue={values?.effectiveFrom ?? defaultMonth}
         errors={state.errors?.effectiveFrom}
         // Browsers without a month picker show a text field; the placeholder, the pattern, the
-        // hint and the server all ask for YYYY-MM.
+        // hint (there only) and the server all ask for YYYY-MM.
         type="month"
         min={minMonth}
         placeholder="YYYY-MM"

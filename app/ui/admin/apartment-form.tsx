@@ -1,11 +1,12 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { useActionState, useEffect, useRef, type ReactNode } from 'react'
+import { useActionState, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { ApartmentFormState } from '@/app/lib/actions/apartments'
 import { formatMonth } from '@/app/lib/utils/dates'
 import BillingChangeWarning from '@/app/ui/admin/billing-change-warning'
 import { focusFirstError } from '@/app/ui/focus-first-error'
+import { hasMonthPicker } from '@/app/ui/month-picker'
 import SubmitButton from '@/app/ui/submit-button'
 import TextField from '@/app/ui/text-field'
 
@@ -36,6 +37,9 @@ const fieldOrder = ['number', 'floor', 'billingStartMonth'] as const
 /** An apartment's number, floor and billing start (R8), to add or to edit. */
 export default function ApartmentForm({ action, confirmedAction, saved, onSaved, cancel }: Props) {
   const t = useTranslations('ApartmentForm')
+  const tCommon = useTranslations('Common')
+  // Rendered only in its dialog, in the browser: the DOM can be asked once.
+  const [monthPicker] = useState(hasMonthPicker)
   const locale = useLocale()
   const editing = saved !== undefined
   const initialState: ApartmentFormState = {}
@@ -99,11 +103,15 @@ export default function ApartmentForm({ action, confirmedAction, saved, onSaved,
       <TextField
         name="billingStartMonth"
         label={t('billingStartMonth')}
-        hint={t('billingStartHint')}
+        hint={
+          monthPicker
+            ? t('billingStartHint')
+            : `${t('billingStartHint')} ${tCommon('monthFormat', { example: '2026-01' })}`
+        }
         defaultValue={values?.billingStartMonth}
         errors={state.errors?.billingStartMonth}
         // Browsers without a month picker show a text field; the placeholder, the pattern, the
-        // hint and the server all ask for YYYY-MM. Empty is the building's month.
+        // hint (there only) and the server all ask for YYYY-MM. Empty is the building's month.
         type="month"
         placeholder="YYYY-MM"
         pattern="\d{4}-(0[1-9]|1[0-2])"

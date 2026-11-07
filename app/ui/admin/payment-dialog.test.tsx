@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { describe, expect, it, vi } from 'vitest'
 import type { PaymentFormState } from '@/app/lib/actions/payments'
 import type { OpenMonth } from '@/app/lib/definitions'
+import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import PaymentDialog from '@/app/ui/admin/payment-dialog'
 import type { PaymentAction } from '@/app/ui/admin/payment-form'
 import en from '@/messages/en.json'
@@ -31,14 +32,17 @@ function renderDialog(
       locale="en"
       messages={{ PaymentForm: copy, PaymentMethods: en.PaymentMethods, Common: en.Common }}
     >
-      <PaymentDialog
-        action={action}
-        number="4"
-        months={open}
-        today="2026-11-02"
-        firstDay="2024-11-01"
-        lastMonth="2027-11"
-      />
+      {/* What was recorded is said in the apartment's payments, as a void is. */}
+      <AdminAnnouncer headingId="payments" header={<h3 id="payments">Latest payments</h3>}>
+        <PaymentDialog
+          action={action}
+          number="4"
+          months={open}
+          today="2026-11-02"
+          firstDay="2024-11-01"
+          lastMonth="2027-11"
+        />
+      </AdminAnnouncer>
     </NextIntlClientProvider>,
   )
   return screen.getByRole('button', { name: 'Apartment 4: record a payment' })

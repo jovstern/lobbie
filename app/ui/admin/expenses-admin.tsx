@@ -7,7 +7,6 @@ import AdminPageHeader from '@/app/ui/admin/admin-page-header'
 import ExpenseForm from '@/app/ui/admin/expense-form'
 import ExpenseList from '@/app/ui/admin/expense-list'
 import { cardClassName } from '@/app/ui/card'
-import { moneyFont } from '@/app/ui/money-font'
 
 /** The page's heading, which takes focus when the button a dialog opened from is gone. */
 const headingId = 'expenses-title'
@@ -37,15 +36,19 @@ export default async function ExpensesAdmin() {
         </h2>
         <ExpenseForm action={record.bind(null, locale)} today={today} firstDay={firstDay} />
       </section>
-      {/* Amounts: the font instance that preloads ₪'s file. */}
-      <section
-        aria-labelledby="expenses-list-title"
-        className={`${moneyFont.className} ${cardClassName}`}
-      >
-        <h2 id="expenses-list-title" className="text-lg font-semibold">
-          {t('listTitle')}
-        </h2>
-        <ExpenseList expenses={expenses} timeZone={timeZone} />
+      <section aria-labelledby="expenses-list-title" className={cardClassName}>
+        {/* The list's own status region and heading: a void is said beside the list, and focus
+            lands on its heading once the voided row's button is gone. */}
+        <AdminAnnouncer
+          headingId="expenses-list-title"
+          header={
+            <h2 id="expenses-list-title" tabIndex={-1} className="text-lg font-semibold">
+              {t('listTitle')}
+            </h2>
+          }
+        >
+          <ExpenseList expenses={expenses} timeZone={timeZone} />
+        </AdminAnnouncer>
       </section>
     </AdminAnnouncer>
   )

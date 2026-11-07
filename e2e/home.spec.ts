@@ -21,7 +21,11 @@ function copyFor(locale: Locale) {
     paid: text.StatusCard.paid,
     paidUp: t('StatusCard.paidUpFor', { month: formatMonth(thisMonth, locale) }),
     overdue: text.StatusCard.overdue,
-    behind: t('StatusCard.monthsBehind', { count: 2 }),
+    behind: t('StatusCard.rowOverdueAndDue', {
+      overdue: formatAgorot(2 * 35_000, locale),
+      count: 2,
+      due: formatAgorot(35_000, locale),
+    }),
     homeTab: text.Nav.home,
   }
 }

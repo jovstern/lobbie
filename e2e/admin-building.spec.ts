@@ -3,6 +3,7 @@ import { expect, notFoundStatus, test } from './fixtures'
 import { useSessionOf } from './helpers/auth'
 import { messages } from './helpers/copy'
 import { deleteAdjustmentsWithReason, demoBuildingBalanceAgorot } from './helpers/db'
+import { refreshFundCache } from './helpers/fund'
 
 // The flows are in Hebrew, the app's default language; the a11y spec covers English too.
 const text = messages.he
@@ -66,11 +67,9 @@ test('a negative adjustment lowers the fund on Home by its amount', async ({ pag
     ).toContainText(formatAgorot(before - 12_345, 'he'))
   } finally {
     await deleteAdjustmentsWithReason(reason)
-    // The delete happened behind the app, whose balance is cached: saving the details
-    // unchanged updates the building's tag, so other specs read the seeded fund again.
-    await page.goto('/admin/building')
-    await page.getByRole('button', { name: text.BuildingForm.save, exact: true }).click()
-    await expect(page.getByText(text.BuildingForm.saved, { exact: true })).toBeVisible()
+    // The delete happened behind the app, whose balance is cached: other specs must read the
+    // seeded fund again.
+    await refreshFundCache(page)
   }
 })
 

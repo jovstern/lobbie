@@ -202,9 +202,9 @@ describe('record', () => {
       expect((await balance(demoBuildingId)).totalAgorot).toBe(before.totalAgorot - 125_050)
       // The fund is cached under the building's tag; Home shows it.
       expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/expenses', 'page')
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/expenses', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/(home)', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/balance', 'page')
     },
   )
 
@@ -220,6 +220,36 @@ describe('record', () => {
       .where(eq(expenses.description, valid.description))
     expect(row.receiptKey).toBeNull()
     expect(await storedFiles()).toEqual([])
+  })
+
+  // Browsers send an empty file part when none was chosen, not always nameless: some name it
+  // "blob" or "undefined". No bytes is no receipt, whatever its name.
+  it.each(['', 'blob', 'undefined', 'r.pdf'])(
+    'takes an empty file named %o as no receipt',
+    async (name) => {
+      await signInAs('committee1@example.com')
+      const empty = new File([], name, { type: 'application/octet-stream' })
+
+      const state = await record('en', noState, form(valid, empty))
+
+      expect(state.recorded).toEqual({ description: valid.description, amountAgorot: 125_050 })
+      const [row] = await db
+        .select()
+        .from(expenses)
+        .where(eq(expenses.description, valid.description))
+      expect(row.receiptKey).toBeNull()
+      expect(await storedFiles()).toEqual([])
+    },
+  )
+
+  it('gives back no receipt name for an empty file when a field is refused', async () => {
+    await signInAs('committee1@example.com')
+    const empty = new File([], 'blob', { type: 'application/octet-stream' })
+
+    const state = await record('en', noState, form({ ...valid, amount: '0' }, empty))
+
+    expect(state.values?.receiptName).toBe('')
+    expect(state.errors?.receipt).toBeUndefined()
   })
 
   it('keeps an image by its bytes, whatever its name and declared type', async () => {
@@ -252,7 +282,6 @@ describe('record', () => {
       new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'r.svg', { type: 'image/svg+xml' }),
       'receiptType',
     ],
-    ['an empty file', new File([], 'r.pdf', { type: 'application/pdf' }), 'receiptEmpty'],
     [
       'a file over 4 MB',
       new File([pdfBytes, new Uint8Array(maxReceiptBytes)], 'r.pdf', { type: 'application/pdf' }),
@@ -422,9 +451,9 @@ describe('voidExpense', () => {
     expect((await balance(demoBuildingId)).totalAgorot).toBe(before.totalAgorot + 125_050)
     expect(await get(receiptKey ?? '')).not.toBeNull()
     expect(updateTag).toHaveBeenCalledWith(`building:${demoBuildingId}`)
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/expenses', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/expenses', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/(home)', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/balance', 'page')
   })
 
   it('asks for a reason', async () => {

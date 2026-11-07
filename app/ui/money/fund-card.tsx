@@ -23,13 +23,9 @@ export default function FundCard({ fund }: { fund: BuildingBalance }) {
   ]
 
   return (
-    <Card titleId="fund-now-title" title={t('nowTitle')}>
-      <div className="flex flex-col gap-1">
-        <p className="text-xl font-semibold tabular-nums">
-          {formatAgorot(fund.totalAgorot, locale)}
-        </p>
-        <p className="text-text-muted">{t('asOf')}</p>
-      </div>
+    <Card titleId="fund-now-title" title={t('nowTitle')} heading="section">
+      {/* The title says when: today. */}
+      <p className="text-xl font-semibold tabular-nums">{formatAgorot(fund.totalAgorot, locale)}</p>
       {openingOnly ? (
         <p className="text-text-muted max-w-prose text-pretty">{t('openingOnly')}</p>
       ) : (

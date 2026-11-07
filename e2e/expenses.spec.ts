@@ -158,11 +158,13 @@ test('the committee adds an expense with a receipt: the fund drops on the balanc
     await expect(
       page.getByText(t('VoidExpense.done', { description, amount }), { exact: true }),
     ).toBeVisible()
+    // Its button is gone: focus moves to the list's heading, beside which the void is said.
     await expect(
-      page.getByRole('heading', { level: 1, name: text.AdminExpenses.title, exact: true }),
+      page.getByRole('heading', { level: 2, name: text.AdminExpenses.listTitle, exact: true }),
     ).toBeFocused()
+    // Residents see only the expenses that count: the voided one is gone from their list.
+    await useSessionOf(page, resident)
     await expectFundOnBalancePage(page, before)
-    // Residents see only the expenses that count: the voided one is gone from the list.
     await expect(yearExpenses.getByText(description, { exact: true })).toHaveCount(0)
   } finally {
     // The committee's session, whichever the test stopped in.
@@ -176,6 +178,31 @@ test('the committee adds an expense with a receipt: the fund drops on the balanc
     }
     const key = await receiptKeyOf(description)
     if (key) await removeUpload(key)
+  }
+})
+
+// A receipt is optional (R18). With no file chosen, the browser still sends an empty file part.
+test('the committee adds an expense without a receipt', async ({ page }, testInfo) => {
+  const description = `ניקיון חדר מדרגות ${testInfo.project.name} ${Date.now()}`
+  const amount = formatAgorot(4_000, 'he')
+  await useSessionOf(page, committee)
+  await page.goto('/admin/expenses')
+
+  try {
+    const form = await fillExpense(page, description, '40')
+    await form.getByRole('button', { name: text.ExpenseForm.submit, exact: true }).click()
+
+    await expect(
+      page.getByText(t('ExpenseForm.recorded', { description, amount }), { exact: true }),
+    ).toBeVisible()
+    expect(await expenseCounts(description)).toBe(true)
+    expect(await receiptKeyOf(description)).toBeNull()
+  } finally {
+    // Voided through the app, which also refreshes the cached fund; the row stays, voided.
+    if (await voidIfStillCounted(page, description, amount)) {
+      await useSessionOf(page, 'admin@example.com')
+      await refreshFundCache(page)
+    }
   }
 })
 

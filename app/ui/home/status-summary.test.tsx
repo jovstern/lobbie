@@ -54,7 +54,7 @@ describe('StatusSummary, one apartment', () => {
     expect(card).toHaveTextContent('Left to pay for November 2026')
   })
 
-  it('overdue: the total owed and the months behind', () => {
+  it('overdue: the total owed, then what is overdue and what is due this month apart', () => {
     const card = renderSummary([
       row('9', { current: due, monthsBehind: 2, totalOwedAgorot: 3 * fee }),
     ])
@@ -62,7 +62,8 @@ describe('StatusSummary, one apartment', () => {
     expect(within(card).getByText('Overdue')).toBeVisible()
     expect(card).toHaveTextContent('₪1,050')
     expect(card).toHaveTextContent('Total owed')
-    expect(card).toHaveTextContent("You're 2 months behind")
+    // The count of months goes with the overdue amount, never with the whole.
+    expect(card).toHaveTextContent('₪700 overdue (2 months) + ₪350 due this month')
   })
 
   it('overdue in Hebrew, with the dual form', () => {
@@ -72,7 +73,7 @@ describe('StatusSummary, one apartment', () => {
     )
 
     expect(within(card).getByText('בפיגור')).toBeVisible()
-    expect(card).toHaveTextContent('חודשיים ללא תשלום')
+    expect(card).toHaveTextContent('בפיגור (חודשיים) + ')
   })
 
   it('no fee: explains there is nothing to pay', () => {
@@ -123,8 +124,18 @@ describe('StatusSummary, several apartments', () => {
     expect(rows[1]).toHaveTextContent('₪350 to pay')
     expect(rows[2]).toHaveTextContent('Apartment 9')
     expect(rows[2]).toHaveTextContent('Overdue')
-    expect(rows[2]).toHaveTextContent('₪700 owed · 1 month behind')
+    expect(rows[2]).toHaveTextContent('₪350 overdue (1 month) + ₪350 due this month')
     expect(rows[3]).toHaveTextContent('Apartment 12')
     expect(rows[3]).toHaveTextContent('Not billed yet')
+  })
+
+  it('behind with this month paid: only what is overdue', () => {
+    const card = renderSummary([
+      row('3', { current: paid, monthsBehind: 0, totalOwedAgorot: 0 }),
+      row('9', { current: paid, monthsBehind: 1, totalOwedAgorot: fee }),
+    ])
+
+    const rows = within(card).getAllByRole('listitem')
+    expect(rows[1]).toHaveTextContent(/₪350 overdue \(1 month\)$/)
   })
 })

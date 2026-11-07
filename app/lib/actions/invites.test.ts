@@ -256,7 +256,7 @@ describe('create', () => {
     expect(lifetime).toBeGreaterThan(14 * day - 60_000)
     expect(lifetime).toBeLessThan(14 * day + 60_000)
 
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
     // No cached read includes invites.
     expect(updateTag).not.toHaveBeenCalled()
   })
@@ -307,7 +307,7 @@ describe('revoke', () => {
 
     expect(await revoke('en', row.id)).toEqual({ revoked: true, message: null })
     expect((await inviteRow(row.id)).revokedAt).not.toBeNull()
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
 
     expect(await revoke('en', row.id)).toEqual({ message: en.InviteErrors.inviteNotFound })
   })

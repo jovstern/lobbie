@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import type { Arrears } from '@/app/lib/definitions'
 import { formatAgorot } from '@/app/lib/utils/money'
 import { cardClassName } from '@/app/ui/card'
+import { overdueText } from '@/app/ui/home/overdue-text'
 import LinkPending from '@/app/ui/nav/link-pending'
 import { Link } from '@/i18n/navigation'
 
@@ -60,10 +61,7 @@ export default async function ArrearsList({ arrears, hrefFor }: Props) {
                   <LinkPending className="-end-2 top-2" />
                 </Link>
                 <span className="text-danger tabular-nums">
-                  {tStatus('rowOverdue', {
-                    amount: formatAgorot(apartment.totalOwedAgorot, locale),
-                    count: apartment.monthsBehind,
-                  })}
+                  {overdueText(apartment, tStatus, locale)}
                 </span>
               </li>
             ))}

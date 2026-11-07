@@ -209,7 +209,7 @@ describe('create', () => {
     expect(state).toEqual({ saved: { number: '14A' }, message: null })
     expect(await apartmentNumbered('14A')).toMatchObject({ floor: -2, billingStartMonth: null })
     expect(updateTag).not.toHaveBeenCalled()
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments', 'page')
   })
 
   it('keeps its own billing start month', async () => {
@@ -298,9 +298,9 @@ describe('update', () => {
     expect(state).toEqual({ saved: { number: 'u-1b' }, message: null })
     expect(await apartmentNumbered('u-1b')).toMatchObject({ id: target.id, floor: 6 })
     expect(updateTag).not.toHaveBeenCalled()
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
     // A billing start changes the months the payments grid shows as owed.
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/payments', 'page')
   })
 
   it('turns a number another apartment has into a field error', async () => {

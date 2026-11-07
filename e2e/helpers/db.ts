@@ -267,8 +267,9 @@ export async function paymentCountOf(number: string, month: string): Promise<num
 
 /**
  * Records a payment for a demo-building apartment straight in the test database, as the
- * treasurer, voided with `voidReason` when one is given. Payments are read fresh by every page
- * (never from a cache), so removing them with `deletePaymentsOf` leaves no stale copy behind.
+ * treasurer, voided with `voidReason` when one is given. Behind the app's back: an apartment's
+ * payments are read fresh, but the building fund counts them and is cached, so after adding
+ * (or removing, with `deletePaymentsOf`) a counted payment, call `refreshFundCache`.
  */
 export async function addPayment(
   number: string,

@@ -1,11 +1,13 @@
 'use client'
 
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
 import { useRef } from 'react'
-import type { FeeTarget } from '@/app/ui/admin/fee-dialog'
+import { formatMonth } from '@/app/lib/utils/dates'
+import { formatAgorot } from '@/app/lib/utils/money'
 import FeeForm, { type FeeAction, type FeeSaved } from '@/app/ui/admin/fee-form'
+import type { FeeTarget } from '@/app/ui/admin/lazy-dialog-button'
 import type { LazyDialogProps } from '@/app/ui/admin/lazy-dialog'
 import { buttonClassName } from '@/app/ui/button-styles'
 
@@ -14,7 +16,8 @@ type Props = LazyDialogProps & {
   target: FeeTarget
   defaultMonth: string
   minMonth?: string
-  onSaved: (saved: FeeSaved) => void
+  /** With what was set, in words. */
+  onSaved: (message: string) => void
 }
 
 /**
@@ -32,6 +35,7 @@ export default function FeeDialogContent({
   onSaved,
 }: Props) {
   const t = useTranslations('FeeForm')
+  const locale = useLocale()
   const contentRef = useRef<HTMLDivElement>(null)
   const title =
     target.kind === 'building'
@@ -39,6 +43,16 @@ export default function FeeDialogContent({
       : target.kind === 'apartment'
         ? t('apartmentTitleNumbered', { number: target.number })
         : t('apartmentTitle')
+
+  function saved({ amountAgorot, effectiveFrom, apartmentNumber }: FeeSaved) {
+    const words = {
+      amount: formatAgorot(amountAgorot, locale),
+      month: formatMonth(effectiveFrom, locale),
+    }
+    return apartmentNumber === null
+      ? t('savedBuilding', words)
+      : t('savedApartment', { ...words, number: apartmentNumber })
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -73,7 +87,7 @@ export default function FeeDialogContent({
             choices={target.kind === 'chosen' ? target.choices : undefined}
             defaultMonth={defaultMonth}
             minMonth={minMonth}
-            onSaved={onSaved}
+            onSaved={(fee) => onSaved(saved(fee))}
             cancel={
               <Dialog.Close type="button" className={buttonClassName('secondary')}>
                 {t('cancel')}

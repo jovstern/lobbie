@@ -60,7 +60,6 @@ describe('CategoryBars', () => {
   it('gives each category its amount and share as text; the bars are hidden from readers', () => {
     renderEn(
       <CategoryBars
-        year={2026}
         expensesAgorot={25_000}
         categories={[
           { category: 'cleaning', amountAgorot: 20_000 },
@@ -80,10 +79,10 @@ describe('CategoryBars', () => {
     expect(items[1]).toHaveTextContent('20% of expenses')
   })
 
-  it('says when the year had no expenses', () => {
-    renderEn(<CategoryBars year={2024} expensesAgorot={0} categories={[]} />)
+  it('shows nothing in a year without expenses: the expenses card says so, once', () => {
+    renderEn(<CategoryBars expensesAgorot={0} categories={[]} />)
 
-    expect(screen.getByText('No expenses in 2024')).toBeVisible()
+    expect(screen.queryByText(en.Balance.categoriesTitle)).toBeNull()
     expect(screen.queryByRole('list')).toBeNull()
   })
 })

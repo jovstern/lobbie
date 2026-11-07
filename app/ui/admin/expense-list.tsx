@@ -42,7 +42,15 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
   }
 
   function receipt(expense: AdminExpense) {
-    if (!expense.receiptKey) return <span className="text-text-muted">{t('noReceipt')}</span>
+    if (!expense.receiptKey) {
+      // A dash where a link would be, so the rows with a receipt stand out; read out in words.
+      return (
+        <span className="text-text-muted">
+          <span aria-hidden>–</span>
+          <span className="sr-only">{t('noReceipt')}</span>
+        </span>
+      )
+    }
     const date = formatDay(expense.spentOn, locale)
     return (
       // A plain link: the file comes from a Route Handler, not a page.
@@ -91,16 +99,22 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
 
   return (
     <>
-      <ol className="divide-border flex flex-col divide-y lg:hidden">
+      <ol
+        aria-labelledby="expenses-list-title"
+        className="divide-border flex flex-col divide-y lg:hidden"
+      >
         {expenses.map((expense) => (
           <li key={expense.id} className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <div className="grid grid-cols-[1fr_auto] items-baseline gap-x-4 gap-y-1">
               <span
-                className={clsx('font-medium break-words', expense.voided && 'text-text-muted')}
+                className={clsx(
+                  'min-w-0 font-medium break-words',
+                  expense.voided && 'text-text-muted',
+                )}
               >
-                {expense.description}
+                <bdi>{expense.description}</bdi>
               </span>
-              <span className={amountClass(expense)}>
+              <span className={clsx(amountClass(expense), 'whitespace-nowrap')}>
                 {formatAgorot(expense.amountAgorot, locale)}
               </span>
             </div>
@@ -108,14 +122,23 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
               {tCategories(expense.category)} · {formatDay(expense.spentOn, locale)} ·{' '}
               {t('recordedBy', { name: expense.recordedByName })}
             </p>
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-              {receipt(expense)}
+            <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2">
+              <div>{receipt(expense)}</div>
               {status(expense)}
             </div>
           </li>
         ))}
       </ol>
-      <table aria-labelledby="expenses-list-title" className="hidden w-full lg:table">
+      <table aria-labelledby="expenses-list-title" className="hidden w-full table-fixed lg:table">
+        {/* Fixed widths: a long description wraps in its column instead of pushing the others. */}
+        <colgroup>
+          <col className="w-32" />
+          <col />
+          <col className="w-36" />
+          <col className="w-32" />
+          <col className="w-32" />
+          <col className="w-44" />
+        </colgroup>
         <thead>
           <tr className="border-border text-text-muted border-b text-sm">
             <th scope="col" className={clsx(cell, 'pt-0 text-start font-medium')}>
@@ -141,17 +164,22 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
         <tbody className="divide-border divide-y">
           {expenses.map((expense) => (
             <tr key={expense.id} className={clsx(expense.voided && 'text-text-muted')}>
-              <th scope="row" className={clsx(cell, 'text-start font-medium tabular-nums')}>
+              <th
+                scope="row"
+                className={clsx(cell, 'text-start font-medium whitespace-nowrap tabular-nums')}
+              >
                 {formatDay(expense.spentOn, locale)}
               </th>
-              <td className={clsx(cell, 'max-w-80')}>
-                <p className="break-words">{expense.description}</p>
+              <td className={cell}>
+                <p className="break-words">
+                  <bdi>{expense.description}</bdi>
+                </p>
                 <p className="text-text-muted text-sm">
                   {t('recordedBy', { name: expense.recordedByName })}
                 </p>
               </td>
               <td className={cell}>{tCategories(expense.category)}</td>
-              <td className={clsx(cell, 'text-end', amountClass(expense))}>
+              <td className={clsx(cell, 'text-end whitespace-nowrap', amountClass(expense))}>
                 {formatAgorot(expense.amountAgorot, locale)}
               </td>
               <td className={clsx(cell, 'py-0')}>{receipt(expense)}</td>

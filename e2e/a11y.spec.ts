@@ -395,6 +395,8 @@ for (const locale of ['he', 'en'] as const) {
         await expect(
           page.getByRole('group', { name: text.InviteAdminClient.newTitle, exact: true }),
         ).toBeVisible()
+        // The new invite fades in; axe reads a colour mid-fade as low contrast.
+        await page.waitForFunction(() => document.getAnimations().length === 0)
         await expectNoViolations(page)
 
         await invite

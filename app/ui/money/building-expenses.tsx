@@ -28,7 +28,15 @@ export default function BuildingExpenses({ year, expenses }: Props) {
   const locale = useLocale()
 
   function receipt(expense: BuildingExpense) {
-    if (!expense.receiptKey) return <span className="text-text-muted">{t('noReceipt')}</span>
+    if (!expense.receiptKey) {
+      // A dash where a link would be, so the rows with a receipt stand out; read out in words.
+      return (
+        <span className="text-text-muted">
+          <span aria-hidden>–</span>
+          <span className="sr-only">{t('noReceipt')}</span>
+        </span>
+      )
+    }
     return (
       // A plain link: the file comes from a Route Handler, not a page.
       <a
@@ -58,11 +66,16 @@ export default function BuildingExpenses({ year, expenses }: Props) {
         </div>
       ) : (
         <>
-          <ol className="divide-border flex flex-col divide-y lg:hidden">
+          <ol
+            aria-labelledby="ledger-expenses-title"
+            className="divide-border flex flex-col divide-y lg:hidden"
+          >
             {expenses.map((expense) => (
               <li key={expense.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <span className="font-medium break-words">{expense.description}</span>
+                  <span className="font-medium break-words">
+                    <bdi>{expense.description}</bdi>
+                  </span>
                   <span className="font-semibold tabular-nums">
                     {formatAgorot(expense.amountAgorot, locale)}
                   </span>
@@ -70,7 +83,12 @@ export default function BuildingExpenses({ year, expenses }: Props) {
                 <p className="text-text-muted text-sm">
                   {tCategories(expense.category)} · {formatDay(expense.spentOn, locale)}
                 </p>
-                <div>{receipt(expense)}</div>
+                {/* On a phone a row without a receipt ends with its date; it is said in words. */}
+                {expense.receiptKey ? (
+                  <div>{receipt(expense)}</div>
+                ) : (
+                  <p className="sr-only">{t('noReceipt')}</p>
+                )}
               </li>
             ))}
           </ol>
@@ -100,7 +118,9 @@ export default function BuildingExpenses({ year, expenses }: Props) {
                   <th scope="row" className={clsx(cell, 'text-start font-medium tabular-nums')}>
                     {formatDay(expense.spentOn, locale)}
                   </th>
-                  <td className={clsx(cell, 'max-w-80 break-words')}>{expense.description}</td>
+                  <td className={clsx(cell, 'max-w-80 break-words')}>
+                    <bdi>{expense.description}</bdi>
+                  </td>
                   <td className={cell}>{tCategories(expense.category)}</td>
                   <td className={clsx(cell, 'text-end font-semibold tabular-nums')}>
                     {formatAgorot(expense.amountAgorot, locale)}

@@ -11,6 +11,7 @@ import {
   setBillingStart,
   withE2eSql,
 } from './helpers/db'
+import { refreshFundCache } from './helpers/fund'
 
 // The flows are in Hebrew, the app's default language; the a11y spec covers English too.
 const text = messages.he
@@ -89,12 +90,15 @@ test('a payment turns an overdue apartment paid, and voiding it makes it overdue
     await confirm.getByRole('button', { name: text.VoidPayment.confirm, exact: true }).click()
 
     await expect(confirm).toBeHidden()
-    await expect(page.getByRole('main').getByRole('status').first()).toHaveText(
-      t('VoidPayment.done', words),
-    )
-    // Its button is gone: focus moves to the heading.
+    // Said in the apartment's payments, where a recording is said too.
+    await expect(card.getByRole('status')).toHaveText(t('VoidPayment.done', words))
+    // Its button is gone: focus moves to the payments' heading.
     await expect(
-      page.getByRole('heading', { level: 1, name: apartment, exact: true }),
+      history.getByRole('heading', {
+        level: 3,
+        name: text.ApartmentPayments.historyTitle,
+        exact: true,
+      }),
     ).toBeFocused()
     await expect(card.getByText(text.StatusCard.overdue, { exact: true })).toBeVisible()
     // Still listed, voided, with the reason.
@@ -107,6 +111,8 @@ test('a payment turns an overdue apartment paid, and voiding it makes it overdue
   } finally {
     await deletePaymentsOf(number)
     await setBillingStart(number, currentMonth)
+    // Deleted behind the app's back: the cached fund still counts the payment.
+    await refreshFundCache(page)
   }
 })
 
@@ -170,5 +176,7 @@ test('a recording waits for another one of the same apartment, then refuses the 
     expect(await paymentCountOf(number, currentMonth)).toBe(1)
   } finally {
     await deletePaymentsOf(number)
+    // The other recording and its removal were behind the app's back: the cached fund missed both.
+    await refreshFundCache(page)
   }
 })

@@ -289,8 +289,8 @@ describe('addAdjustment', () => {
     ])
     expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
     // The pages that show the fund: Home's card and the balance page.
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/(home)', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/balance', 'page')
     expect(await balance(buildingId)).toEqual({
       ...before,
       adjustmentsAgorot: before.adjustmentsAgorot - 12_050,

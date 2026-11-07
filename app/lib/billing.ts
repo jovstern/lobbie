@@ -6,14 +6,28 @@ import type { Db } from '@/app/lib/db'
 import { apartments, buildings, feeRates, payments } from '@/app/lib/schema'
 import type { ApartmentBilling } from '@/app/lib/utils/status'
 
-// postgres-js returns some numeric results as strings; the sum is checked to be an integer.
-const monthSum = z.object({ month: z.string(), amountAgorot: z.coerce.number().int() })
+// One row: the apartment, its building's billing start, and as JSON the fee rates and the sums
+// paid by month. JSON numbers come back as numbers, its dates as `YYYY-MM` text.
+const billingRow = z.object({
+  number: z.string(),
+  billingStartMonth: z.string().nullable(),
+  buildingBillingStartMonth: z.string(),
+  rates: z.array(
+    z.object({
+      apartmentId: z.string().nullable(),
+      amountAgorot: z.number().int().nullable(),
+      effectiveFrom: z.string(),
+    }),
+  ),
+  payments: z.array(z.object({ month: z.string(), amountAgorot: z.number().int() })),
+})
 
 /**
  * Everything needed to work out what one apartment owes (`utils/status`), read fresh, not from
  * the building's cache: recording a payment checks it inside its transaction, after locking the
- * apartment, so a payment committed meanwhile is counted. Four queries sent together, each
- * scoped to the building. Null when the apartment is not one of the building's.
+ * apartment, so a payment committed meanwhile is counted. One query, scoped to the building, so
+ * the locked apartment waits on a single round trip. Null when the apartment is not one of the
+ * building's.
  */
 export async function readBilling(
   executor: Db | Tx,
@@ -21,56 +35,50 @@ export async function readBilling(
   apartmentId: string,
   currentMonth: string,
 ): Promise<(ApartmentBilling & { number: string }) | null> {
-  const [[apartment], [building], rates, sums] = await Promise.all([
-    executor
-      .select({
-        id: apartments.id,
-        number: apartments.number,
-        billingStartMonth: apartments.billingStartMonth,
-      })
-      .from(apartments)
-      .where(and(eq(apartments.id, apartmentId), eq(apartments.buildingId, buildingId))),
-    executor
-      .select({ billingStartMonth: buildings.billingStartMonth })
-      .from(buildings)
-      .where(eq(buildings.id, buildingId)),
-    // The building's default and this apartment's own.
-    executor
-      .select({
-        apartmentId: feeRates.apartmentId,
-        amountAgorot: feeRates.amountAgorot,
-        effectiveFrom: feeRates.effectiveFrom,
-      })
-      .from(feeRates)
-      .where(
-        and(
-          eq(feeRates.buildingId, buildingId),
-          or(isNull(feeRates.apartmentId), eq(feeRates.apartmentId, apartmentId)),
-        ),
-      ),
-    // Voided payments never count.
-    executor
-      .select({
-        month: payments.month,
-        amountAgorot: sql`cast(sum(${payments.amountAgorot}) as integer)`,
-      })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.buildingId, buildingId),
-          eq(payments.apartmentId, apartmentId),
-          isNull(payments.voidedAt),
-        ),
-      )
-      .groupBy(payments.month),
-  ])
-  if (!apartment || !building) return null
+  const [row] = await executor
+    .select({
+      number: apartments.number,
+      billingStartMonth: apartments.billingStartMonth,
+      buildingBillingStartMonth: buildings.billingStartMonth,
+      // The building's default and this apartment's own.
+      rates: sql`(
+        SELECT coalesce(json_agg(json_build_object(
+          'apartmentId', ${feeRates.apartmentId},
+          'amountAgorot', ${feeRates.amountAgorot},
+          'effectiveFrom', ${feeRates.effectiveFrom}
+        )), '[]'::json)
+        FROM ${feeRates}
+        WHERE ${and(
+          eq(feeRates.buildingId, buildings.id),
+          or(isNull(feeRates.apartmentId), eq(feeRates.apartmentId, apartments.id)),
+        )}
+      )`,
+      // Voided payments never count.
+      payments: sql`(
+        SELECT coalesce(json_agg(json_build_object('month', paid.month, 'amountAgorot', paid.amount_agorot)), '[]'::json)
+        FROM (
+          SELECT ${payments.month} AS month, sum(${payments.amountAgorot}) AS amount_agorot
+          FROM ${payments}
+          WHERE ${and(
+            eq(payments.buildingId, buildings.id),
+            eq(payments.apartmentId, apartments.id),
+            isNull(payments.voidedAt),
+          )}
+          GROUP BY ${payments.month}
+        ) AS paid
+      )`,
+    })
+    .from(apartments)
+    .innerJoin(buildings, eq(buildings.id, apartments.buildingId))
+    .where(and(eq(apartments.id, apartmentId), eq(apartments.buildingId, buildingId)))
+  if (!row) return null
+  const billing = billingRow.parse(row)
   return {
-    number: apartment.number,
-    apartment: { id: apartment.id, billingStartMonth: apartment.billingStartMonth },
-    buildingBillingStartMonth: building.billingStartMonth,
-    rates,
-    payments: z.array(monthSum).parse(sums),
+    number: billing.number,
+    apartment: { id: apartmentId, billingStartMonth: billing.billingStartMonth },
+    buildingBillingStartMonth: billing.buildingBillingStartMonth,
+    rates: billing.rates,
+    payments: billing.payments,
     currentMonth,
   }
 }

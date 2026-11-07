@@ -45,7 +45,7 @@ export default function MonthList({ months, currentMonth }: Props) {
       </h2>
       <ol className="divide-border flex flex-col divide-y">
         {months.map((status) => {
-          const { icon: Icon, label, className } = monthStatusLooks[status.kind]
+          const { label, className } = monthStatusLooks[status.kind]
           const isCurrent = status.month === currentMonth
           const amount = amountOf(status)
           return (
@@ -62,7 +62,7 @@ export default function MonthList({ months, currentMonth }: Props) {
               </span>
               <span className="flex flex-col items-end gap-0.5 text-end">
                 <span className={clsx('inline-flex items-center gap-1.5 font-medium', className)}>
-                  <Icon aria-hidden className="size-5 shrink-0" />
+                  <span aria-hidden className="status-mark shrink-0" data-status={status.kind} />
                   {t(label)}
                 </span>
                 {amount ? (

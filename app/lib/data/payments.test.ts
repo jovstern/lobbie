@@ -388,7 +388,12 @@ describe('grid', () => {
     ])
     const four = rowOf(result, '4')
     expect(four.id).toBe(idOf('4'))
-    expect(four.standing).toEqual({ kind: 'overdue', monthsBehind: 1, totalOwedAgorot: 2 * fee })
+    expect(four.standing).toEqual({
+      kind: 'overdue',
+      monthsBehind: 1,
+      totalOwedAgorot: 2 * fee,
+      overdueAgorot: fee,
+    })
     expect(four.months).toEqual([
       ...Array.from({ length: 9 }, (_, i) => paid(`2026-0${i + 1}`)),
       unpaid('2026-10', 'overdue'),
@@ -465,6 +470,7 @@ describe('grid', () => {
         kind: 'overdue',
         monthsBehind: 1,
         totalOwedAgorot: 25_000 + fee,
+        overdueAgorot: 25_000,
       })
       expect(rowOf(result, '10').months[11]).toEqual(unpaid('2026-12', 'upcoming', 0, penthouseFee))
     } finally {
@@ -514,8 +520,20 @@ describe('grid', () => {
 
     expect((await grid('2026', now)).arrears).toEqual({
       apartments: [
-        { id: idOf('9'), number: '9', monthsBehind: 2, totalOwedAgorot: 3 * fee },
-        { id: idOf('4'), number: '4', monthsBehind: 1, totalOwedAgorot: 2 * fee },
+        {
+          id: idOf('9'),
+          number: '9',
+          monthsBehind: 2,
+          totalOwedAgorot: 3 * fee,
+          overdueAgorot: 2 * fee,
+        },
+        {
+          id: idOf('4'),
+          number: '4',
+          monthsBehind: 1,
+          totalOwedAgorot: 2 * fee,
+          overdueAgorot: fee,
+        },
       ],
       totalOwedAgorot: 5 * fee,
     })
@@ -633,7 +651,7 @@ describe('monthlyStatus', () => {
     expect(result).toEqual({
       number: '4',
       currentMonth,
-      standing: { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: 2 * fee },
+      standing: { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: 2 * fee, overdueAgorot: fee },
       months: [
         ...Array.from({ length: 9 }, (_, i) => settled(`2026-0${i + 1}`)),
         owing('2026-10', 'overdue'),

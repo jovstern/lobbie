@@ -77,6 +77,16 @@ export function gridYear(
 }
 
 /**
+ * What remains of an apartment's overdue months alone: its total owed without what is left of
+ * the current month, so "N months behind" never reads as the whole amount.
+ */
+export function overdueAgorot(summary: ApartmentSummary): number {
+  const { current, totalOwedAgorot } = summary
+  const dueNow = current.kind === 'due' ? current.remainingAgorot : 0
+  return totalOwedAgorot - dueNow
+}
+
+/**
  * Who is behind (an earlier month not fully paid) and by how much, the largest debt first;
  * equal debts keep the order given. The total is what they owe together.
  */
@@ -90,6 +100,7 @@ export function arrearsOf(
       number,
       monthsBehind: summary.monthsBehind,
       totalOwedAgorot: summary.totalOwedAgorot,
+      overdueAgorot: overdueAgorot(summary),
     }))
     .toSorted((a, b) => b.totalOwedAgorot - a.totalOwedAgorot)
   return {

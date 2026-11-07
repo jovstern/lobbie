@@ -15,6 +15,7 @@ import {
 import { demoBuildingId } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
 import { balance, yearReport } from './ledger'
+import { ledgerRange, ledgerYear } from './ledger-year'
 
 const testDb = await vi.hoisted(async () => {
   const { createTestDb } = await import('@/app/lib/test/db')
@@ -24,6 +25,11 @@ vi.mock('@/app/lib/db', () => ({ db: testDb.db }))
 // Outside Next, `'use cache'` is an inert string and the cache functions only record tags.
 vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }))
 vi.mock('@/app/lib/authz', () => ({ requireMember: vi.fn() }))
+// The cached readers, watched: what they are called with is what keys their cache entries.
+vi.mock('./ledger-year', async (importOriginal) => {
+  const cached = await importOriginal<typeof import('./ledger-year')>()
+  return { ledgerRange: vi.fn(cached.ledgerRange), ledgerYear: vi.fn(cached.ledgerYear) }
+})
 afterAll(() => testDb.close())
 
 const now = new Date('2026-11-02T10:00:00Z')
@@ -381,6 +387,59 @@ describe('yearReport', () => {
     ['2031', 2026],
   ])('reads ?year=%j as %i: this year, or the nearest it has', async (param, year) => {
     expect((await yearReport(param, now)).year).toBe(year)
+  })
+
+  // `?year=` is the visitor's to choose: only the year it is clamped to may key the cache, so
+  // the entries stay one per year there is something to show.
+  it.each([
+    ['2019', 2024],
+    ['9999', 2026],
+    ['garbage', 2026],
+    ['2025', 2025],
+  ])('caches ?year=%s as the year %i only', async (param, year) => {
+    vi.mocked(ledgerRange).mockClear()
+    vi.mocked(ledgerYear).mockClear()
+
+    await yearReport(param, now)
+
+    expect(ledgerRange).toHaveBeenCalledWith(ledgerId, 'Asia/Jerusalem', 2026)
+    expect(ledgerYear).toHaveBeenCalledTimes(1)
+    expect(ledgerYear).toHaveBeenCalledWith(ledgerId, 'Asia/Jerusalem', year, '2025-03', '2026-11')
+  })
+
+  it('starts the years at an expense from before billing start, once that was moved later', async () => {
+    const [moved] = await db
+      .insert(buildings)
+      .values({ name: 'Moved', address: 'Moved 1', billingStartMonth: '2026-05' })
+      .returning()
+    const expense = { buildingId: moved.id, recordedBy: treasurerId, category: 'water' as const }
+    await db.insert(expenses).values([
+      { ...expense, amountAgorot: 4_000, spentOn: '2025-08-10', description: 'Before' },
+      // A voided expense does not count, nor move the years.
+      {
+        ...expense,
+        amountAgorot: 1_000,
+        spentOn: '2023-02-01',
+        description: 'Voided',
+        ...voided(treasurerId),
+      },
+    ])
+    vi.mocked(requireMember).mockResolvedValue(memberOf(moved.id))
+
+    const report = await yearReport('2019', now)
+
+    expect(report).toMatchObject({
+      year: 2025,
+      years: { first: 2025, last: 2026 },
+      expensesAgorot: 4_000,
+    })
+    expect(report.months.map(({ month }) => month)).toEqual([
+      '2025-08',
+      '2025-09',
+      '2025-10',
+      '2025-11',
+      '2025-12',
+    ])
   })
 
   it("starts this year in the building's time zone", async () => {

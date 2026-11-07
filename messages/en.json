@@ -6,7 +6,8 @@
   "Common": {
     "backHome": "Back to home",
     "saved": "Saved",
-    "dialogLoadFailed": "That didn’t open. Check your connection and try again."
+    "dialogLoadFailed": "That didn’t open. Check your connection and try again.",
+    "monthFormat": "Type it as YYYY-MM, for example {example}."
   },
   "NotFound": {
     "title": "Page not found",
@@ -95,7 +96,6 @@
     "dueFor": "Due for {month}",
     "partialFor": "Left to pay for {month}",
     "totalOwed": "Total owed",
-    "monthsBehind": "You're {count, plural, one {# month} other {# months}} behind",
     "noFeeBody": "The committee hasn't set a fee for {month}, so there's nothing to pay.",
     "notBilledTitle": "Billing hasn't started yet",
     "notBilledBody": "Once the committee starts billing, you'll see here whether you're paid up.",
@@ -104,11 +104,13 @@
     "apartment": "Apartment {number}",
     "rowPaid": "Paid for {month}",
     "rowDue": "{amount} to pay",
-    "rowOverdue": "{amount} owed · {count, plural, one {# month} other {# months}} behind"
+    "rowOverdue": "{overdue} overdue ({count, plural, one {# month} other {# months}})",
+    "rowOverdueAndDue": "{overdue} overdue ({count, plural, one {# month} other {# months}}) + {due} due this month"
   },
   "BalanceCard": {
     "title": "Building fund",
-    "asOf": "As of today"
+    "asOf": "As of today",
+    "details": "See where the money goes"
   },
   "Money": {
     "title": "Your payments",
@@ -148,7 +150,6 @@
     "title": "Building fund",
     "lead": "What the building has, what came in and where it went.",
     "nowTitle": "In the fund today",
-    "asOf": "As of today",
     "opening": "Opening balance",
     "payments": "Payments in",
     "adjustments": "Adjustments",
@@ -177,7 +178,9 @@
     "receiptLabel": "Receipt for {description}, {date}",
     "noReceipt": "No receipt",
     "noExpensesTitle": "No expenses in {year}",
-    "noExpensesBody": "When the committee records an expense, it shows up here with its receipt."
+    "noExpensesBody": "When the committee records an expense, it shows up here with its receipt.",
+    "yearFailedTitle": "The year’s figures",
+    "yearFailed": "We couldn’t load this year’s figures. The fund above is up to date; try again in a moment."
   },
   "More": {
     "title": "More",
@@ -373,7 +376,7 @@
     "amount": "Monthly fee in shekels",
     "amountHint": "For example 350 or 412.50",
     "effectiveFrom": "Starting from",
-    "effectiveFromHint": "A fee already set from that month is replaced. Without a month picker, type it as YYYY-MM, for example 2027-01.",
+    "effectiveFromHint": "A fee already set from that month is replaced.",
     "submit": "Save fee",
     "saving": "Saving…",
     "cancel": "Cancel",
@@ -412,7 +415,8 @@
     "note": "Note: {note}",
     "voided": "Voided",
     "voidedBy": "Voided by {name} on {date}: {reason}",
-    "limited": "The latest {count} payments."
+    "limited": "The latest {count} payments.",
+    "showAll": "Show all ({count})"
   },
   "PaymentForm": {
     "open": "Record a payment",
@@ -423,8 +427,9 @@
     "monthsHint": "Choosing months fills in what they owe.",
     "overdue": "Overdue",
     "due": "Due",
-    "upcoming": "Ahead",
+    "upcoming": "Upcoming",
     "owed": "{amount} owed",
+    "fee": "Fee {amount}",
     "left": "{amount} left of {due}",
     "nothingOpen": "Nothing is left to pay, up to and including {month}.",
     "amount": "Amount in shekels",
@@ -509,6 +514,8 @@
     "descriptionHint": "For example: monthly stairwell cleaning.",
     "receipt": "Receipt (optional)",
     "receiptHint": "A photo or scan: JPEG, PNG, WebP or PDF, up to 4 MB.",
+    "chooseFile": "Choose a file",
+    "noFile": "No file chosen",
     "receiptAgain": "Choose {name} again: a file isn’t kept after an error.",
     "receiptTooLarge": "That file is over 4 MB. Choose a smaller photo or scan.",
     "submit": "Add expense",
@@ -572,14 +579,15 @@
     "paid": "Paid",
     "due": "Due",
     "overdue": "Overdue",
-    "upcoming": "Ahead",
+    "upcoming": "Upcoming",
     "notBilled": "Not billed",
     "noFee": "No fee",
     "left": "{amount} left",
     "close": "Close",
     "closeLabel": "Close apartment {number}",
     "noApartmentsTitle": "No apartments yet",
-    "noApartmentsBody": "Once the building’s apartments are added, their payments show here."
+    "noApartmentsBody": "Once the building’s apartments are added, their payments show here.",
+    "legendLabel": "Key"
   },
   "AdminApartments": {
     "title": "Apartments",
@@ -618,7 +626,7 @@
     "floor": "Floor",
     "floorHint": "0 is the ground floor; below it, -1 and down.",
     "billingStartMonth": "Billing starts",
-    "billingStartHint": "Leave it empty to use the building’s month. Without a month picker, type it as YYYY-MM, for example 2026-01.",
+    "billingStartHint": "Leave it empty to use the building’s month.",
     "add": "Add apartment",
     "adding": "Adding…",
     "save": "Save",

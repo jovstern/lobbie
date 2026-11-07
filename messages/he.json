@@ -6,7 +6,8 @@
   "Common": {
     "backHome": "חזרה לדף הבית",
     "saved": "נשמר",
-    "dialogLoadFailed": "החלון לא נפתח. בדקו את החיבור ונסו שוב."
+    "dialogLoadFailed": "החלון לא נפתח. בדקו את החיבור ונסו שוב.",
+    "monthFormat": "כתבו שנה וחודש, למשל {example}"
   },
   "NotFound": {
     "title": "הדף לא נמצא",
@@ -95,7 +96,6 @@
     "dueFor": "לתשלום עבור {month}",
     "partialFor": "נותר לשלם עבור {month}",
     "totalOwed": "סך החוב",
-    "monthsBehind": "{count, plural, one {חודש} two {חודשיים} other {# חודשים}} ללא תשלום",
     "noFeeBody": "הוועד לא קבע דמי ועד ל{month}, אז אין מה לשלם.",
     "notBilledTitle": "החיוב עוד לא התחיל",
     "notBilledBody": "כשהוועד יתחיל לגבות דמי ועד, תראו כאן אם שילמתם.",
@@ -104,11 +104,13 @@
     "apartment": "דירה {number}",
     "rowPaid": "שולם עבור {month}",
     "rowDue": "{amount} לתשלום",
-    "rowOverdue": "חוב של {amount} · {count, plural, one {חודש} two {חודשיים} other {# חודשים}} ללא תשלום"
+    "rowOverdue": "{overdue} בפיגור ({count, plural, one {חודש אחד} two {חודשיים} other {# חודשים}})",
+    "rowOverdueAndDue": "{overdue} בפיגור ({count, plural, one {חודש אחד} two {חודשיים} other {# חודשים}}) + {due} לתשלום החודש"
   },
   "BalanceCard": {
     "title": "קופת הבניין",
-    "asOf": "נכון להיום"
+    "asOf": "נכון להיום",
+    "details": "לאן הכסף הולך"
   },
   "Money": {
     "title": "התשלומים שלכם",
@@ -148,7 +150,6 @@
     "title": "קופת הבניין",
     "lead": "כמה כסף יש בקופה, מה נכנס אליה ולאן הוא הלך.",
     "nowTitle": "בקופה היום",
-    "asOf": "נכון להיום",
     "opening": "יתרת פתיחה",
     "payments": "תשלומים שנכנסו",
     "adjustments": "תיקוני יתרה",
@@ -177,7 +178,9 @@
     "receiptLabel": "קבלה עבור {description}, {date}",
     "noReceipt": "אין קבלה",
     "noExpensesTitle": "אין הוצאות ב־{year}",
-    "noExpensesBody": "כשהוועד ירשום הוצאה, היא תופיע כאן עם הקבלה שלה."
+    "noExpensesBody": "כשהוועד ירשום הוצאה, היא תופיע כאן עם הקבלה שלה.",
+    "yearFailedTitle": "נתוני השנה",
+    "yearFailed": "לא הצלחנו לטעון את נתוני השנה. הקופה למעלה מעודכנת; נסו שוב בעוד רגע."
   },
   "More": {
     "title": "עוד",
@@ -373,7 +376,7 @@
     "amount": "סכום חודשי בשקלים",
     "amountHint": "למשל 350 או 412.50",
     "effectiveFrom": "החל מ־",
-    "effectiveFromHint": "סכום שכבר נקבע מאותו חודש יוחלף. אם אין בוחר חודשים, כתבו שנה וחודש, למשל 2027-01",
+    "effectiveFromHint": "סכום שכבר נקבע מאותו חודש יוחלף.",
     "submit": "שמירת הסכום",
     "saving": "שומרים…",
     "cancel": "ביטול",
@@ -412,7 +415,8 @@
     "note": "הערה: {note}",
     "voided": "בוטל",
     "voidedBy": "בוטל על ידי {name} ב־{date}: {reason}",
-    "limited": "{count} התשלומים האחרונים."
+    "limited": "{count} התשלומים האחרונים.",
+    "showAll": "הצגת הכול ({count})"
   },
   "PaymentForm": {
     "open": "רישום תשלום",
@@ -423,8 +427,9 @@
     "monthsHint": "בחירת החודשים ממלאת את הסכום שנותר לשלם עליהם.",
     "overdue": "בפיגור",
     "due": "לתשלום",
-    "upcoming": "מראש",
+    "upcoming": "בהמשך",
     "owed": "{amount} לתשלום",
+    "fee": "דמי ועד {amount}",
     "left": "נותרו {amount} מתוך {due}",
     "nothingOpen": "אין מה לשלם עד {month}, כולל.",
     "amount": "סכום בשקלים",
@@ -509,6 +514,8 @@
     "descriptionHint": "למשל: ניקיון חדר מדרגות חודשי.",
     "receipt": "קבלה (לא חובה)",
     "receiptHint": "צילום או סריקה בגודל של עד 4 מגה־בייט, בפורמט JPEG או PNG או WebP או PDF",
+    "chooseFile": "בחירת קובץ",
+    "noFile": "לא נבחר קובץ",
     "receiptAgain": "צריך לבחור שוב את {name}: קובץ לא נשמר אחרי שגיאה.",
     "receiptTooLarge": "הקובץ גדול מ־4 מגה־בייט. צריך לבחור צילום או סריקה קטנים יותר.",
     "submit": "הוספת הוצאה",
@@ -571,7 +578,7 @@
     "apartmentColumn": "דירה",
     "paid": "שולם",
     "due": "לתשלום",
-    "overdue": "באיחור",
+    "overdue": "בפיגור",
     "upcoming": "בהמשך",
     "notBilled": "לא חויב",
     "noFee": "אין דמי ועד",
@@ -579,7 +586,8 @@
     "close": "סגירה",
     "closeLabel": "סגירת דירה {number}",
     "noApartmentsTitle": "עדיין אין דירות",
-    "noApartmentsBody": "כשהדירות של הבניין יתווספו, התשלומים שלהן יופיעו כאן."
+    "noApartmentsBody": "כשהדירות של הבניין יתווספו, התשלומים שלהן יופיעו כאן.",
+    "legendLabel": "מקרא"
   },
   "AdminApartments": {
     "title": "דירות",
@@ -618,7 +626,7 @@
     "floor": "קומה",
     "floorHint": "0 היא קומת הקרקע. מתחתיה ‎-1 ומטה.",
     "billingStartMonth": "החיוב מתחיל ב־",
-    "billingStartHint": "השאירו ריק כדי להשתמש בחודש של הבניין. אם אין בוחר חודשים, כתבו שנה וחודש, למשל 2026-01",
+    "billingStartHint": "השאירו ריק כדי להשתמש בחודש של הבניין.",
     "add": "הוספת דירה",
     "adding": "מוסיפים…",
     "save": "שמירה",

@@ -14,10 +14,11 @@ type Props = {
 
 // Never colour alone: each mark has a word and an icon. Past fees have none.
 const marks = {
+  // Neutral: a fee in force is a fact, not good news.
   current: {
     icon: CheckCircleIcon,
     label: 'stateCurrent',
-    className: 'text-success border-success',
+    className: 'text-text border-text-muted',
   },
   upcoming: { icon: ClockIcon, label: 'stateUpcoming', className: 'text-text-muted border-border' },
 } as const

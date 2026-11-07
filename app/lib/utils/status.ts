@@ -9,7 +9,7 @@ import type {
 } from '@/app/lib/definitions'
 import { addMonths } from './dates'
 import { feeFor } from './fees'
-import { yearMonths } from './payments'
+import { overdueAgorot, yearMonths } from './payments'
 
 /** Everything needed to work out what one apartment owes. */
 export type ApartmentBilling = {
@@ -120,7 +120,9 @@ export function residentMonths(billing: ApartmentBilling): GridMonth[] {
  */
 export function apartmentStanding(summary: ApartmentSummary): ApartmentStanding {
   const { current, monthsBehind, totalOwedAgorot } = summary
-  if (monthsBehind > 0) return { kind: 'overdue', monthsBehind, totalOwedAgorot }
+  if (monthsBehind > 0) {
+    return { kind: 'overdue', monthsBehind, totalOwedAgorot, overdueAgorot: overdueAgorot(summary) }
+  }
   switch (current.kind) {
     case 'not-billed':
     case 'no-fee':

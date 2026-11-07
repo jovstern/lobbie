@@ -1,6 +1,6 @@
 'use client'
 
-import clsx from 'clsx'
+import { PaperClipIcon } from '@heroicons/react/20/solid'
 import { useLocale, useTranslations } from 'next-intl'
 import { useActionState, useEffect, useRef, useState } from 'react'
 import type { ExpenseFormState } from '@/app/lib/actions/expenses'
@@ -54,11 +54,18 @@ export default function ExpenseForm({ action, today, firstDay }: Props) {
   // A file over 4 MB is refused as soon as it is chosen: sent, it would exceed the request
   // limit before the server could say why.
   const [tooLarge, setTooLarge] = useState(false)
+  // The chosen file's name, shown in the picker's own words rather than the browser's.
+  const [fileName, setFileName] = useState<string | null>(null)
   const initialState: ExpenseFormState = {}
   const [state, formAction] = useActionState(
     async (previous: ExpenseFormState, formData: FormData) => {
       setTooLarge(false)
+      // No file chosen still sends an empty file part; without one, there is no receipt.
+      const receipt = formData.get('receipt')
+      if (receipt instanceof File && receipt.size === 0) formData.delete('receipt')
       const next = await action(previous, formData)
+      // The form empties after each attempt, the file with it.
+      setFileName(null)
       if (next.recorded) {
         const amount = formatAgorot(next.recorded.amountAgorot, locale)
         announce(t('recorded', { description: next.recorded.description, amount }))
@@ -150,9 +157,8 @@ export default function ExpenseForm({ action, today, firstDay }: Props) {
         required
       />
       <div className="flex flex-col gap-2 sm:col-span-2">
-        <label htmlFor="receipt" className="text-sm font-medium">
-          {t('receipt')}
-        </label>
+        {/* The input is the control (focus, keyboard, screen readers); the label draws it in
+            the page's language, as browsers draw "Choose file" in their own. */}
         <input
           id="receipt"
           name="receipt"
@@ -165,12 +171,26 @@ export default function ExpenseForm({ action, today, firstDay }: Props) {
             const over = file !== undefined && file.size > maxReceiptBytes
             setTooLarge(over)
             if (over) event.currentTarget.value = ''
+            setFileName(over ? null : (file?.name ?? null))
           }}
-          className={clsx(
-            'rounded-control border-text-muted bg-surface text-text hover:border-text aria-invalid:border-danger min-h-11 w-full border border-dashed px-3 py-2 text-base transition-[border-color]',
-            'file:rounded-control file:border-text-muted file:bg-surface-raised file:text-text file:me-3 file:min-h-9 file:cursor-pointer file:border file:px-3 file:font-medium',
-          )}
+          className="peer sr-only"
         />
+        <label htmlFor="receipt" className="order-first text-sm font-medium">
+          {t('receipt')}
+        </label>
+        <label
+          htmlFor="receipt"
+          aria-hidden
+          className="rounded-control border-text-muted bg-surface hover:border-text peer-focus-visible:outline-accent peer-aria-invalid:border-danger flex min-h-11 cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 border border-dashed px-3 py-2 transition-[border-color] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2"
+        >
+          <span className="rounded-control border-text-muted bg-surface-raised inline-flex min-h-9 items-center gap-1.5 border px-3 font-medium">
+            <PaperClipIcon className="size-4 shrink-0" />
+            {t('chooseFile')}
+          </span>
+          <span className={fileName ? 'min-w-0 break-all' : 'text-text-muted'}>
+            <bdi>{fileName ?? t('noFile')}</bdi>
+          </span>
+        </label>
         <p id="receipt-hint" className="text-text-muted text-sm">
           {t('receiptHint')}
         </p>

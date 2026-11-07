@@ -6,8 +6,9 @@ import { Dialog } from 'radix-ui'
 import { useRef } from 'react'
 import type { OpenMonth } from '@/app/lib/definitions'
 import { formatMonth } from '@/app/lib/utils/dates'
+import { formatAgorot } from '@/app/lib/utils/money'
 import type { LazyDialogProps } from '@/app/ui/admin/lazy-dialog'
-import PaymentForm, { type PaymentAction, type PaymentRecorded } from '@/app/ui/admin/payment-form'
+import PaymentForm, { type PaymentAction } from '@/app/ui/admin/payment-form'
 import { buttonClassName } from '@/app/ui/button-styles'
 
 type Props = LazyDialogProps & {
@@ -18,7 +19,8 @@ type Props = LazyDialogProps & {
   firstDay: string
   /** The last month a payment may go to, named when none is left to pay. */
   lastMonth: string
-  onRecorded: (recorded: PaymentRecorded) => void
+  /** With what was recorded, in words. */
+  onRecorded: (message: string) => void
 }
 
 /**
@@ -82,7 +84,15 @@ export default function PaymentDialogContent({
               months={months}
               today={today}
               firstDay={firstDay}
-              onRecorded={onRecorded}
+              onRecorded={(payment) =>
+                onRecorded(
+                  t('recorded', {
+                    amount: formatAgorot(payment.amountAgorot, locale),
+                    number: payment.apartmentNumber,
+                    count: payment.months.length,
+                  }),
+                )
+              }
               cancel={close}
             />
           ) : (

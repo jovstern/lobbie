@@ -67,15 +67,22 @@ const refusalMessage: Record<FileRefusal, 'receiptEmpty' | 'receiptTooLarge' | '
 }
 
 /**
- * The receipt sent with the form, checked by its bytes (spec §3): none when no file was
- * chosen (browsers then send an empty, nameless file). One over 4 MB is refused unread.
+ * The file sent as the receipt, or null when there is none. With no file chosen, browsers send
+ * an empty file part, not always nameless (it may arrive as "blob" or "undefined"): a file
+ * without bytes is no receipt, whatever its name.
+ */
+function receiptFile(value: FormDataEntryValue | null): File | null {
+  return value instanceof File && value.size > 0 ? value : null
+}
+
+/**
+ * The receipt sent with the form, checked by its bytes (spec §3); none when no file was chosen.
+ * One over 4 MB is refused unread.
  */
 async function readReceipt(
-  value: FormDataEntryValue | null,
+  value: File | null,
 ): Promise<{ ok: true; file: CheckedFile | null } | { ok: false; reason: FileRefusal }> {
-  if (!(value instanceof File) || (value.size === 0 && value.name === '')) {
-    return { ok: true, file: null }
-  }
+  if (value === null) return { ok: true, file: null }
   if (value.size > maxReceiptBytes) return { ok: false, reason: 'tooLarge' }
   return checkFile(new Uint8Array(await value.arrayBuffer()))
 }
@@ -107,13 +114,13 @@ export async function record(
   formData: FormData,
 ): Promise<ExpenseFormState> {
   const lang = resolveLocale(locale)
-  const receiptValue = formData.get('receipt')
+  const receiptValue = receiptFile(formData.get('receipt'))
   const values = {
     category: typed(formData, 'category'),
     amount: typed(formData, 'amount'),
     spentOn: typed(formData, 'spentOn'),
     description: typed(formData, 'description'),
-    receiptName: receiptValue instanceof File ? receiptValue.name : '',
+    receiptName: receiptValue?.name ?? '',
   }
 
   const authorization = await authorizeAction('committee', lang)

@@ -7,7 +7,6 @@ import Card from '@/app/ui/card'
 import StandingHero from '@/app/ui/home/standing-hero'
 import MonthList from '@/app/ui/money/month-list'
 import PaymentHistory from '@/app/ui/money/payment-history'
-import { moneyFont } from '@/app/ui/money-font'
 
 /**
  * One of the person's apartments (R16): how it stands now, the focal point; its months, each
@@ -25,10 +24,13 @@ export default async function ApartmentMoney({ apartmentId }: { apartmentId: str
   if (!status || !payments) notFound()
 
   return (
-    // Amounts: the font instance that preloads ₪'s file.
-    <div className={`${moneyFont.className} flex flex-col gap-4 lg:gap-6`}>
+    <div className="flex flex-col gap-4 lg:gap-6">
       <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
-        <Card titleId="money-standing-title" title={t('apartment', { number: status.number })}>
+        <Card
+          titleId="money-standing-title"
+          title={t('apartment', { number: status.number })}
+          heading="section"
+        >
           <StandingHero
             standing={status.standing}
             monthName={formatMonth(status.currentMonth, locale)}

@@ -8,7 +8,6 @@ import AdjustmentDialog from '@/app/ui/admin/adjustment-dialog'
 import AdjustmentList from '@/app/ui/admin/adjustment-list'
 import BuildingForm from '@/app/ui/admin/building-form'
 import Card from '@/app/ui/card'
-import { moneyFont } from '@/app/ui/money-font'
 
 /** `/admin/building` for an admin: the details form beside the fund and its corrections. */
 export default async function BuildingSettings() {
@@ -39,27 +38,24 @@ export default async function BuildingSettings() {
               }}
             />
           </Card>
-          {/* Amounts: the font instance that preloads ₪'s file. */}
-          <div className={moneyFont.className}>
-            <Card titleId="building-fund-title" title={t('fundTitle')}>
-              <dl className="flex flex-col gap-1">
-                <dt className="text-sm font-medium">{t('openingBalance')}</dt>
-                <dd className="text-xl font-semibold tabular-nums">
-                  {formatAgorot(details.openingBalanceAgorot, locale)}
-                </dd>
-                <dd className="text-text-muted text-sm">{t('openingBalanceHint')}</dd>
-              </dl>
-              <section aria-labelledby="adjustments-title" className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 id="adjustments-title" className="text-lg font-semibold">
-                    {t('adjustmentsTitle')}
-                  </h3>
-                  <AdjustmentDialog action={addAdjustment.bind(null, locale)} />
-                </div>
-                <AdjustmentList adjustments={rows} timeZone={timeZone} />
-              </section>
-            </Card>
-          </div>
+          <Card titleId="building-fund-title" title={t('fundTitle')}>
+            <dl className="flex flex-col gap-1">
+              <dt className="text-sm font-medium">{t('openingBalance')}</dt>
+              <dd className="text-xl font-semibold tabular-nums">
+                {formatAgorot(details.openingBalanceAgorot, locale)}
+              </dd>
+              <dd className="text-text-muted text-sm">{t('openingBalanceHint')}</dd>
+            </dl>
+            <section aria-labelledby="adjustments-title" className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 id="adjustments-title" className="text-lg font-semibold">
+                  {t('adjustmentsTitle')}
+                </h3>
+                <AdjustmentDialog action={addAdjustment.bind(null, locale)} />
+              </div>
+              <AdjustmentList adjustments={rows} timeZone={timeZone} />
+            </section>
+          </Card>
         </div>
       }
     </div>

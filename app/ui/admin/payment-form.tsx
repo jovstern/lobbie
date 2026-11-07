@@ -130,7 +130,10 @@ export default function PaymentForm({
                           amount: formatAgorot(open.remainingAgorot, locale),
                           due: formatAgorot(open.dueAgorot, locale),
                         })
-                      : t('owed', { amount: formatAgorot(open.remainingAgorot, locale) })}
+                      : // A month ahead is not owed yet: it shows its fee.
+                        t(open.kind === 'upcoming' ? 'fee' : 'owed', {
+                          amount: formatAgorot(open.remainingAgorot, locale),
+                        })}
                   </span>
                 </span>
               </label>

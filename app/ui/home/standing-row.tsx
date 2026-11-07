@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl'
 import type { ApartmentStanding } from '@/app/lib/definitions'
 import { formatAgorot } from '@/app/lib/utils/money'
+import { overdueText } from '@/app/ui/home/overdue-text'
 import StatusChip from '@/app/ui/home/status-chip'
 
 type Props = { number: string; standing: ApartmentStanding; monthName: string }
@@ -17,10 +18,7 @@ export default function StandingRow({ number, standing, monthName }: Props) {
       case 'due':
         return t('rowDue', { amount: formatAgorot(standing.remainingAgorot, locale) })
       case 'overdue':
-        return t('rowOverdue', {
-          amount: formatAgorot(standing.totalOwedAgorot, locale),
-          count: standing.monthsBehind,
-        })
+        return overdueText(standing, t, locale)
       // The chip says it all.
       case 'no-fee':
       case 'not-billed':

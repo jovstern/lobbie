@@ -186,15 +186,21 @@ export function ArrearsSkeleton() {
   )
 }
 
-/**
- * `/admin/payments`: its header, who is behind, then the grid's title and rows (a table on
- * wide screens, cards below).
- */
+/** `/admin/payments`: its header, then the board below it. */
 export function PaymentsSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-6">
       <AdminHeaderSkeleton />
-      <div className="grid items-start gap-4 xl:grid-cols-2 xl:gap-6">
+      <PaymentsBoardSkeleton />
+    </div>
+  )
+}
+
+/** `/admin/payments` below its header: who is behind, then the grid's title and its rows. */
+export function PaymentsBoardSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2 xl:gap-6">
         <ArrearsSkeleton />
       </div>
       <div className="rounded-card border-border bg-surface-raised shadow-card border">
@@ -202,15 +208,14 @@ export function PaymentsSkeleton() {
           <div className={`${block} h-7 w-40`} />
           <div className={`${block} h-6 w-72 max-w-full`} />
         </div>
-        {[0, 1, 2, 3].map((row) => (
-          <div key={row} className="border-border flex flex-col gap-3 border-t p-4 sm:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className={`${block} h-6 w-28`} />
-              <div className="rounded-chip bg-border h-8 w-20 animate-pulse lg:hidden" />
+        <div className="border-border divide-border flex flex-col divide-y border-t">
+          {[0, 1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="flex items-center gap-4 px-4 py-2">
+              <div className={`${block} h-7 w-8 shrink-0`} />
+              <div className={`${block} h-7 w-full`} />
             </div>
-            <div className={`${block} h-14 w-full`} />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -749,7 +754,6 @@ export function BalanceSkeleton() {
     <div aria-hidden className="flex flex-col gap-6 lg:gap-8">
       <CardSkeleton minHeight="min-h-56">
         <div className={`${block} h-8 w-40`} />
-        <div className={`${block} h-6 w-24`} />
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 pt-4 sm:grid-cols-4">
           {[0, 1, 2, 3].map((part) => (
             <div key={part} className="flex flex-col gap-1">

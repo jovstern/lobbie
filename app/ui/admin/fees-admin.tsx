@@ -13,7 +13,6 @@ import FeeDialog from '@/app/ui/admin/fee-dialog'
 import FeeHistory from '@/app/ui/admin/fee-history'
 import FollowBuildingDialog from '@/app/ui/admin/follow-building-dialog'
 import { cardClassName } from '@/app/ui/card'
-import { moneyFont } from '@/app/ui/money-font'
 import { Link } from '@/i18n/navigation'
 
 /** The page's heading, which takes focus when the button a dialog opened from is gone. */
@@ -62,8 +61,7 @@ export default async function FeesAdmin() {
       headingId={headingId}
       header={<AdminPageHeader title={t('title')} lead={t('lead')} headingId={headingId} />}
     >
-      {/* Amounts: the font instance that preloads ₪'s file. */}
-      <div className={`${moneyFont.className} grid items-start gap-4 lg:grid-cols-2 lg:gap-6`}>
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
         <section aria-labelledby="building-fee-title" className={cardClassName}>
           <h2 id="building-fee-title" className="text-lg font-semibold">
             {t('buildingTitle')}
@@ -98,7 +96,8 @@ export default async function FeesAdmin() {
             minMonth={building.length === 0 ? billingStartMonth : firstMonth}
             variant={building.length === 0 ? 'primary' : 'secondary'}
           />
-          {building.length > 0 ? (
+          {/* A history of one fee would only repeat the fee above. */}
+          {building.length > 1 ? (
             <section aria-labelledby="building-history-title" className="flex flex-col gap-3">
               <h3 id="building-history-title" className="text-base font-semibold">
                 {t('historyTitle')}

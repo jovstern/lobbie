@@ -42,6 +42,12 @@ describe('ledgerYears', () => {
       { first: 2023, last: 2026 },
     ],
     [
+      'an expense before billing starts, which was moved later',
+      { billingStartMonth: '2026-05', earliestSpentOn: '2025-08-10' },
+      2026,
+      { first: 2025, last: 2026 },
+    ],
+    [
       'billing that starts next year: this year still shows',
       { billingStartMonth: '2027-01' },
       2026,
@@ -49,7 +55,10 @@ describe('ledgerYears', () => {
     ],
   ])('%s', (_, dates, currentYear, range) => {
     expect(
-      ledgerYears({ earliestPaidOn: null, earliestAdjustedOn: null, ...dates }, currentYear),
+      ledgerYears(
+        { earliestPaidOn: null, earliestSpentOn: null, earliestAdjustedOn: null, ...dates },
+        currentYear,
+      ),
     ).toEqual(range)
   })
 })

@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import LinkPending from '@/app/ui/nav/link-pending'
 import { Link, usePathname } from '@/i18n/navigation'
 
@@ -13,9 +13,17 @@ type Props = {
 export default function AdminNavLink({ href, children }: Props) {
   const pathname = usePathname()
   const isCurrent = pathname === href || (href !== '/admin' && pathname.startsWith(`${href}/`))
+  const link = useRef<HTMLAnchorElement>(null)
+
+  // On a phone the tabs scroll sideways: the current one is scrolled into view, so a section
+  // past the edge is not hidden behind the fade. Scrolling is the DOM's, outside React.
+  useEffect(() => {
+    if (isCurrent) link.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [isCurrent])
 
   return (
     <Link
+      ref={link}
       href={href}
       aria-current={isCurrent ? 'page' : undefined}
       className="text-text-muted hover:text-text aria-[current=page]:border-accent aria-[current=page]:text-accent relative -mb-px flex min-h-11 items-center border-b-2 border-transparent px-1 font-medium whitespace-nowrap transition-[border-color,color]"

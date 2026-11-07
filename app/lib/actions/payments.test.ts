@@ -195,6 +195,36 @@ afterEach(async () => {
 })
 
 describe('record', () => {
+  // Every statement in the transaction is a round trip to the database (two, unprepared),
+  // while the apartment stays locked: the lock, one read of all it owes, and the insert.
+  it('records in three statements inside its transaction: the lock, one read, the insert', async () => {
+    await signInAs('committee1@example.com')
+    const sent: string[] = []
+    const transaction = testDb.client.transaction.bind(testDb.client)
+    const spy = vi.spyOn(testDb.client, 'transaction').mockImplementation((callback) =>
+      transaction((tx) =>
+        callback({
+          ...tx,
+          query: (query, params, options) => {
+            sent.push(query)
+            return tx.query(query, params, options)
+          },
+        }),
+      ),
+    )
+
+    try {
+      const state = await record('en', idOf('4'), noState, form(valid))
+
+      expect(state.recorded).toBeDefined()
+      expect(sent).toHaveLength(3)
+      expect(sent[0]).toMatch(/for no key update/i)
+      expect(sent[2]).toMatch(/^insert into "payments"/i)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   it('refuses a resident and keeps what was typed', async () => {
     await signInAs('resident1@example.com')
 
@@ -228,13 +258,13 @@ describe('record', () => {
       )
       // The building's balance is cached under its tag.
       expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
       // The committee's overview and grid show who owes what.
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin', 'page')
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/payments', 'page')
       // The residents' Money page shows the apartment's months and history.
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money', 'page')
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/(overview)', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/balance', 'page')
     },
   )
 
@@ -344,8 +374,8 @@ describe('record', () => {
     const state = await record('en', idOf('4'), noState, form(october))
 
     expect(state.errors?.months).toEqual([errors('paid', { month: formatMonth('2026-10', 'en') })])
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/payments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
   })
 
   it('refreshes the pages when the amount is more than is now left', async () => {
@@ -363,7 +393,7 @@ describe('record', () => {
     expect(state.errors?.amount).toEqual([
       errors('tooMuch', { amount: formatAgorot(25_000, 'en') }),
     ])
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/payments', 'page')
     expect(updateTag).toHaveBeenCalledTimes(1)
   })
 
@@ -529,9 +559,9 @@ describe('voidPayment', () => {
       kind: 'overdue',
     })
     expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money/balance', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/payments', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/(overview)', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/balance', 'page')
   })
 
   it('asks for a reason', async () => {

@@ -1,6 +1,5 @@
 'use client'
 
-import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import { createContext, use, useState, type ReactNode } from 'react'
 
 type Announcer = {
@@ -19,6 +18,11 @@ export function useAnnouncer(): Announcer {
   return announcer
 }
 
+/** The nearest announcer, or null outside one (a component that can also say things itself). */
+export function useMaybeAnnouncer(): Announcer | null {
+  return use(AnnouncerContext)
+}
+
 type Props = {
   /** The page's `h1`, which takes focus when the button that had it is gone. */
   headingId: string
@@ -32,7 +36,8 @@ type Props = {
  * One status region for an admin page's dialogs (the apartments pages, people). Adding or
  * removing a row changes the list, so the button a dialog opened from may be gone when it
  * closes; the announcement and the focus then need a place that stays. Scoped to each page,
- * not the app.
+ * not the app; a part of the page (an apartment's payments, the expenses list) may have its
+ * own inside, so what happened is said, and focus lands, next to where it happened.
  */
 export default function AdminAnnouncer({ headingId, header, children }: Props) {
   // Keyed by a count, so the same message twice is announced twice.
@@ -53,7 +58,8 @@ export default function AdminAnnouncer({ headingId, header, children }: Props) {
           <div role="status" aria-live="polite" aria-atomic="true">
             {announcement ? (
               <p key={announcement.id} className="text-success flex items-center gap-2 font-medium">
-                <CheckCircleIcon aria-hidden className="size-5 shrink-0" />
+                {/* The paid month's mark, from CSS: no icon module in every admin page's bundle. */}
+                <span aria-hidden className="status-mark shrink-0" data-status="paid" />
                 {announcement.message}
               </p>
             ) : null}

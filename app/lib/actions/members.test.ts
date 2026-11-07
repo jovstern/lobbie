@@ -239,7 +239,7 @@ describe('setRole', () => {
       role: 'committee',
       committeeTitle: 'Treasurer',
     })
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/people', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/people', 'page')
     // No cached read holds roles.
     expect(updateTag).not.toHaveBeenCalled()
     expect(redirect).not.toHaveBeenCalled()
@@ -458,8 +458,8 @@ describe('removeFromBuilding', () => {
       .from(apartments)
       .where(inArray(apartments.id, [apartment.id, second.id]))
     expect(left).toHaveLength(2)
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/people', 'page')
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/people', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
     expect(redirect).not.toHaveBeenCalled()
   })
 

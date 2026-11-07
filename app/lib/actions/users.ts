@@ -59,7 +59,7 @@ function committeeContactSchema(t: Translate<'ProfileErrors'>) {
 }
 
 function refreshProfile() {
-  revalidatePath('/[locale]/profile', 'page')
+  revalidatePath('/[locale]/(app)/profile', 'page')
 }
 
 /** The member's own membership row, in their own building. */

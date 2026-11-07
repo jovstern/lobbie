@@ -5,6 +5,7 @@ import { expect, notFoundStatus, test } from './fixtures'
 import { useSessionOf } from './helpers/auth'
 import { messages, translator } from './helpers/copy'
 import { deletePaymentsOf, setBillingStart } from './helpers/db'
+import { refreshFundCache } from './helpers/fund'
 
 // The flows are in Hebrew, the app's default language; the a11y spec covers English too.
 const text = messages.he
@@ -21,24 +22,14 @@ const currentYear = Number(currentMonth.slice(0, 4))
 // A role below the page's gets its 404; Chrome may report the document's status as an error.
 test.use({ expectedConsoleErrors: [{ text: notFoundStatus, url: /\/admin\/payments$/ }] })
 
-/**
- * One month of one apartment on the grid: a table cell on desktop, a month of the apartment's
- * card on a phone (the table is hidden there, and the cards on desktop).
- */
-function monthOnGrid(page: Page, isPhone: boolean, number: string, month: string) {
+/** One month of one apartment on the grid: a table cell, at every width. */
+function monthOnGrid(page: Page, number: string, month: string) {
   const grid = page.getByRole('region', {
     name: t('AdminPayments.gridTitle', { year: month.slice(0, 4) }),
     exact: true,
   })
   const apartment = t('AdminPayments.apartment', { number })
   const index = Number(month.slice(5)) - 1
-  if (isPhone) {
-    return grid
-      .getByRole('listitem')
-      .filter({ has: page.getByRole('heading', { name: apartment, exact: true }) })
-      .getByRole('listitem')
-      .nth(index)
-  }
   return grid
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader', { name: apartment, exact: true }) })
@@ -48,11 +39,10 @@ function monthOnGrid(page: Page, isPhone: boolean, number: string, month: string
 
 test('the committee records a payment from the grid (overdue → paid) and voids it (overdue again)', async ({
   page,
-}, testInfo) => {
-  const isPhone = testInfo.project.name === 'phone'
+}) => {
   const number = 'e2e-2'
   const apartment = t('AdminPayments.apartment', { number })
-  const cell = () => monthOnGrid(page, isPhone, number, lastMonth)
+  const cell = () => monthOnGrid(page, number, lastMonth)
   // Billed from last month, which it has not paid: it is behind.
   await setBillingStart(number, lastMonth)
   await useSessionOf(page, committee)
@@ -66,7 +56,13 @@ test('the committee records a payment from the grid (overdue → paid) and voids
     })
     await expect(
       overviewArrears.getByRole('listitem').filter({ hasText: apartment }),
-    ).toContainText(t('StatusCard.rowOverdue', { amount: formatAgorot(2 * fee, 'he'), count: 1 }))
+    ).toContainText(
+      t('StatusCard.rowOverdueAndDue', {
+        overdue: formatAgorot(fee, 'he'),
+        count: 1,
+        due: formatAgorot(fee, 'he'),
+      }),
+    )
     await page
       .getByRole('main')
       .getByRole('link', { name: text.Admin.recordPayment, exact: true })
@@ -132,21 +128,28 @@ test('the committee records a payment from the grid (overdue → paid) and voids
     await confirm.getByRole('button', { name: text.VoidPayment.confirm, exact: true }).click()
 
     await expect(confirm).toBeHidden()
-    // Its button is gone: focus moves to the page's heading, and the page says what happened.
+    // Its button is gone: focus moves to the payments' heading, and the apartment's payments
+    // say what happened, where a recording is said too.
     await expect(
-      page.getByRole('heading', { level: 1, name: text.AdminPayments.title, exact: true }),
+      opened.getByRole('heading', {
+        level: 3,
+        name: text.ApartmentPayments.historyTitle,
+        exact: true,
+      }),
     ).toBeFocused()
-    await expect(page.getByRole('main').getByRole('status').first()).toHaveText(
-      t('VoidPayment.done', words),
-    )
+    await expect(opened.getByRole('status')).toHaveText(t('VoidPayment.done', words))
     await expect(opened.getByText(text.StatusCard.overdue, { exact: true })).toBeVisible()
     await expect(cell()).toContainText(text.AdminPayments.overdue)
     await expect(arrears.getByRole('listitem').filter({ hasText: apartment })).toContainText(
-      t('StatusCard.rowOverdue', { amount: formatAgorot(fee, 'he'), count: 1 }),
+      t('StatusCard.rowOverdue', { overdue: formatAgorot(fee, 'he'), count: 1 }),
     )
   } finally {
     await deletePaymentsOf(number)
     await setBillingStart(number, currentMonth)
+    // Deleted behind the app's back: the cached fund still counts the payment. Only the admin
+    // saves the building, the write that refreshes it.
+    await useSessionOf(page, 'admin@example.com')
+    await refreshFundCache(page)
   }
 })
 

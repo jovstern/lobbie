@@ -167,7 +167,7 @@ describe('updateProfile', () => {
       savedAt: expect.any(Number),
     })
     expect(await rowsOf(me)).toMatchObject({ name: 'Dana Zur', phone: '+972545550301' })
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/profile', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/profile', 'page')
     await expectBystandersUntouched()
   })
 
@@ -227,7 +227,7 @@ describe('setShowContact', () => {
       message: null,
     })
     expect(await rowsOf(me)).toMatchObject({ showContact: false })
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/profile', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/profile', 'page')
     await expectBystandersUntouched()
   })
 
@@ -295,7 +295,7 @@ describe('updateCommitteeContact', () => {
       committeePhone: '+97235550101',
       committeeEmail: 'vaad@test.example',
     })
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/profile', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/profile', 'page')
     await expectBystandersUntouched()
   })
 

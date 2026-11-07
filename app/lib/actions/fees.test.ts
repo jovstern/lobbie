@@ -179,12 +179,12 @@ describe('setDefault', () => {
       ])
       // The building's billing (fee rates) is cached under its tag.
       expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/fees', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/fees', 'page')
       // The payments grid owes each month the fee in force.
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/payments', 'page')
       // So do Home's status card and the residents' Money page.
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/(home)', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/money/(overview)', 'page')
     },
   )
 
@@ -352,7 +352,7 @@ describe('setOverride', () => {
     ])
     // The building default of the same month is another rate: both stand.
     expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
-    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/apartments/[id]', 'page')
   })
 
   it('takes the apartment from the form when none is bound', async () => {
@@ -524,7 +524,7 @@ describe('followBuilding', () => {
         { amountAgorot: null, effectiveFrom: '2026-12', createdBy: person.id },
       ])
       expect(updateTag).toHaveBeenCalledWith(`building:${buildingId}`)
-      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/fees', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/(app)/admin/fees', 'page')
     },
   )
 

@@ -95,7 +95,14 @@ export type ApartmentStanding =
   | { kind: 'no-fee' }
   | { kind: 'paid' }
   | { kind: 'due'; remainingAgorot: number; partial: boolean }
-  | { kind: 'overdue'; monthsBehind: number; totalOwedAgorot: number }
+  | {
+      kind: 'overdue'
+      monthsBehind: number
+      /** What remains of the overdue months and the current one. */
+      totalOwedAgorot: number
+      /** What remains of the overdue months alone; the rest of the total is due this month. */
+      overdueAgorot: number
+    }
 
 export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number]
 
@@ -233,6 +240,8 @@ export type ArrearsEntry = {
   monthsBehind: number
   /** What remains of those months and the current one. */
   totalOwedAgorot: number
+  /** What remains of the overdue months alone; the rest of the total is due this month. */
+  overdueAgorot: number
 }
 
 /** Who is behind, the largest debt first, and what they owe together. */

@@ -29,25 +29,22 @@ const yearOf = (date: string) => Number(date.slice(0, 4))
 
 /**
  * The years `/money/balance` offers: from the earliest year the fund moved (billing start, or an
- * earlier payment paid ahead or correction) to this year. Nothing is dated in the future.
+ * earlier payment paid ahead, expense or correction) to this year. Nothing is dated in the
+ * future. (An expense predates billing start only once billing start was moved later.)
  */
 export function ledgerYears(
-  {
-    billingStartMonth,
-    earliestPaidOn,
-    earliestAdjustedOn,
-  }: {
+  dates: {
     billingStartMonth: string
     /** `YYYY-MM-DD`, of the earliest payment that counts; null without one. */
     earliestPaidOn: string | null
+    /** `YYYY-MM-DD`, of the earliest expense that counts; null without one. */
+    earliestSpentOn: string | null
     /** `YYYY-MM-DD` in the building's time zone, of the earliest correction; null without one. */
     earliestAdjustedOn: string | null
   },
   currentYear: number,
 ): YearRange {
-  const starts = [billingStartMonth, earliestPaidOn, earliestAdjustedOn].flatMap((date) =>
-    date === null ? [] : [yearOf(date)],
-  )
+  const starts = Object.values(dates).flatMap((date) => (date === null ? [] : [yearOf(date)]))
   return { first: Math.min(...starts, currentYear), last: currentYear }
 }
 
