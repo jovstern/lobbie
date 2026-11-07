@@ -55,7 +55,7 @@ export default function BuildingExpenses({ year, expenses }: Props) {
 
   return (
     <section aria-labelledby="ledger-expenses-title" className={cardClassName}>
-      <h3 id="ledger-expenses-title" className="text-text-muted font-medium">
+      <h3 id="ledger-expenses-title" className="text-lg font-semibold">
         {t('expensesTitle', { year: String(year) })}
       </h3>
       {expenses.length === 0 ? (
@@ -72,11 +72,11 @@ export default function BuildingExpenses({ year, expenses }: Props) {
           >
             {expenses.map((expense) => (
               <li key={expense.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <span className="font-medium break-words">
+                <div className="grid grid-cols-[1fr_auto] items-baseline gap-x-4 gap-y-1">
+                  <span className="min-w-0 font-medium break-words">
                     <bdi>{expense.description}</bdi>
                   </span>
-                  <span className="font-semibold tabular-nums">
+                  <span className="font-semibold whitespace-nowrap tabular-nums">
                     {formatAgorot(expense.amountAgorot, locale)}
                   </span>
                 </div>

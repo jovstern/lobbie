@@ -3,6 +3,7 @@ import type { ApartmentStanding } from '@/app/lib/definitions'
 import { formatAgorot } from '@/app/lib/utils/money'
 import { overdueText } from '@/app/ui/home/overdue-text'
 import StatusChip from '@/app/ui/home/status-chip'
+import type { ReactNode } from 'react'
 
 type Props = { number: string; standing: ApartmentStanding; monthName: string }
 
@@ -11,7 +12,7 @@ export default function StandingRow({ number, standing, monthName }: Props) {
   const t = useTranslations('StatusCard')
   const locale = useLocale()
 
-  function detail(): string | null {
+  function detail(): ReactNode {
     switch (standing.kind) {
       case 'paid':
         return t('rowPaid', { month: monthName })

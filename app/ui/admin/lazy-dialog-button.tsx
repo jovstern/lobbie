@@ -7,7 +7,7 @@ import { ConfirmDialogContent, preloadConfirmDialog } from '@/app/ui/admin/confi
 import type { FeeAction } from '@/app/ui/admin/fee-form'
 import { LazyDialogSlot, lazyWithRetry, useLazyDialog } from '@/app/ui/admin/lazy-dialog'
 import type { PaymentAction } from '@/app/ui/admin/payment-form'
-import type { VoidAction, VoidLabels } from '@/app/ui/admin/void-dialog-content'
+import type { VoidAction, VoidSubject } from '@/app/ui/admin/void-dialog-content'
 import { buttonClassName, type ButtonVariant } from '@/app/ui/button-styles'
 
 // One client module for the money dialogs' buttons (record a payment, set a fee, void, follow
@@ -43,15 +43,7 @@ export type MoneyDialog =
       defaultMonth: string
       minMonth?: string
     }
-  | {
-      kind: 'void'
-      action: VoidAction
-      title: string
-      description: string
-      labels: VoidLabels
-      /** What the page says once it is voided. */
-      done: string
-    }
+  | { kind: 'void'; action: VoidAction; subject: VoidSubject }
   | {
       kind: 'confirm'
       action: () => Promise<{ message?: string | null; done?: boolean }>
@@ -80,7 +72,7 @@ type Props = {
   variant?: ButtonVariant
   /**
    * Where what was done is said: beside the button, or in the status region of the nearest
-   * `AdminAnnouncer` (the page's, or the apartment panel's).
+   * `AdminAnnouncer` (the page's, or the apartment panel's); beside it when there is none.
    */
   status?: 'beside' | 'announcer'
   /**
@@ -121,11 +113,14 @@ export default function LazyDialogButton({
     },
   })
 
+  // Said beside the button when asked, or when there is no announcer above to say it.
+  const beside = status === 'beside' || !announcer
+
   function finish(message: string) {
     done.current = true
     lazy.setOpen(false)
-    if (status === 'announcer' && announcer) announcer.announce(message)
-    else setSaid((previous) => ({ message, count: (previous?.count ?? 0) + 1 }))
+    if (beside) setSaid((previous) => ({ message, count: (previous?.count ?? 0) + 1 }))
+    else announcer.announce(message)
   }
 
   function content() {
@@ -139,10 +134,8 @@ export default function LazyDialogButton({
           <VoidDialogContent
             {...lazy.content}
             action={dialog.action}
-            title={dialog.title}
-            description={dialog.description}
-            labels={dialog.labels}
-            onVoided={() => finish(dialog.done)}
+            subject={dialog.subject}
+            onVoided={finish}
           />
         )
       case 'confirm':
@@ -172,7 +165,7 @@ export default function LazyDialogButton({
   )
   const slot = <LazyDialogSlot dialog={lazy}>{content()}</LazyDialogSlot>
 
-  if (status === 'announcer') {
+  if (!beside) {
     return (
       <>
         {button}

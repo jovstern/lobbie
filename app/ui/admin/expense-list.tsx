@@ -9,7 +9,8 @@ import { formatAgorot } from '@/app/lib/utils/money'
 import VoidExpenseDialog from '@/app/ui/admin/void-expense-dialog'
 
 type Props = {
-  /** Newest first, voided ones included. */
+  year: number
+  /** The year's, newest first, voided ones included. */
   expenses: AdminExpense[]
   /** The building's, in which a void's instant becomes a date. */
   timeZone: string
@@ -24,7 +25,7 @@ const linkClassName =
  * receipt, opened through `/api/files/[id]` (a PDF downloads). A voided expense stays listed,
  * struck through, with who voided it, when and why; the others can be voided.
  */
-export default async function ExpenseList({ expenses, timeZone }: Props) {
+export default async function ExpenseList({ year, expenses, timeZone }: Props) {
   const [t, tCategories, locale] = await Promise.all([
     getTranslations('AdminExpenses'),
     getTranslations('ExpenseCategories'),
@@ -35,7 +36,7 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
     return (
       <div className="rounded-control bg-surface flex flex-col items-start gap-2 p-4">
         <ReceiptPercentIcon aria-hidden className="text-text-muted size-7" />
-        <p className="font-semibold">{t('emptyTitle')}</p>
+        <p className="font-semibold">{t('emptyTitle', { year: String(year) })}</p>
         <p className="text-text-muted">{t('emptyBody')}</p>
       </div>
     )
@@ -73,6 +74,7 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
           description={expense.description}
           spentOn={expense.spentOn}
           amountAgorot={expense.amountAgorot}
+          hasReceipt={expense.receiptKey !== null}
         />
       )
     }
@@ -183,7 +185,8 @@ export default async function ExpenseList({ expenses, timeZone }: Props) {
                 {formatAgorot(expense.amountAgorot, locale)}
               </td>
               <td className={clsx(cell, 'py-0')}>{receipt(expense)}</td>
-              <td className={cell}>{status(expense)}</td>
+              {/* The Void button's own height lines its words up with the row's text. */}
+              <td className={clsx(cell, !expense.voided && 'py-0')}>{status(expense)}</td>
             </tr>
           ))}
         </tbody>

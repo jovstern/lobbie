@@ -1,5 +1,5 @@
+import { unstable_rethrow } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { Suspense } from 'react'
 import { requireMember } from '@/app/lib/authz'
 import { balance, yearReport } from '@/app/lib/data/ledger'
 import type { LedgerYear as LedgerYearReport } from '@/app/lib/definitions'
@@ -9,18 +9,16 @@ import BuildingExpenses from '@/app/ui/money/building-expenses'
 import CategoryBars from '@/app/ui/money/category-bars'
 import FundCard from '@/app/ui/money/fund-card'
 import LedgerMonths from '@/app/ui/money/ledger-months'
-import LedgerYearBoundary from '@/app/ui/money/ledger-year-boundary'
+import LedgerYearFailed from '@/app/ui/money/ledger-year-failed'
 import YearNav from '@/app/ui/year-nav'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
-type Settled<T> = { ok: true; value: T } | { ok: false; error: unknown }
-
 /**
  * `/money/balance` for every member (R19): the fund now, over every year, then one year of it
  * (`?year=`, this year by default): what came in and went out, by category and by month, and
- * the year's expenses with their receipts. Both are read at once; the year has its own error
- * boundary, so if it fails the fund still shows.
+ * the year's expenses with their receipts. Both are read at once; if the year cannot be read,
+ * the fund still shows, with the failure in the year's place.
  */
 export default async function BalanceView({ searchParams }: Props) {
   // A member of a building; anyone else is sent to sign in or to join.
@@ -30,32 +28,28 @@ export default async function BalanceView({ searchParams }: Props) {
   ])
   const [fund, report] = await Promise.all([
     balance(buildingId),
-    // Held, not thrown here: thrown, it would take the fund card down with it.
-    yearReport(requestedYear).then(
-      (value): Settled<LedgerYearReport> => ({ ok: true, value }),
-      (error: unknown): Settled<LedgerYearReport> => ({ ok: false, error }),
-    ),
+    // Held, not thrown: thrown, it would take the fund card down with it. Next's own signals
+    // (a redirect, a 404, prerendering's bail-out) still go through.
+    yearReport(requestedYear).catch((error: unknown) => {
+      unstable_rethrow(error)
+      return null
+    }),
   ])
+  const retryHref =
+    typeof requestedYear === 'string'
+      ? `/money/balance?${new URLSearchParams({ year: requestedYear })}`
+      : '/money/balance'
 
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
       <FundCard fund={fund} />
-      <LedgerYearBoundary>
-        {/* Its own Suspense, as React needs one between a server render's error and the
-            boundary that catches it on the client; the year is read by now, so it shows at
-            once and the fallback never does. */}
-        <Suspense fallback={null}>
-          <LedgerYear report={report} />
-        </Suspense>
-      </LedgerYearBoundary>
+      {report ? <LedgerYear report={report} /> : <LedgerYearFailed retryHref={retryHref} />}
     </div>
   )
 }
 
-/** The year's money; a failed read is thrown here, inside the year's own boundary. */
-async function LedgerYear({ report: settled }: { report: Settled<LedgerYearReport> }) {
-  if (!settled.ok) throw settled.error
-  const report = settled.value
+/** The year's money: what came in and went out, by category and by month, and its expenses. */
+async function LedgerYear({ report }: { report: LedgerYearReport }) {
   const [t, locale] = await Promise.all([getTranslations('Balance'), getLocale()])
   const { year } = report
   const totals = [

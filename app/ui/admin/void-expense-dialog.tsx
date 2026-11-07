@@ -12,6 +12,8 @@ type Props = {
   description: string
   spentOn: string
   amountAgorot: number
+  /** Whether it has a receipt, which the confirmation says stays listed. */
+  hasReceipt: boolean
 }
 
 /**
@@ -19,7 +21,13 @@ type Props = {
  * listed without this button, so focus goes to the list's heading and the page's status region
  * says what happened.
  */
-export default function VoidExpenseDialog({ action, description, spentOn, amountAgorot }: Props) {
+export default function VoidExpenseDialog({
+  action,
+  description,
+  spentOn,
+  amountAgorot,
+  hasReceipt,
+}: Props) {
   const t = useTranslations('VoidExpense')
   const locale = useLocale()
   const words = { description, amount: formatAgorot(amountAgorot, locale) }
@@ -29,16 +37,7 @@ export default function VoidExpenseDialog({ action, description, spentOn, amount
       dialog={{
         kind: 'void',
         action,
-        title: t('title', words),
-        description: t('body', words),
-        labels: {
-          reason: t('reason'),
-          reasonHint: t('reasonHint'),
-          confirm: t('confirm'),
-          pending: t('pending'),
-          cancel: t('cancel'),
-        },
-        done: t('done', words),
+        subject: { kind: 'expense', description, amountAgorot, hasReceipt },
       }}
       // Recurring expenses share a description: the date tells their buttons apart.
       label={t('openLabel', { ...words, date: formatDay(spentOn, locale) })}

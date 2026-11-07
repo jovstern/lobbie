@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { dirFor } from '@/i18n/locale'
 import { routing } from '@/i18n/routing'
+import { pickMessages, sharedNamespaces } from '@/app/ui/client-messages'
 import { rubik } from '@/app/ui/fonts'
 import '@/app/globals.css'
 
@@ -31,40 +32,9 @@ export default async function LocaleLayout({ children }: LayoutProps<'/[locale]'
     <html lang={locale} dir={dirFor(locale)} className={rubik.variable}>
       <body className="min-h-dvh font-sans antialiased">
         {WebVitals ? <WebVitals /> : null}
-        {/* Only the namespaces client components read; each new one is added here. */}
-        <NextIntlClientProvider
-          messages={{
-            AdjustmentForm: messages.AdjustmentForm,
-            ApartmentForm: messages.ApartmentForm,
-            ApartmentRemove: messages.ApartmentRemove,
-            BuildingForm: messages.BuildingForm,
-            CommitteeContactForm: messages.CommitteeContactForm,
-            Common: messages.Common,
-            ContactVisibility: messages.ContactVisibility,
-            CopyButton: messages.CopyButton,
-            ErrorPage: messages.ErrorPage,
-            ExpenseCategories: messages.ExpenseCategories,
-            ExpenseForm: messages.ExpenseForm,
-            FeeForm: messages.FeeForm,
-            FollowBuilding: messages.FollowBuilding,
-            InviteAdminClient: messages.InviteAdminClient,
-            InviteAll: messages.InviteAll,
-            JoinCodeForm: messages.JoinCodeForm,
-            LanguageChoice: messages.LanguageChoice,
-            LanguageSwitch: messages.LanguageSwitch,
-            PaymentForm: messages.PaymentForm,
-            PaymentMethods: messages.PaymentMethods,
-            PersonRemove: messages.PersonRemove,
-            PersonRole: messages.PersonRole,
-            ProfileForm: messages.ProfileForm,
-            ResidentsClient: messages.ResidentsClient,
-            Roles: messages.Roles,
-            Search: messages.Search,
-            SignInForm: messages.SignInForm,
-            VoidExpense: messages.VoidExpense,
-            VoidPayment: messages.VoidPayment,
-          }}
-        >
+        {/* Only the namespaces client components read on any page; each admin page adds its
+            own (ClientMessages). */}
+        <NextIntlClientProvider messages={pickMessages(messages, sharedNamespaces)}>
           {children}
         </NextIntlClientProvider>
       </body>

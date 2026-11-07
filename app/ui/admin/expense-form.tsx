@@ -59,16 +59,20 @@ export default function ExpenseForm({ action, today, firstDay }: Props) {
   const initialState: ExpenseFormState = {}
   const [state, formAction] = useActionState(
     async (previous: ExpenseFormState, formData: FormData) => {
+      // A file refused as too large was taken off the form: say the expense went without it.
+      const refusedFile = tooLarge
       setTooLarge(false)
       // No file chosen still sends an empty file part; without one, there is no receipt.
       const receipt = formData.get('receipt')
-      if (receipt instanceof File && receipt.size === 0) formData.delete('receipt')
+      const noFile = !(receipt instanceof File) || receipt.size === 0
+      if (noFile) formData.delete('receipt')
       const next = await action(previous, formData)
       // The form empties after each attempt, the file with it.
       setFileName(null)
       if (next.recorded) {
         const amount = formatAgorot(next.recorded.amountAgorot, locale)
-        announce(t('recorded', { description: next.recorded.description, amount }))
+        const words = { description: next.recorded.description, amount }
+        announce(t(refusedFile && noFile ? 'recordedNoReceipt' : 'recorded', words))
       }
       return next
     },

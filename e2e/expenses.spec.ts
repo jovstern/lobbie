@@ -160,7 +160,11 @@ test('the committee adds an expense with a receipt: the fund drops on the balanc
     ).toBeVisible()
     // Its button is gone: focus moves to the list's heading, beside which the void is said.
     await expect(
-      page.getByRole('heading', { level: 2, name: text.AdminExpenses.listTitle, exact: true }),
+      page.getByRole('heading', {
+        level: 2,
+        name: t('AdminExpenses.listTitle', { year: today.slice(0, 4) }),
+        exact: true,
+      }),
     ).toBeFocused()
     // Residents see only the expenses that count: the voided one is gone from their list.
     await useSessionOf(page, resident)

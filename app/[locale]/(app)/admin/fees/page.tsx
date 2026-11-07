@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
+import ClientMessages from '@/app/ui/client-messages'
 import { requireRole } from '@/app/lib/authz'
 import FeesAdmin from '@/app/ui/admin/fees-admin'
 import { FeesSkeleton } from '@/app/ui/skeletons'
@@ -16,8 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
 // The committee and up: FeesAdmin checks the role and answers 404 to anyone else.
 export default function AdminFeesPage() {
   return (
-    <Suspense fallback={<FeesSkeleton />}>
-      <FeesAdmin />
-    </Suspense>
+    <ClientMessages namespaces={['FeeForm']}>
+      <Suspense fallback={<FeesSkeleton />}>
+        <FeesAdmin />
+      </Suspense>
+    </ClientMessages>
   )
 }

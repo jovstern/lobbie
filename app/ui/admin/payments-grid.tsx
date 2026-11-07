@@ -51,7 +51,8 @@ export default function PaymentsGrid({
       aria-labelledby={captionId}
       // Scrollable from the keyboard when the months do not fit.
       tabIndex={0}
-      className="border-border overflow-x-auto rounded-b-[inherit] border-t"
+      // Scrolled to, a month stops clear of the sticky apartment column.
+      className="border-border scroll-ps-14 overflow-x-auto rounded-b-[inherit] border-t sm:scroll-ps-24"
     >
       <table className="w-full border-collapse">
         <caption id={captionId} className="sr-only">
@@ -61,9 +62,12 @@ export default function PaymentsGrid({
           <tr className="border-border border-b">
             <th
               scope="col"
-              className={`${sticky} bg-surface-raised text-text-muted px-3 py-3 text-start text-sm font-medium whitespace-nowrap sm:px-4`}
+              className={`${sticky} bg-surface-raised text-text-muted px-2 py-3 text-start text-sm font-medium whitespace-nowrap sm:px-4`}
             >
-              {t('apartmentColumn')}
+              <span aria-hidden className="sm:hidden">
+                {t('apartmentColumnShort')}
+              </span>
+              <span className="max-sm:sr-only">{t('apartmentColumn')}</span>
             </th>
             {months.map((month) => (
               <th
@@ -71,7 +75,7 @@ export default function PaymentsGrid({
                 scope="col"
                 aria-current={month === currentMonth ? 'date' : undefined}
                 className={clsx(
-                  'text-text-muted aria-[current=date]:text-text min-w-12 px-1 py-3 text-center text-sm font-medium whitespace-nowrap aria-[current=date]:font-semibold',
+                  'text-text-muted aria-[current=date]:text-text min-w-11 px-0.5 py-3 text-center text-sm font-medium whitespace-nowrap aria-[current=date]:font-semibold xl:min-w-12 xl:px-1',
                   // Where the months start scrolled to, in browsers that support it.
                   month === currentMonth && `${current} [scroll-initial-target:nearest]`,
                 )}
@@ -99,7 +103,8 @@ export default function PaymentsGrid({
                     aria-label={t('apartment', { number: row.number })}
                     aria-current={selected ? 'true' : undefined}
                     data-select-apartment
-                    className="text-accent relative inline-flex min-h-11 min-w-11 items-center px-2 font-semibold whitespace-nowrap underline-offset-4 hover:underline aria-[current=true]:underline"
+                    data-apartment-link={row.id}
+                    className="text-accent relative inline-flex min-h-11 min-w-11 items-center px-1 font-semibold whitespace-nowrap underline-offset-4 hover:underline aria-[current=true]:underline sm:px-2"
                   >
                     {row.number}
                     <LinkPending className="end-0 top-2" />
@@ -109,7 +114,7 @@ export default function PaymentsGrid({
                   <td
                     key={status.month}
                     className={clsx(
-                      'px-1 py-1.5 text-center align-middle',
+                      'px-0.5 py-1.5 text-center align-middle xl:px-1',
                       status.month === currentMonth && current,
                     )}
                   >

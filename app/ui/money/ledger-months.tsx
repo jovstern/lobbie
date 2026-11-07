@@ -17,7 +17,7 @@ export default function LedgerMonths({ year, months }: Pick<LedgerYear, 'year' |
 
   return (
     <section aria-labelledby="ledger-months-title" className={cardClassName}>
-      <h3 id="ledger-months-title" className="text-text-muted font-medium">
+      <h3 id="ledger-months-title" className="text-lg font-semibold">
         {t('monthsTitle')}
       </h3>
       {months.length === 0 ? (

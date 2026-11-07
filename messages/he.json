@@ -104,8 +104,9 @@
     "apartment": "דירה {number}",
     "rowPaid": "שולם עבור {month}",
     "rowDue": "{amount} לתשלום",
-    "rowOverdue": "{overdue} בפיגור ({count, plural, one {חודש אחד} two {חודשיים} other {# חודשים}})",
-    "rowOverdueAndDue": "{overdue} בפיגור ({count, plural, one {חודש אחד} two {חודשיים} other {# חודשים}}) + {due} לתשלום החודש"
+    "rowOverdue": "<part>{overdue} בפיגור ({count, plural, one {חודש אחד} two {חודשיים} other {# חודשים}})</part>",
+    "rowOverdueAndDue": "<part>{overdue} בפיגור ({count, plural, one {חודש אחד} two {חודשיים} other {# חודשים}})</part> + <part>{due} לתשלום החודש</part>",
+    "details": "לתשלומים שלכם"
   },
   "BalanceCard": {
     "title": "קופת הבניין",
@@ -416,7 +417,8 @@
     "voided": "בוטל",
     "voidedBy": "בוטל על ידי {name} ב־{date}: {reason}",
     "limited": "{count} התשלומים האחרונים.",
-    "showAll": "הצגת הכול ({count})"
+    "showAll": "הצגת הכול ({count})",
+    "allPayments": "כל התשלומים של הדירה"
   },
   "PaymentForm": {
     "open": "רישום תשלום",
@@ -488,9 +490,9 @@
     "title": "הוצאות",
     "lead": "על מה הבניין מוציא את הכסף, כל הוצאה עם הקבלה שלה. כל הוצאה יורדת מקופת הבניין; הוצאה שגויה מבטלים, ולא עורכים.",
     "formTitle": "הוספת הוצאה",
-    "listTitle": "כל ההוצאות",
-    "emptyTitle": "עדיין אין הוצאות",
-    "emptyBody": "מוסיפים את הראשונה למעלה: על מה, כמה ומתי, עם הקבלה.",
+    "listTitle": "ההוצאות ב־{year}",
+    "emptyTitle": "אין הוצאות ב־{year}",
+    "emptyBody": "מוסיפים הוצאה למעלה: על מה, כמה ומתי, עם הקבלה.",
     "dateColumn": "תאריך",
     "categoryColumn": "קטגוריה",
     "descriptionColumn": "על מה",
@@ -502,7 +504,10 @@
     "noReceipt": "אין קבלה",
     "recordedBy": "נרשם על ידי {name}",
     "voided": "בוטלה",
-    "voidedOn": "בוטלה ב־{date} על ידי {name}: {reason}"
+    "voidedOn": "בוטלה ב־{date} על ידי {name}: {reason}",
+    "yearsLabel": "שנים",
+    "previousYear": "השנה הקודמת, {year}",
+    "nextYear": "השנה הבאה, {year}"
   },
   "ExpenseForm": {
     "category": "קטגוריה",
@@ -520,7 +525,8 @@
     "receiptTooLarge": "הקובץ גדול מ־4 מגה־בייט. צריך לבחור צילום או סריקה קטנים יותר.",
     "submit": "הוספת הוצאה",
     "recording": "מוסיפים…",
-    "recorded": "נוספה: {description}, {amount}"
+    "recorded": "נוספה: {description}, {amount}",
+    "recordedNoReceipt": "נוספה: {description}, {amount}. לא צורפה קבלה."
   },
   "ExpenseCategories": {
     "cleaning": "ניקיון",
@@ -553,6 +559,7 @@
     "openLabel": "ביטול הוצאה: {description} מ־{date}, {amount}",
     "title": "לבטל את ההוצאה ״{description}״?",
     "body": "{amount} יחזרו לקופת הבניין. ההוצאה תישאר ברשימה כמבוטלת, עם הקבלה שלה, ואי אפשר לערוך אותה.",
+    "bodyNoReceipt": "{amount} יחזרו לקופת הבניין. ההוצאה תישאר ברשימה כמבוטלת, ואי אפשר לערוך אותה.",
     "reason": "סיבה",
     "reasonHint": "למשל: נרשמה פעמיים בטעות.",
     "confirm": "ביטול ההוצאה",
@@ -576,6 +583,7 @@
     "nextYear": "השנה הבאה, {year}",
     "tableLabel": "התשלומים ב־{year}, לפי דירה וחודש",
     "apartmentColumn": "דירה",
+    "apartmentColumnShort": "דירה",
     "paid": "שולם",
     "due": "לתשלום",
     "overdue": "בפיגור",

@@ -19,7 +19,7 @@ export default function ArrivalHeading({ id, children }: Props) {
   }, [])
 
   return (
-    <h2 ref={heading} id={id} tabIndex={-1} className="text-lg font-semibold">
+    <h2 ref={heading} id={id} tabIndex={-1} className="text-lg font-semibold focus:outline-none">
       {children}
     </h2>
   )

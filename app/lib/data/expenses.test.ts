@@ -82,16 +82,20 @@ beforeEach(() => {
 })
 
 describe('list', () => {
-  it("lists the committee's building's expenses, newest first, voided ones too", async () => {
+  it("lists this year's expenses of the committee's building, newest first, voided ones too", async () => {
     vi.mocked(requireRole).mockResolvedValue(memberOf(demoBuildingId))
 
-    const { expenses: rows, today, firstDay } = await list()
+    const { expenses: rows, today, firstDay, year, years } = await list()
 
     expect(requireRole).toHaveBeenCalledWith('committee')
     expect(today).toBe('2026-11-02')
     // The first day of the building's billing start month: earlier is the opening balance.
     expect(firstDay).toBe('2025-11-01')
-    expect(rows).toHaveLength(16)
+    expect(year).toBe(2026)
+    expect(years).toEqual({ first: 2025, last: 2026 })
+    // The seed's 15 less December 2025's, and the voided one above.
+    expect(rows).toHaveLength(15)
+    expect(rows.every((row) => row.spentOn.startsWith('2026-'))).toBe(true)
     expect(rows.map((row) => row.description)).not.toContain('Not this building')
     expect(rows[0]).toEqual({
       id: expect.any(String),
@@ -110,6 +114,21 @@ describe('list', () => {
     const spentOn = rows.map((row) => row.spentOn)
     expect(spentOn).toEqual(spentOn.toSorted().toReversed())
     expect(rows[1]).toMatchObject({ receiptKey: null, voided: null })
+  })
+
+  it('shows the year asked for, kept within the years there are', async () => {
+    vi.mocked(requireRole).mockResolvedValue(memberOf(demoBuildingId))
+
+    const lastYear = await list('2025')
+    expect(lastYear.year).toBe(2025)
+    expect(lastYear.expenses.map((row) => row.spentOn)).toEqual(['2025-12-01'])
+    // Before billing starts: the first year there is; after this year: this year.
+    expect((await list('1999')).year).toBe(2025)
+    expect((await list('1999')).expenses).toHaveLength(1)
+    expect((await list('2030')).year).toBe(2026)
+    // Not a year at all: this year.
+    expect((await list('abc')).year).toBe(2026)
+    expect((await list(['2025', '2026'])).year).toBe(2026)
   })
 
   it('breaks ties on the same day by when they were recorded, newest first, then by id', async () => {

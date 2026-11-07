@@ -57,7 +57,8 @@ test('the committee records a payment from the grid (overdue → paid) and voids
     await expect(
       overviewArrears.getByRole('listitem').filter({ hasText: apartment }),
     ).toContainText(
-      t('StatusCard.rowOverdueAndDue', {
+      t.markup('StatusCard.rowOverdueAndDue', {
+        part: (chunks) => chunks,
         overdue: formatAgorot(fee, 'he'),
         count: 1,
         due: formatAgorot(fee, 'he'),
@@ -141,7 +142,11 @@ test('the committee records a payment from the grid (overdue → paid) and voids
     await expect(opened.getByText(text.StatusCard.overdue, { exact: true })).toBeVisible()
     await expect(cell()).toContainText(text.AdminPayments.overdue)
     await expect(arrears.getByRole('listitem').filter({ hasText: apartment })).toContainText(
-      t('StatusCard.rowOverdue', { overdue: formatAgorot(fee, 'he'), count: 1 }),
+      t.markup('StatusCard.rowOverdue', {
+        overdue: formatAgorot(fee, 'he'),
+        count: 1,
+        part: (chunks) => chunks,
+      }),
     )
   } finally {
     await deletePaymentsOf(number)

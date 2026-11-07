@@ -10,7 +10,7 @@ import en from '@/messages/en.json'
 
 const copy = en.VoidExpense
 
-function renderDialog(action: VoidAction) {
+function renderDialog(action: VoidAction, hasReceipt = true) {
   render(
     <NextIntlClientProvider locale="en" messages={{ VoidExpense: copy, Common: en.Common }}>
       <AdminAnnouncer
@@ -26,6 +26,7 @@ function renderDialog(action: VoidAction) {
           description="Lobby door"
           spentOn="2026-11-01"
           amountAgorot={125_000}
+          hasReceipt={hasReceipt}
         />
       </AdminAnnouncer>
     </NextIntlClientProvider>,
@@ -45,6 +46,20 @@ describe('VoidExpenseDialog', () => {
 
     expect(dialog).toHaveAccessibleDescription(/goes back into the building fund/)
     expect(screen.getByLabelText(copy.reason)).toHaveFocus()
+  })
+
+  it('leaves the receipt out of the confirmation when there is none', async () => {
+    const user = userEvent.setup()
+    await user.click(
+      renderDialog(
+        vi.fn(async () => ({})),
+        false,
+      ),
+    )
+    const dialog = await screen.findByRole('alertdialog')
+
+    expect(dialog).toHaveAccessibleDescription(/goes back into the building fund/)
+    expect(dialog).not.toHaveAccessibleDescription(/receipt/)
   })
 
   it('keeps the dialog open with a refusal', async () => {

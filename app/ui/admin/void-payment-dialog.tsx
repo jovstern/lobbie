@@ -25,20 +25,7 @@ export default function VoidPaymentDialog({ action, month, amountAgorot }: Props
 
   return (
     <LazyDialogButton
-      dialog={{
-        kind: 'void',
-        action,
-        title: t('title', words),
-        description: t('body', words),
-        labels: {
-          reason: t('reason'),
-          reasonHint: t('reasonHint'),
-          confirm: t('confirm'),
-          pending: t('pending'),
-          cancel: t('cancel'),
-        },
-        done: t('done', words),
-      }}
+      dialog={{ kind: 'void', action, subject: { kind: 'payment', month, amountAgorot } }}
       label={t('openLabel', words)}
       variant="ghost"
       status="announcer"

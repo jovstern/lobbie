@@ -1,4 +1,4 @@
-import { ChevronDownIcon, NoSymbolIcon } from '@heroicons/react/20/solid'
+import { ChevronDownIcon, ChevronRightIcon, NoSymbolIcon } from '@heroicons/react/20/solid'
 import clsx from 'clsx'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
@@ -12,7 +12,10 @@ import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import PaymentDialog from '@/app/ui/admin/payment-dialog'
 import VoidPaymentDialog from '@/app/ui/admin/void-payment-dialog'
 import StatusChip from '@/app/ui/home/status-chip'
+import LinkPending from '@/app/ui/nav/link-pending'
+import { Link } from '@/i18n/navigation'
 import { overdueText } from '@/app/ui/home/overdue-text'
+import type { ReactNode } from 'react'
 
 /** The history's heading: focus goes to it once a voided payment's button is gone. */
 const historyId = 'apartment-payments-history'
@@ -25,7 +28,16 @@ const shown = 5
  * payments, each one that counts with its Void. A voided payment stays listed, struck through,
  * with who voided it and why.
  */
-export default async function ApartmentPayments({ apartmentId }: { apartmentId: Promise<string> }) {
+type Props = {
+  apartmentId: Promise<string>
+  /**
+   * Where all of its payments are, when this shows only the latest (its admin page, which
+   * links to `/admin/payments` with it open); without it, the rest are a click away here.
+   */
+  allHref?: (apartmentId: string) => string
+}
+
+export default async function ApartmentPayments({ apartmentId, allHref }: Props) {
   const id = await apartmentId
   const [{ timeZone }, payments, t, tStatus, tMethods, locale] = await Promise.all([
     // The committee's, as the payments are: the apartment's admin page and `/admin/payments`
@@ -40,7 +52,7 @@ export default async function ApartmentPayments({ apartmentId }: { apartmentId: 
   if (!payments) notFound()
 
   const monthName = formatMonth(payments.currentMonth, locale)
-  function standingDetail(standing: ApartmentStanding): string | null {
+  function standingDetail(standing: ApartmentStanding): ReactNode {
     switch (standing.kind) {
       case 'paid':
         return t('paidUp', { month: monthName })
@@ -137,13 +149,23 @@ export default async function ApartmentPayments({ apartmentId }: { apartmentId: 
       }
     >
       <section aria-labelledby={historyId} className="flex flex-col gap-3">
-        <h3 id={historyId} tabIndex={-1} className="text-base font-semibold">
+        <h3 id={historyId} tabIndex={-1} className="text-base font-semibold focus:outline-none">
           {t('historyTitle')}
         </h3>
         {payments.history.length > 0 ? (
           <>
             <ol className="divide-border flex flex-col divide-y">{latest.map(row)}</ol>
-            {earlier.length > 0 ? (
+            {earlier.length > 0 && allHref ? (
+              // Not sent at all here: the payments page has them, with the grid.
+              <Link
+                href={allHref(id)}
+                className="text-accent relative inline-flex min-h-11 w-fit items-center gap-1 font-medium underline-offset-4 hover:underline"
+              >
+                {t('allPayments')}
+                <ChevronRightIcon aria-hidden className="size-5 rtl:-scale-x-100" />
+                <LinkPending className="-end-3 top-2" />
+              </Link>
+            ) : earlier.length > 0 ? (
               // The rest on request, so a long history does not push the grid down.
               <details className="group flex flex-col">
                 <summary className="text-accent rounded-control inline-flex min-h-11 cursor-pointer items-center gap-1 font-medium underline-offset-4 hover:underline">
@@ -162,7 +184,7 @@ export default async function ApartmentPayments({ apartmentId }: { apartmentId: 
         ) : (
           <p className="text-text-muted">{t('empty')}</p>
         )}
-        {payments.historyLimited ? (
+        {payments.historyLimited && !allHref ? (
           <p className="text-text-muted text-sm">
             {t('limited', { count: payments.history.length })}
           </p>

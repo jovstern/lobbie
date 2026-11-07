@@ -9,7 +9,7 @@ export const cardClassName =
  * Each Home card's least height, shared with its skeleton so nothing shifts when it streams
  * in. On desktop the two sit in one grid row, so they share the taller one.
  */
-export const homeCardHeights = { status: 'min-h-56', balance: 'min-h-52 lg:min-h-56' } as const
+export const homeCardHeights = { status: 'min-h-64', balance: 'min-h-52 lg:min-h-64' } as const
 
 type Props = {
   /** Unique on the page: the card is a region named by its title. */

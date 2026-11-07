@@ -105,7 +105,7 @@ export default function InviteAll({
       {list ? (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <h3 ref={resultRef} tabIndex={-1} className="font-semibold">
+            <h3 ref={resultRef} tabIndex={-1} className="font-semibold focus:outline-none">
               {t('resultTitle', { count: created.length })}
             </h3>
             {created.length > 0 ? (

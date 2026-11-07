@@ -113,4 +113,26 @@ describe('ExpenseForm', () => {
     expect(receipt).toBeInvalid()
     expect(receipt.files).toHaveLength(0)
   })
+
+  it('says the expense went without a receipt when the file was refused', async () => {
+    const user = userEvent.setup()
+    renderForm(
+      vi.fn(async (): Promise<ExpenseFormState> => ({
+        message: null,
+        recorded: { description: 'Lobby door closer', amountAgorot: 125_000 },
+      })),
+    )
+    await user.selectOptions(screen.getByLabelText(copy.category), 'repairs')
+    await user.type(screen.getByLabelText(copy.amount), '1250')
+    await user.type(screen.getByLabelText(copy.description), 'Lobby door closer')
+    await user.upload(
+      screen.getByLabelText(copy.receipt),
+      new File([new Uint8Array(maxReceiptBytes + 1)], 'huge.pdf', { type: 'application/pdf' }),
+    )
+    await user.click(screen.getByRole('button', { name: copy.submit }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(/No receipt attached\.$/),
+    )
+  })
 })

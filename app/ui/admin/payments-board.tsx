@@ -1,4 +1,4 @@
-import { HomeModernIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { HomeModernIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
@@ -7,12 +7,12 @@ import { yearMonths } from '@/app/lib/utils/payments'
 import ApartmentPayments from '@/app/ui/admin/apartment-payments'
 import ArrearsList from '@/app/ui/admin/arrears-list'
 import ArrivalHeading from '@/app/ui/admin/arrival-heading'
+import CloseApartmentLink from '@/app/ui/admin/close-apartment-link'
 import PaymentsGrid from '@/app/ui/admin/payments-grid'
+import ReturnFocus from '@/app/ui/admin/return-focus'
 import { cardClassName } from '@/app/ui/card'
 import EmptyState from '@/app/ui/empty-state'
 import { monthStatusLooks } from '@/app/ui/month-status-looks'
-import LinkPending from '@/app/ui/nav/link-pending'
-import { Link } from '@/i18n/navigation'
 import { ApartmentPaymentsSkeleton } from '@/app/ui/skeletons'
 import YearNav from '@/app/ui/year-nav'
 
@@ -59,20 +59,19 @@ export default async function PaymentsBoard({ searchParams }: Props) {
               <ArrivalHeading key={selected.id} id="open-apartment-title">
                 {t('apartment', { number: selected.number })}
               </ArrivalHeading>
-              <Link
+              <CloseApartmentLink
                 href={paymentsHref({ year })}
-                aria-label={t('closeLabel', { number: selected.number })}
-                className="rounded-control text-text-muted hover:bg-surface hover:text-text relative -me-2 -mt-2 flex size-11 shrink-0 items-center justify-center transition-[background-color,color]"
-              >
-                <XMarkIcon aria-hidden className="size-6" />
-                <LinkPending className="end-0 top-0" />
-              </Link>
+                apartmentId={selected.id}
+                label={t('closeLabel', { number: selected.number })}
+              />
             </div>
             <Suspense key={selected.id} fallback={<ApartmentPaymentsSkeleton />}>
               <ApartmentPayments apartmentId={Promise.resolve(selected.id)} />
             </Suspense>
           </section>
-        ) : null}
+        ) : (
+          <ReturnFocus />
+        )}
         <ArrearsList arrears={board.arrears} hrefFor={apartmentHref} />
       </div>
       <section

@@ -119,7 +119,7 @@ export default async function ApartmentDetails({ apartmentId }: Props) {
         header={
           <header className="flex flex-col gap-2">
             {/* Focusable from script: it takes focus when the button that had it is gone. */}
-            <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold">
+            <h1 id={headingId} tabIndex={-1} className="text-2xl font-semibold focus:outline-none">
               {t.rich('apartmentHeading', {
                 number: () =>
                   streamed(<ApartmentNumberSkeleton />, (id) => (
@@ -170,7 +170,10 @@ export default async function ApartmentDetails({ apartmentId }: Props) {
             {tPayments('title')}
           </h2>
           {streamed(<ApartmentPaymentsSkeleton />, (id) => (
-            <ApartmentPayments apartmentId={id} />
+            <ApartmentPayments
+              apartmentId={id}
+              allHref={(apartment) => `/admin/payments?${new URLSearchParams({ apartment })}`}
+            />
           ))}
         </section>
       </AdminAnnouncer>

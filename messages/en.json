@@ -104,8 +104,9 @@
     "apartment": "Apartment {number}",
     "rowPaid": "Paid for {month}",
     "rowDue": "{amount} to pay",
-    "rowOverdue": "{overdue} overdue ({count, plural, one {# month} other {# months}})",
-    "rowOverdueAndDue": "{overdue} overdue ({count, plural, one {# month} other {# months}}) + {due} due this month"
+    "rowOverdue": "<part>{overdue} overdue ({count, plural, one {# month} other {# months}})</part>",
+    "rowOverdueAndDue": "<part>{overdue} overdue ({count, plural, one {# month} other {# months}})</part> + <part>{due} due this month</part>",
+    "details": "See your payments"
   },
   "BalanceCard": {
     "title": "Building fund",
@@ -416,7 +417,8 @@
     "voided": "Voided",
     "voidedBy": "Voided by {name} on {date}: {reason}",
     "limited": "The latest {count} payments.",
-    "showAll": "Show all ({count})"
+    "showAll": "Show all ({count})",
+    "allPayments": "All of its payments"
   },
   "PaymentForm": {
     "open": "Record a payment",
@@ -488,9 +490,9 @@
     "title": "Expenses",
     "lead": "What the building spends its money on, each with its receipt. Every expense comes off the building fund; a wrong one is voided, never edited.",
     "formTitle": "Add an expense",
-    "listTitle": "All expenses",
-    "emptyTitle": "No expenses yet",
-    "emptyBody": "Add the first one above: what it was for, how much and when, with its receipt.",
+    "listTitle": "Expenses in {year}",
+    "emptyTitle": "No expenses in {year}",
+    "emptyBody": "Add one above: what it was for, how much and when, with its receipt.",
     "dateColumn": "Date",
     "categoryColumn": "Category",
     "descriptionColumn": "What for",
@@ -502,7 +504,10 @@
     "noReceipt": "No receipt",
     "recordedBy": "Recorded by {name}",
     "voided": "Voided",
-    "voidedOn": "Voided on {date} by {name}: {reason}"
+    "voidedOn": "Voided on {date} by {name}: {reason}",
+    "yearsLabel": "Years",
+    "previousYear": "Previous year, {year}",
+    "nextYear": "Next year, {year}"
   },
   "ExpenseForm": {
     "category": "Category",
@@ -520,7 +525,8 @@
     "receiptTooLarge": "That file is over 4 MB. Choose a smaller photo or scan.",
     "submit": "Add expense",
     "recording": "Adding…",
-    "recorded": "Added: {description}, {amount}"
+    "recorded": "Added: {description}, {amount}",
+    "recordedNoReceipt": "Added: {description}, {amount}. No receipt attached."
   },
   "ExpenseCategories": {
     "cleaning": "Cleaning",
@@ -553,6 +559,7 @@
     "openLabel": "Void the expense {description} of {date}, {amount}",
     "title": "Void the expense “{description}”?",
     "body": "{amount} goes back into the building fund. The expense stays listed as voided, with its receipt; it can’t be edited.",
+    "bodyNoReceipt": "{amount} goes back into the building fund. The expense stays listed as voided; it can’t be edited.",
     "reason": "Reason",
     "reasonHint": "For example: recorded twice by mistake.",
     "confirm": "Void expense",
@@ -576,6 +583,7 @@
     "nextYear": "Next year, {year}",
     "tableLabel": "Payments in {year}, by apartment and month",
     "apartmentColumn": "Apartment",
+    "apartmentColumnShort": "Apt",
     "paid": "Paid",
     "due": "Due",
     "overdue": "Overdue",

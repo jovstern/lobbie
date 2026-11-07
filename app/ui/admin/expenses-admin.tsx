@@ -7,19 +7,24 @@ import AdminPageHeader from '@/app/ui/admin/admin-page-header'
 import ExpenseForm from '@/app/ui/admin/expense-form'
 import ExpenseList from '@/app/ui/admin/expense-list'
 import { cardClassName } from '@/app/ui/card'
+import YearNav from '@/app/ui/year-nav'
 
 /** The page's heading, which takes focus when the button a dialog opened from is gone. */
 const headingId = 'expenses-title'
 
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
 /**
  * `/admin/expenses` for the committee and up (R18): adding an expense with its receipt, on the
- * page (a long form, spec §6), then every expense, newest first, each voidable.
+ * page (a long form, spec §6), then one year's expenses (`?year=`, this year by default),
+ * newest first, each voidable.
  */
-export default async function ExpensesAdmin() {
+export default async function ExpensesAdmin({ searchParams }: Props) {
   // The committee and up; anyone else gets the 404, before anything of the building is read.
   const { timeZone } = await requireRole('committee')
-  const [{ expenses, today, firstDay }, t, locale] = await Promise.all([
-    list(),
+  const { year: requestedYear } = await searchParams
+  const [{ expenses, today, firstDay, year, years }, t, locale] = await Promise.all([
+    list(requestedYear),
     getTranslations('AdminExpenses'),
     getLocale(),
   ])
@@ -42,12 +47,28 @@ export default async function ExpensesAdmin() {
         <AdminAnnouncer
           headingId="expenses-list-title"
           header={
-            <h2 id="expenses-list-title" tabIndex={-1} className="text-lg font-semibold">
-              {t('listTitle')}
-            </h2>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2
+                id="expenses-list-title"
+                tabIndex={-1}
+                className="text-lg font-semibold focus:outline-none"
+              >
+                {t('listTitle', { year: String(year) })}
+              </h2>
+              <YearNav
+                year={year}
+                years={years}
+                hrefFor={(other) =>
+                  `/admin/expenses?${new URLSearchParams({ year: String(other) })}`
+                }
+                label={t('yearsLabel')}
+                previousLabel={(other) => t('previousYear', { year: other })}
+                nextLabel={(other) => t('nextYear', { year: other })}
+              />
+            </div>
           }
         >
-          <ExpenseList expenses={expenses} timeZone={timeZone} />
+          <ExpenseList year={year} expenses={expenses} timeZone={timeZone} />
         </AdminAnnouncer>
       </section>
     </AdminAnnouncer>

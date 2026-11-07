@@ -26,23 +26,31 @@ const months = [
 function renderDialog(
   action: PaymentAction = vi.fn(async (): Promise<PaymentFormState> => ({})),
   open = months,
+  inAnnouncer = true,
 ) {
+  const dialog = (
+    <PaymentDialog
+      action={action}
+      number="4"
+      months={open}
+      today="2026-11-02"
+      firstDay="2024-11-01"
+      lastMonth="2027-11"
+    />
+  )
   render(
     <NextIntlClientProvider
       locale="en"
       messages={{ PaymentForm: copy, PaymentMethods: en.PaymentMethods, Common: en.Common }}
     >
       {/* What was recorded is said in the apartment's payments, as a void is. */}
-      <AdminAnnouncer headingId="payments" header={<h3 id="payments">Latest payments</h3>}>
-        <PaymentDialog
-          action={action}
-          number="4"
-          months={open}
-          today="2026-11-02"
-          firstDay="2024-11-01"
-          lastMonth="2027-11"
-        />
-      </AdminAnnouncer>
+      {inAnnouncer ? (
+        <AdminAnnouncer headingId="payments" header={<h3 id="payments">Latest payments</h3>}>
+          {dialog}
+        </AdminAnnouncer>
+      ) : (
+        dialog
+      )}
     </NextIntlClientProvider>,
   )
   return screen.getByRole('button', { name: 'Apartment 4: record a payment' })
@@ -151,5 +159,22 @@ describe('PaymentDialog', () => {
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toHaveTextContent('Nothing is left to pay, up to and including November 2027.')
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  it('says what was recorded beside the button when no announcer is above it', async () => {
+    const user = userEvent.setup()
+    const action = vi.fn(async (): Promise<PaymentFormState> => ({
+      message: null,
+      recorded: { apartmentNumber: '4', amountAgorot: 35_000, months: ['2026-11'] },
+    }))
+    await user.click(renderDialog(action, months, false))
+    await screen.findByRole('dialog')
+    await user.click(screen.getByRole('button', { name: copy.submit }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        /^Recorded ₪\s?350 for apartment 4 \(1 month\)$/,
+      ),
+    )
   })
 })

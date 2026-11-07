@@ -123,9 +123,13 @@ export type AdminExpense = {
   voided: { at: Date; byName: string; reason: string } | null
 }
 
-/** The building's expenses for the committee, with the dates a new one may carry. */
+/** One year of the building's expenses for the committee, with the dates a new one may carry. */
 export type AdminExpenses = {
-  /** Newest first, voided ones included. */
+  /** The year shown. */
+  year: number
+  /** The years there are: from billing start (or an earlier expense) to this one. */
+  years: YearRange
+  /** The year's, newest first, voided ones included. */
   expenses: AdminExpense[]
   /** `YYYY-MM-DD` in the building's time zone: an expense is spent on it or earlier. */
   today: string

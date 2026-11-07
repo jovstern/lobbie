@@ -1,10 +1,28 @@
 import { render, screen, within } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
-import { describe, expect, it } from 'vitest'
+import type { ReactNode } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 import type { ApartmentSummary } from '@/app/lib/definitions'
 import StatusSummary, { type ApartmentStatusRow } from '@/app/ui/home/status-summary'
 import en from '@/messages/en.json'
 import he from '@/messages/he.json'
+
+// A plain anchor: the locale-aware Link needs the router, which jsdom does not have.
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({
+    href,
+    children,
+    className,
+  }: {
+    href: string
+    children: ReactNode
+    className: string
+  }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
+}))
 
 const catalogs = { he, en }
 const fee = 35_000
@@ -31,6 +49,10 @@ describe('StatusSummary, one apartment', () => {
 
     expect(within(card).getByText('Paid')).toBeVisible()
     expect(card).toHaveTextContent("You're paid up for November 2026")
+    expect(within(card).getByRole('link', { name: en.StatusCard.details })).toHaveAttribute(
+      'href',
+      '/money',
+    )
   })
 
   it('due: the amount remaining for the month', () => {

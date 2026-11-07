@@ -1,16 +1,38 @@
 import { render, screen, within } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import type { ReactNode } from 'react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import CategoryBars from '@/app/ui/money/category-bars'
 import FundCard from '@/app/ui/money/fund-card'
+import LedgerYearFailed from '@/app/ui/money/ledger-year-failed'
 import en from '@/messages/en.json'
+
+// A plain anchor: the locale-aware Link needs the router, which jsdom does not have.
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({
+    href,
+    children,
+    className,
+  }: {
+    href: string
+    children: ReactNode
+    className: string
+  }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
+}))
 
 function renderEn(children: ReactNode) {
   render(
     <NextIntlClientProvider
       locale="en"
-      messages={{ Balance: en.Balance, ExpenseCategories: en.ExpenseCategories }}
+      messages={{
+        Balance: en.Balance,
+        ExpenseCategories: en.ExpenseCategories,
+        ErrorPage: en.ErrorPage,
+      }}
     >
       {children}
     </NextIntlClientProvider>,
@@ -84,5 +106,17 @@ describe('CategoryBars', () => {
 
     expect(screen.queryByText(en.Balance.categoriesTitle)).toBeNull()
     expect(screen.queryByRole('list')).toBeNull()
+  })
+})
+
+describe('LedgerYearFailed', () => {
+  it('says the year could not be read, and links to the same page to try again', () => {
+    renderEn(<LedgerYearFailed retryHref="/money/balance?year=2025" />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(en.Balance.yearFailed)
+    expect(screen.getByRole('link', { name: en.ErrorPage.retry })).toHaveAttribute(
+      'href',
+      '/money/balance?year=2025',
+    )
   })
 })

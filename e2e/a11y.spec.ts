@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { currentMonthIn, formatMonth } from '@/app/lib/utils/dates'
+import { addMonths, currentMonthIn, formatMonth } from '@/app/lib/utils/dates'
 import { formatAgorot } from '@/app/lib/utils/money'
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
@@ -301,8 +301,13 @@ for (const locale of ['he', 'en'] as const) {
     test('Admin: expenses as the committee, and the void dialog', async ({ page }) => {
       const text = messages[locale]
       await useSessionOf(page, 'committee1@example.com')
-      await page.goto(`${prefix}/admin/expenses`)
-      const list = page.getByRole('region', { name: text.AdminExpenses.listTitle, exact: true })
+      // The year of last month, which the seed always spends in (even in January).
+      const year = addMonths(currentMonthIn('Asia/Jerusalem'), -1).slice(0, 4)
+      await page.goto(`${prefix}/admin/expenses?year=${year}`)
+      const list = page.getByRole('region', {
+        name: translator(locale)('AdminExpenses.listTitle', { year }),
+        exact: true,
+      })
       // Once the expenses have streamed in, so axe checks them rather than the skeleton.
       await expect(
         list.getByRole('button', { name: new RegExp(`^${text.VoidExpense.open}`) }).first(),
