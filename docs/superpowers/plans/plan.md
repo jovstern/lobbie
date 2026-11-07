@@ -509,7 +509,7 @@ M1's PR.
 | Milestone | Estimated | Actual | Why it differed |
 |---|---|---|---|
 | M1 | 2 h 45 min | ~3 h 30 min agent (ratio 1.28); wall clock 3 days | Security and latency findings needed real fixes (HTTP magic-link bypass, plain tokens, session-cache renewal, one-round-trip status); workarounds for Better Auth + Cache Components + next-intl; three fix rounds. Wall clock: two usage-limit pauses and a Neon branch recreation. Remaining milestones re-scaled ×1.28 (M2–M7 ≈ 13 h) |
-| M2 | 1 h 45 min | | |
+| M2 | 1 h 45 min (2 h 15 min re-scaled) | ~8 h agent (ratio ≈ 3.5 against the re-scaled figure) | The Neon `dev` and `test` branches vanished twice, so six tasks were built without e2e and debugged together (20 failures in the first run); ~2 h 10 min of performance work (prepared statements tried and reverted, lazy dialogs, message precompile, ADR 0002); every review layer found real security, privacy, accessibility and locking issues; three fix rounds. M1 + M2 ran 2.3× over (11.5 h vs 5 h), so M3–M7 re-scaled from 8 h 20 min to ≈ 19 h |
 | M3 | 2 h | | |
 | M4 | 1 h 40 min | | |
 | M5 | 1 h 30 min | | |
