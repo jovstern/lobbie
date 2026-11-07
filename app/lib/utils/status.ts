@@ -4,6 +4,7 @@ import type {
   FeeRate,
   MonthPayment,
   MonthStatus,
+  OpenMonth,
 } from '@/app/lib/definitions'
 import { addMonths } from './dates'
 import { feeFor } from './fees'
@@ -69,6 +70,22 @@ export function apartmentSummary(billing: ApartmentBilling): ApartmentSummary {
       totalOwedAgorot += status.remainingAgorot
   }
   return { current: monthStatus(billing, billing.currentMonth), monthsBehind, totalOwedAgorot }
+}
+
+/**
+ * The months a payment can still go to, oldest first: from the billing start to `lastMonth`,
+ * each one with a fee that is not fully paid (overdue, due, or upcoming when paid ahead), with
+ * what remains of it.
+ */
+export function openMonths(billing: ApartmentBilling, lastMonth: string): OpenMonth[] {
+  const open: OpenMonth[] = []
+  for (let month = billingStart(billing); month <= lastMonth; month = addMonths(month, 1)) {
+    const status = monthStatus(billing, month)
+    if (status.kind === 'overdue' || status.kind === 'due' || status.kind === 'upcoming') {
+      open.push({ month, ...status })
+    }
+  }
+  return open
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { Locale } from '@/i18n/routing'
-import type { feeRates, payments, roleEnum } from './schema'
+import type { feeRates, paymentMethodEnum, payments, roleEnum } from './schema'
 
 /** A fee rate as the fee logic needs it; `apartmentId` null is the building default. */
 export type FeeRate = Pick<
@@ -68,6 +68,15 @@ export type MonthStatus =
       remainingAgorot: number
     }
 
+/** A month a payment can still go to (R15): not fully paid, with what remains of its fee. */
+export type OpenMonth = {
+  month: string
+  kind: 'overdue' | 'due' | 'upcoming'
+  dueAgorot: number
+  paidAgorot: number
+  remainingAgorot: number
+}
+
 export type ApartmentSummary = {
   /** The status of the current month in the building's time zone. */
   current: MonthStatus
@@ -87,6 +96,40 @@ export type ApartmentStanding =
   | { kind: 'paid' }
   | { kind: 'due'; remainingAgorot: number; partial: boolean }
   | { kind: 'overdue'; monthsBehind: number; totalOwedAgorot: number }
+
+export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number]
+
+/** A payment as the committee sees it on an apartment's page (R15). */
+export type PaymentEntry = {
+  id: string
+  month: string
+  amountAgorot: number
+  /** The calendar date it was paid, `YYYY-MM-DD`. */
+  paidOn: string
+  method: PaymentMethod
+  note: string | null
+  recordedByName: string
+  /** Null while it counts; a voided payment stays listed, never edited. */
+  voided: { at: Date; byName: string; reason: string } | null
+}
+
+/** One apartment's payments, for the committee to record and void (R15). */
+export type ApartmentPayments = {
+  number: string
+  /** In the building's time zone. */
+  currentMonth: string
+  /** `YYYY-MM-DD` in the building's time zone: a payment is paid on it or earlier. */
+  today: string
+  standing: ApartmentStanding
+  /** The last month a payment may go to: a year ahead. */
+  lastMonth: string
+  /** The months a payment can still go to, oldest first, up to `lastMonth`. */
+  openMonths: OpenMonth[]
+  /** The latest payments, newest month first. */
+  history: PaymentEntry[]
+  /** Whether it has more payments than `history` lists. */
+  historyLimited: boolean
+}
 
 export type BuildingBalance = {
   openingBalanceAgorot: number

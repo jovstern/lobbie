@@ -302,6 +302,10 @@ export function ApartmentPageSkeleton() {
         <div className={`${block} h-7 w-36`} />
         <ApartmentFeeSkeleton />
       </div>
+      <div className={clsx(cardClassName, 'max-w-2xl')}>
+        <div className={`${block} h-7 w-28`} />
+        <ApartmentPaymentsSkeleton />
+      </div>
     </div>
   )
 }
@@ -319,6 +323,32 @@ export function ApartmentFeeSkeleton() {
       </div>
       <div className={`${block} h-11 w-44`} />
       <div className={`${block} h-6 w-full max-w-md`} />
+    </div>
+  )
+}
+
+/**
+ * The payments card's status chip and line, its button, and a short history, shaped like an
+ * apartment that pays every month.
+ */
+export function ApartmentPaymentsSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <div className="rounded-chip bg-border h-8 w-20 animate-pulse" />
+        <div className={`${block} h-6 w-48`} />
+      </div>
+      <div className={`${block} h-11 w-44`} />
+      <div className={`${block} h-6 w-36`} />
+      {[0, 1, 2].map((row) => (
+        <div key={row} className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className={`${block} h-6 w-40`} />
+            <div className={`${block} h-11 w-24`} />
+          </div>
+          <div className={`${block} h-5 w-full max-w-sm`} />
+        </div>
+      ))}
     </div>
   )
 }

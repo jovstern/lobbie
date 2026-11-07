@@ -29,3 +29,12 @@ export function refreshFeePages() {
   revalidatePath('/[locale]/admin/fees', 'page')
   refreshApartmentPages()
 }
+
+/**
+ * The pages that show an apartment's payments: its admin page, and Home, whose status card
+ * says whether it is paid up.
+ */
+export function refreshPaymentPages() {
+  revalidatePath('/[locale]/admin/apartments/[id]', 'page')
+  revalidatePath('/[locale]', 'page')
+}

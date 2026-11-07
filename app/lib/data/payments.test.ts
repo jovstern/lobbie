@@ -1,7 +1,9 @@
 import { and, eq } from 'drizzle-orm'
 import { cacheTag } from 'next/cache'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
+import type { Member } from '@/app/lib/definitions'
 import {
   apartmentResidents,
   apartments,
@@ -12,7 +14,7 @@ import {
 } from '@/app/lib/schema'
 import { demoBuildingId } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
-import { statusForUser } from './payments'
+import { forApartment, statusForUser } from './payments'
 
 const testDb = await vi.hoisted(async () => {
   const { createTestDb } = await import('@/app/lib/test/db')
@@ -21,6 +23,7 @@ const testDb = await vi.hoisted(async () => {
 vi.mock('@/app/lib/db', () => ({ db: testDb.db }))
 // Outside Next, `'use cache'` is an inert string and the cache functions only record tags.
 vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }))
+vi.mock('@/app/lib/authz', () => ({ requireRole: vi.fn() }))
 afterAll(() => testDb.close())
 
 // The seed is relative to "now": billing starts 12 months back, so 2025-11 through 2026-11.
@@ -211,5 +214,119 @@ describe('statusForUser', () => {
       area: 'data/payments',
     })
     consoleError.mockRestore()
+  })
+})
+
+describe('forApartment', () => {
+  function signInAsCommitteeOf(id: string) {
+    const member: Member = {
+      userId: 'not-read',
+      buildingId: id,
+      role: 'committee',
+      apartmentIds: [],
+      isDemo: false,
+      timeZone: 'Asia/Jerusalem',
+      buildingName: 'not-read',
+    }
+    vi.mocked(requireRole).mockResolvedValue(member)
+  }
+
+  const owing = (month: string, kind: 'overdue' | 'due' | 'upcoming') => ({
+    month,
+    kind,
+    dueAgorot: fee,
+    paidAgorot: 0,
+    remainingAgorot: fee,
+  })
+
+  it('checks the role first: the committee and up', async () => {
+    signInAsCommitteeOf(buildingId)
+    await forApartment(idOf('4'), now)
+    expect(requireRole).toHaveBeenCalledWith('committee')
+  })
+
+  it('is what apartment 4 owes, and the months it can still pay, up to a year ahead', async () => {
+    signInAsCommitteeOf(buildingId)
+
+    const result = await forApartment(idOf('4'), now)
+
+    expect(result).toMatchObject({
+      number: '4',
+      currentMonth,
+      today: '2026-11-02',
+      lastMonth: '2027-11',
+      standing: { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: 2 * fee },
+    })
+    expect(result?.openMonths.slice(0, 3)).toEqual([
+      owing('2026-10', 'overdue'),
+      owing('2026-11', 'due'),
+      owing('2026-12', 'upcoming'),
+    ])
+    expect(result?.openMonths.at(-1)).toEqual(owing('2027-11', 'upcoming'))
+    expect(result?.openMonths).toHaveLength(14)
+  })
+
+  it('lists its payments newest month first, a voided one with who voided it and why', async () => {
+    signInAsCommitteeOf(buildingId)
+
+    const result = await forApartment(idOf('2'), now)
+
+    // The seed's 13 paid months and one voided payment.
+    expect(result?.history).toHaveLength(14)
+    expect(result?.historyLimited).toBe(false)
+    const months = result?.history.map((payment) => payment.month) ?? []
+    expect(months).toEqual(months.toSorted().reverse())
+    expect(result?.history[0]).toMatchObject({
+      month: currentMonth,
+      amountAgorot: fee,
+      recordedByName: 'רונית ביטון',
+      voided: null,
+    })
+    const voided = result?.history.find((payment) => payment.voided)
+    expect(voided).toMatchObject({
+      method: 'cash',
+      note: 'מזומן לגזברית',
+      voided: { byName: 'רונית ביטון', reason: 'נרשם פעמיים בטעות' },
+    })
+    expect(voided?.paidOn).toMatch(/^\d{4}-\d{2}-04$/)
+    expect(result?.standing).toEqual({ kind: 'paid' })
+    // Paid through this month: only months ahead are left to pay.
+    expect(result?.openMonths[0]).toEqual(owing('2026-12', 'upcoming'))
+  })
+
+  it('shows the latest 20 payments and says there are more', async () => {
+    signInAsCommitteeOf(buildingId)
+    const [treasurer] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, 'committee2@example.com'))
+    await db.insert(payments).values(
+      Array.from({ length: 21 }, () => ({
+        buildingId,
+        apartmentId: idOf('e2e-3'),
+        month: currentMonth,
+        amountAgorot: 1,
+        paidOn: '2026-11-01',
+        method: 'cash' as const,
+        recordedBy: treasurer.id,
+      })),
+    )
+
+    const result = await forApartment(idOf('e2e-3'), now)
+
+    expect(result?.history).toHaveLength(20)
+    expect(result?.historyLimited).toBe(true)
+    await db.delete(payments).where(eq(payments.apartmentId, idOf('e2e-3')))
+  })
+
+  it("is null for another building's apartment and for a malformed id", async () => {
+    const [other] = await db
+      .insert(buildings)
+      .values({ name: 'Other 2', address: 'Elsewhere 2', billingStartMonth: '2026-01' })
+      .returning()
+    signInAsCommitteeOf(other.id)
+
+    expect(await forApartment(idOf('4'), now)).toBeNull()
+    expect(await forApartment('not-a-uuid', now)).toBeNull()
   })
 })

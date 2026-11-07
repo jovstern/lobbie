@@ -229,3 +229,38 @@ export async function addOwnFee(number: string, amountAgorot: number, month: str
         AND u.email = 'committee2@example.com'`,
   )
 }
+
+/**
+ * Sets the month a demo-building apartment's billing starts, by its number; null follows the
+ * building's. The seed starts the e2e apartments this month. Read fresh by every page (only
+ * the building's billing is cached), so a cleanup here leaves no stale copy behind.
+ */
+export async function setBillingStart(number: string, month: string | null): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      UPDATE apartments SET billing_start_month = ${month}
+      WHERE building_id = ${demoBuildingId} AND number = ${number}`,
+  )
+}
+
+/** Removes every payment of a demo-building apartment, voided or not, by its number. */
+export async function deletePaymentsOf(number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM payments
+      WHERE apartment_id = (
+        SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+      )`,
+  )
+}
+
+/** How many payments a demo-building apartment has for a month, voided or not. */
+export async function paymentCountOf(number: string, month: string): Promise<number> {
+  return withE2eSql(async (sql) => {
+    const [row] = await sql`
+      SELECT count(*)::int AS payments FROM payments p
+      JOIN apartments a ON a.id = p.apartment_id
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number} AND p.month = ${month}`
+    return z.number().int().parse(row?.payments)
+  })
+}

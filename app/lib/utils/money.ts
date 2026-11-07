@@ -38,3 +38,14 @@ export function parseShekelsToAgorot(input: string): number | null {
     Number(whole.replaceAll(',', '')) * agorotPerShekel + Number(fraction.padEnd(2, '0'))
   return agorot <= maxAgorot ? agorot : null
 }
+
+/**
+ * Agorot as a person would type them into an amount field: no thousands separators, no sign,
+ * and two decimals only when there are agorot ("350", "350.50"). `parseShekelsToAgorot` reads it
+ * back as the same amount.
+ */
+export function agorotToShekelsInput(agorot: number): string {
+  const whole = Math.floor(agorot / agorotPerShekel)
+  const fraction = agorot % agorotPerShekel
+  return fraction === 0 ? String(whole) : `${whole}.${String(fraction).padStart(2, '0')}`
+}

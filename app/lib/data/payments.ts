@@ -1,11 +1,14 @@
 import 'server-only'
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import { cacheLife, cacheTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
+import { requireRole } from '@/app/lib/authz'
+import { readBilling } from '@/app/lib/billing'
 import { buildingTag, feesTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
-import type { ApartmentStatus } from '@/app/lib/definitions'
+import type { ApartmentPayments, ApartmentStatus } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
 import {
   apartmentResidents,
@@ -14,9 +17,11 @@ import {
   buildings,
   feeRates,
   payments,
+  user,
 } from '@/app/lib/schema'
-import { currentMonthIn } from '@/app/lib/utils/dates'
-import { apartmentSummary } from '@/app/lib/utils/status'
+import { addMonths, currentMonthIn, todayIn } from '@/app/lib/utils/dates'
+import { paymentMonthsAhead } from '@/app/lib/utils/payments'
+import { apartmentStanding, apartmentSummary, openMonths } from '@/app/lib/utils/status'
 
 // postgres-js returns some numeric results as strings; the sum is checked to be an integer.
 const monthPaymentRow = z.object({
@@ -128,5 +133,83 @@ export async function statusForUser(
     unstable_rethrow(err)
     logger.error('Failed to load payment statuses', { area: 'data/payments', userId, err })
     throw new Error('Failed to load payment statuses')
+  }
+}
+
+/** How many of an apartment's payments its admin page lists, newest first. */
+const historyLength = 20
+
+const voider = alias(user, 'voider')
+
+/**
+ * One apartment's payments, as the committee records and voids them (R15): how it stands, the
+ * months a payment can still go to (those not fully paid, up to a year ahead), and its
+ * latest payments, voided ones included, with who recorded and voided each. Null when it is not
+ * one of the committee's building's apartments (or the id is malformed). Uncached: it names
+ * people, and a recording must see the payments as they are. The committee and up.
+ */
+export async function forApartment(
+  apartmentId: string,
+  now: Date = new Date(),
+): Promise<ApartmentPayments | null> {
+  const { buildingId, timeZone } = await requireRole('committee')
+  // A malformed id would be a Postgres error; it is simply no apartment.
+  if (!z.uuid().safeParse(apartmentId).success) return null
+  try {
+    const currentMonth = currentMonthIn(timeZone, now)
+    const [billing, rows] = await Promise.all([
+      readBilling(db, buildingId, apartmentId, currentMonth),
+      db
+        .select({
+          id: payments.id,
+          month: payments.month,
+          amountAgorot: payments.amountAgorot,
+          paidOn: payments.paidOn,
+          method: payments.method,
+          note: payments.note,
+          recordedByName: user.name,
+          voidedAt: payments.voidedAt,
+          voidedByName: voider.name,
+          voidReason: payments.voidReason,
+        })
+        .from(payments)
+        .innerJoin(user, eq(user.id, payments.recordedBy))
+        .leftJoin(voider, eq(voider.id, payments.voidedBy))
+        .where(and(eq(payments.buildingId, buildingId), eq(payments.apartmentId, apartmentId)))
+        .orderBy(desc(payments.month), desc(payments.createdAt), desc(payments.id))
+        // One more than is shown, to know whether there are more.
+        .limit(historyLength + 1),
+    ])
+    if (!billing) return null
+
+    const lastMonth = addMonths(currentMonth, paymentMonthsAhead)
+    return {
+      number: billing.number,
+      currentMonth,
+      today: todayIn(timeZone, now),
+      standing: apartmentStanding(apartmentSummary(billing)),
+      lastMonth,
+      openMonths: openMonths(billing, lastMonth),
+      history: rows
+        .slice(0, historyLength)
+        .map(({ voidedAt, voidedByName, voidReason, ...payment }) => ({
+          ...payment,
+          // The database keeps the void columns all set or all null.
+          voided:
+            voidedAt && voidedByName !== null && voidReason !== null
+              ? { at: voidedAt, byName: voidedByName, reason: voidReason }
+              : null,
+        })),
+      historyLimited: rows.length > historyLength,
+    }
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load the apartment payments', {
+      area: 'data/payments',
+      buildingId,
+      apartmentId,
+      err,
+    })
+    throw new Error('Failed to load the apartment payments')
   }
 }

@@ -1,4 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
+import { currentMonthIn, formatMonth } from '@/app/lib/utils/dates'
+import { formatAgorot } from '@/app/lib/utils/money'
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { signIn, useSessionOf } from './helpers/auth'
@@ -128,6 +130,45 @@ for (const locale of ['he', 'en'] as const) {
       await expect(
         page.getByRole('heading', { level: 1, name: apartment, exact: true }),
       ).toBeVisible()
+      await expectNoViolations(page)
+    })
+
+    test("Admin: one apartment's payments, and the record and void dialogs", async ({ page }) => {
+      const text = messages[locale]
+      const t = translator(locale)
+      const apartment = t('AdminApartments.apartmentTitle', { number: '1' })
+      await useSessionOf(page, 'admin@example.com')
+      await page.goto(`${prefix}/admin/apartments`)
+      await page.getByRole('main').getByRole('link', { name: apartment, exact: true }).click()
+      const card = page.getByRole('region', { name: text.ApartmentPayments.title, exact: true })
+      // Once the payments have streamed in, so axe checks them rather than the skeleton.
+      await expect(card.getByRole('listitem').first()).toBeVisible()
+      await expectNoViolations(page)
+
+      await card
+        .getByRole('button', { name: t('PaymentForm.openLabel', { number: '1' }), exact: true })
+        .click()
+      const dialog = page.getByRole('dialog', {
+        name: t('PaymentForm.title', { number: '1' }),
+        exact: true,
+      })
+      await expect(dialog).toBeVisible()
+      // Mid-fade, colours are part transparent: axe checks the dialog as it settles.
+      await page.waitForFunction(() => document.getAnimations().length === 0)
+      await expectNoViolations(page)
+      await page.keyboard.press('Escape')
+      await expect(dialog).toBeHidden()
+
+      // The newest payment's Void (this month's fee): its confirmation asks why.
+      const words = {
+        month: formatMonth(currentMonthIn('Asia/Jerusalem'), locale),
+        amount: formatAgorot(35_000, locale),
+      }
+      await card
+        .getByRole('button', { name: t('VoidPayment.openLabel', words), exact: true })
+        .click()
+      await expect(page.getByRole('alertdialog')).toBeVisible()
+      await page.waitForFunction(() => document.getAnimations().length === 0)
       await expectNoViolations(page)
     })
 

@@ -1,4 +1,10 @@
-import { ArrowLeftIcon, BanknotesIcon, LinkIcon, UsersIcon } from '@heroicons/react/24/outline'
+import {
+  ArrowLeftIcon,
+  BanknotesIcon,
+  CreditCardIcon,
+  LinkIcon,
+  UsersIcon,
+} from '@heroicons/react/24/outline'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Suspense, type ReactNode } from 'react'
@@ -11,6 +17,7 @@ import AdminAnnouncer from '@/app/ui/admin/admin-announcer'
 import ApartmentDialog from '@/app/ui/admin/apartment-dialog'
 import ApartmentFee from '@/app/ui/admin/apartment-fee'
 import ApartmentInvite from '@/app/ui/admin/apartment-invite'
+import ApartmentPayments from '@/app/ui/admin/apartment-payments'
 import ApartmentResidents from '@/app/ui/admin/apartment-residents'
 import { cardClassName } from '@/app/ui/card'
 import {
@@ -18,6 +25,7 @@ import {
   ApartmentFeeSkeleton,
   ApartmentInviteSkeleton,
   ApartmentNumberSkeleton,
+  ApartmentPaymentsSkeleton,
   ApartmentResidentsSkeleton,
 } from '@/app/ui/skeletons'
 import { Link } from '@/i18n/navigation'
@@ -76,20 +84,21 @@ type Props = {
 }
 
 /**
- * `/admin/apartments/[id]` for an admin: the apartment's header, its invite, its residents, then
- * its monthly fee.
+ * `/admin/apartments/[id]` for an admin: the apartment's header, its invite, its residents, its
+ * monthly fee, then its payments.
  * Rendered after the role check (the page streams it behind a placeholder that names nothing);
- * then the number, the facts, the invite, the residents and the fee stream in, each checking the
- * apartment: an id that is not one of the building's apartments gets the 404.
+ * then the number, the facts, the invite, the residents, the fee and the payments stream in, each
+ * checking the apartment: an id that is not one of the building's apartments gets the 404.
  */
 export default async function ApartmentDetails({ apartmentId }: Props) {
   // Admins only, before anything names the page; anyone else gets the 404.
   await requireRole('admin')
-  const [t, tInvite, tResidents, tFee] = await Promise.all([
+  const [t, tInvite, tResidents, tFee, tPayments] = await Promise.all([
     getTranslations('AdminApartments'),
     getTranslations('InviteAdmin'),
     getTranslations('Residents'),
     getTranslations('ApartmentFee'),
+    getTranslations('ApartmentPayments'),
   ])
   // What reads the apartment streams in behind a placeholder of its shape.
   const streamed = (fallback: ReactNode, content: (id: Promise<string>) => ReactNode) => (
@@ -153,6 +162,15 @@ export default async function ApartmentDetails({ apartmentId }: Props) {
           </h2>
           {streamed(<ApartmentFeeSkeleton />, (id) => (
             <ApartmentFee apartmentId={id} />
+          ))}
+        </section>
+        <section aria-labelledby="payments-title" className={`${cardClassName} max-w-2xl`}>
+          <h2 id="payments-title" className="flex items-center gap-2 text-lg font-semibold">
+            <CreditCardIcon aria-hidden className="text-text-muted size-5" />
+            {tPayments('title')}
+          </h2>
+          {streamed(<ApartmentPaymentsSkeleton />, (id) => (
+            <ApartmentPayments apartmentId={id} />
           ))}
         </section>
       </AdminAnnouncer>

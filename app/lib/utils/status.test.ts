@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { FeeRate, MonthPayment } from '@/app/lib/definitions'
 import { currentMonthIn } from './dates'
-import { apartmentStanding, apartmentSummary, monthStatus, type ApartmentBilling } from './status'
+import {
+  apartmentStanding,
+  apartmentSummary,
+  monthStatus,
+  openMonths,
+  type ApartmentBilling,
+} from './status'
 
 const apartmentId = 'apt-1'
 const fee = 35_000
@@ -294,5 +300,51 @@ describe('apartmentStanding', () => {
     ],
   ] as const)('%s', (_name, summary, expected) => {
     expect(apartmentStanding(summary)).toEqual(expected)
+  })
+})
+
+describe('openMonths', () => {
+  const open = (month: string, kind: 'overdue' | 'due' | 'upcoming', paidAgorot = 0) => ({
+    month,
+    kind,
+    dueAgorot: fee,
+    paidAgorot,
+    remainingAgorot: fee - paidAgorot,
+  })
+
+  it('lists every month not fully paid, from billing start to the last month, oldest first', () => {
+    const paidUpTo = ['2026-01', '2026-02', '2026-03', '2026-05'].map((month) => paid(month))
+    expect(openMonths(billing({ payments: paidUpTo }), '2026-08')).toEqual([
+      open('2026-04', 'overdue'),
+      open('2026-06', 'due'),
+      open('2026-07', 'upcoming'),
+      open('2026-08', 'upcoming'),
+    ])
+  })
+
+  it('keeps a partly paid month with what remains', () => {
+    expect(
+      openMonths(
+        billing({ payments: [paid('2026-06', 10_000)], currentMonth: '2026-06' }),
+        '2026-06',
+      ).at(-1),
+    ).toEqual(open('2026-06', 'due', 10_000))
+  })
+
+  it('leaves out months without a fee and months before billing starts', () => {
+    const rates = [{ apartmentId: null, amountAgorot: fee, effectiveFrom: '2026-05' }]
+    expect(
+      openMonths(
+        billing({ apartment: { id: apartmentId, billingStartMonth: '2026-03' }, rates }),
+        '2026-06',
+      ).map(({ month }) => month),
+    ).toEqual(['2026-05', '2026-06'])
+  })
+
+  it('is empty when everything is paid', () => {
+    const payments = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].map(
+      (month) => paid(month),
+    )
+    expect(openMonths(billing({ payments }), '2026-06')).toEqual([])
   })
 })
