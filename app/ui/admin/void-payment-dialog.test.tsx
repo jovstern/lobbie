@@ -57,6 +57,8 @@ describe('VoidPaymentDialog', () => {
     await waitFor(() => expect(reason).toHaveFocus())
     expect(reason).toHaveValue('x')
     expect(reason).toHaveAccessibleDescription(`${copy.reasonHint} ${en.PaymentErrors.reason}`)
+    // The apartment's residents read the reason on their Money page: the hint says so.
+    expect(reason).toHaveAccessibleDescription(/residents see this reason/)
   })
 
   it('sends the reason, then moves focus to the heading and says it was voided', async () => {

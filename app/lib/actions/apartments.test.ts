@@ -298,6 +298,8 @@ describe('update', () => {
     expect(await apartmentNumbered('u-1b')).toMatchObject({ id: target.id, floor: 6 })
     expect(updateTag).not.toHaveBeenCalled()
     expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/apartments/[id]', 'page')
+    // A billing start changes the months the payments grid shows as owed.
+    expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
   })
 
   it('turns a number another apartment has into a field error', async () => {

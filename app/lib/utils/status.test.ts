@@ -6,6 +6,7 @@ import {
   apartmentSummary,
   monthStatus,
   openMonths,
+  residentMonths,
   type ApartmentBilling,
 } from './status'
 
@@ -346,5 +347,85 @@ describe('openMonths', () => {
       (month) => paid(month),
     )
     expect(openMonths(billing({ payments }), '2026-06')).toEqual([])
+  })
+})
+
+describe('residentMonths', () => {
+  const owing = (month: string, kind: 'overdue' | 'due' | 'upcoming', paidAgorot = 0) => ({
+    month,
+    kind,
+    dueAgorot: fee,
+    paidAgorot,
+    remainingAgorot: fee - paidAgorot,
+  })
+  const settled = (month: string) => ({ month, kind: 'paid', dueAgorot: fee, paidAgorot: fee })
+
+  it("is the current year's twelve months, January first, each with its status", () => {
+    const result = residentMonths(
+      billing({
+        buildingBillingStartMonth: '2026-03',
+        payments: [paid('2026-03'), paid('2026-04'), paid('2026-06', 10_000), paid('2026-08')],
+      }),
+    )
+
+    expect(result).toEqual([
+      { month: '2026-01', kind: 'not-billed' },
+      { month: '2026-02', kind: 'not-billed' },
+      settled('2026-03'),
+      settled('2026-04'),
+      owing('2026-05', 'overdue'),
+      owing('2026-06', 'due', 10_000),
+      owing('2026-07', 'upcoming'),
+      // Paid ahead.
+      settled('2026-08'),
+      owing('2026-09', 'upcoming'),
+      owing('2026-10', 'upcoming'),
+      owing('2026-11', 'upcoming'),
+      owing('2026-12', 'upcoming'),
+    ])
+  })
+
+  it('puts the months still owed from earlier years first, oldest first', () => {
+    const result = residentMonths(
+      billing({
+        buildingBillingStartMonth: '2025-10',
+        rates: [{ apartmentId: null, amountAgorot: fee, effectiveFrom: '2025-10' }],
+        payments: [paid('2025-11'), paid('2025-12', 5_000), paid('2026-01')],
+        currentMonth: '2026-01',
+      }),
+    )
+
+    expect(result.slice(0, 4)).toEqual([
+      owing('2025-10', 'overdue'),
+      owing('2025-12', 'overdue', 5_000),
+      settled('2026-01'),
+      owing('2026-02', 'upcoming'),
+    ])
+    expect(result).toHaveLength(14)
+  })
+
+  it("adds next year's months paid ahead, in full or in part, after this year's", () => {
+    const result = residentMonths(
+      billing({
+        currentMonth: '2026-12',
+        payments: [paid('2027-01'), paid('2027-02', 10_000)],
+      }),
+    )
+
+    expect(result.slice(11)).toEqual([
+      owing('2026-12', 'due'),
+      settled('2027-01'),
+      owing('2027-02', 'upcoming', 10_000),
+    ])
+    // Months ahead with nothing paid are left out.
+    expect(result).toHaveLength(14)
+  })
+
+  it('shows months without a fee as such', () => {
+    const rates = [{ apartmentId: null, amountAgorot: fee, effectiveFrom: '2026-06' }]
+    expect(residentMonths(billing({ rates })).slice(4, 6)).toEqual([
+      { month: '2026-05', kind: 'no-fee' },
+      owing('2026-06', 'due'),
+    ])
   })
 })

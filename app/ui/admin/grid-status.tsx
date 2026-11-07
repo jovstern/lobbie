@@ -1,27 +1,9 @@
-import {
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  EllipsisHorizontalCircleIcon,
-  ExclamationTriangleIcon,
-  MinusCircleIcon,
-} from '@heroicons/react/20/solid'
 import clsx from 'clsx'
 import type { getTranslations } from 'next-intl/server'
 import type { GridMonth } from '@/app/lib/definitions'
 import { formatAgorot } from '@/app/lib/utils/money'
+import { monthStatusLooks } from '@/app/ui/month-status-looks'
 import type { Locale } from '@/i18n/routing'
-
-// Status is never colour alone: each month has a word and an icon. Months that ask nothing of
-// the committee (ahead, before billing, without a fee) stay muted, so what is owed stands out.
-const looks = {
-  paid: { icon: CheckCircleIcon, label: 'paid', className: 'text-success' },
-  due: { icon: ClockIcon, label: 'due', className: 'text-warning' },
-  overdue: { icon: ExclamationTriangleIcon, label: 'overdue', className: 'text-danger' },
-  upcoming: { icon: EllipsisHorizontalCircleIcon, label: 'upcoming', className: 'text-text-muted' },
-  'not-billed': { icon: CalendarIcon, label: 'notBilled', className: 'text-text-muted' },
-  'no-fee': { icon: MinusCircleIcon, label: 'noFee', className: 'text-text-muted' },
-} as const satisfies Record<GridMonth['kind'], unknown>
 
 type Props = {
   status: GridMonth
@@ -35,7 +17,7 @@ type Props = {
  * it is paid in part, what is left of it (spec §3: a part payment keeps the status).
  */
 export default function GridStatus({ status, t, locale }: Props) {
-  const { icon: Icon, label, className } = looks[status.kind]
+  const { icon: Icon, label, className } = monthStatusLooks[status.kind]
   const partial = 'remainingAgorot' in status && status.paidAgorot > 0
 
   return (

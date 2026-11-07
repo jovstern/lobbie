@@ -52,6 +52,23 @@ for (const locale of ['he', 'en'] as const) {
       })
     }
 
+    // Overdue (danger), and apartment 2's history with a voided payment.
+    for (const member of ['resident9@example.com', 'committee1@example.com']) {
+      test(`Money of ${member}`, async ({ page }) => {
+        const text = messages[locale]
+        await useSessionOf(page, member)
+        await page.goto(`${prefix}/money`)
+        // Once the apartment has streamed in, so axe checks it rather than the skeleton.
+        await expect(
+          page.getByRole('region', { name: text.Money.historyTitle, exact: true }),
+        ).toBeVisible()
+        await expect(
+          page.getByRole('region', { name: text.Money.monthsTitle, exact: true }),
+        ).toBeVisible()
+        await expectNoViolations(page)
+      })
+    }
+
     test('More', async ({ page }) => {
       await useSessionOf(page, 'resident1@example.com')
       await page.goto(`${prefix}/more`)

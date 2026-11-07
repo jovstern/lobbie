@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   arrearsOf,
+  chosenApartment,
   earliestPaidOn,
   gridYear,
   gridYears,
@@ -157,5 +158,20 @@ describe('earliestPaidOn', () => {
     ['2026-12', '2025-12-01'],
   ])('billing from %s: paid on %s at the earliest', (billingStart, day) => {
     expect(earliestPaidOn(billingStart)).toBe(day)
+  })
+})
+
+describe('chosenApartment', () => {
+  const own = ['apt-4', 'apt-9']
+
+  it.each([
+    ['no choice: the first', undefined, own, 'apt-4'],
+    ['one of their own', 'apt-9', own, 'apt-9'],
+    ["someone else's", 'apt-5', own, null],
+    ['several at once', ['apt-4', 'apt-9'], own, null],
+    ['an empty choice', '', own, null],
+    ['no apartments at all', undefined, [], null],
+  ] as const)('%s', (_name, param, apartmentIds, expected) => {
+    expect(chosenApartment(param, apartmentIds)).toBe(expected)
   })
 })

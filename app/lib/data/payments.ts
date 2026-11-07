@@ -4,16 +4,18 @@ import { alias } from 'drizzle-orm/pg-core'
 import { cacheLife, cacheTag } from 'next/cache'
 import { unstable_rethrow } from 'next/navigation'
 import { z } from 'zod'
-import { requireRole } from '@/app/lib/authz'
+import { requireMember, requireRole } from '@/app/lib/authz'
 import { readBilling } from '@/app/lib/billing'
 import { byNumber } from '@/app/lib/data/apartments'
 import { buildingTag, feesTag } from '@/app/lib/data/cache-tags'
 import { db } from '@/app/lib/db'
 import type {
+  ApartmentMonths,
   ApartmentPayments,
   ApartmentStatus,
   Arrears,
   PaymentsGrid,
+  ResidentPayment,
 } from '@/app/lib/definitions'
 import { logger } from '@/app/lib/logger'
 import {
@@ -39,6 +41,7 @@ import {
   apartmentSummary,
   monthStatus,
   openMonths,
+  residentMonths,
   type ApartmentBilling,
 } from '@/app/lib/utils/status'
 
@@ -372,5 +375,130 @@ export async function arrears(now: Date = new Date()): Promise<Arrears> {
     unstable_rethrow(err)
     logger.error('Failed to load the arrears', { area: 'data/payments', buildingId, err })
     throw new Error('Failed to load the arrears')
+  }
+}
+
+const monthSumRow = z.object({ month: z.string(), amountAgorot: z.coerce.number().int() })
+
+/**
+ * `/money` (R16): how one of the person's own apartments stands, and its months (this year's,
+ * after any earlier one still owed and before any later one paid ahead). Null for any apartment that is not theirs, in their
+ * building. Uncached: payments are read as they are; the building's billing and fee rates
+ * come from its cache. Every member.
+ */
+export async function monthlyStatus(
+  apartmentId: string,
+  now: Date = new Date(),
+): Promise<ApartmentMonths | null> {
+  const { buildingId, timeZone, apartmentIds } = await requireMember()
+  // Only the person's own apartments; anything else (a malformed id too) is no apartment.
+  if (!apartmentIds.includes(apartmentId)) return null
+  try {
+    const [{ building, rates }, [apartment], sums] = await Promise.all([
+      buildingBilling(buildingId),
+      db
+        .select({
+          id: apartments.id,
+          number: apartments.number,
+          billingStartMonth: apartments.billingStartMonth,
+        })
+        .from(apartments)
+        .where(and(eq(apartments.id, apartmentId), eq(apartments.buildingId, buildingId))),
+      // Voided payments never count.
+      db
+        .select({
+          month: payments.month,
+          amountAgorot: sql`cast(sum(${payments.amountAgorot}) as integer)`,
+        })
+        .from(payments)
+        .where(
+          and(
+            eq(payments.buildingId, buildingId),
+            eq(payments.apartmentId, apartmentId),
+            isNull(payments.voidedAt),
+          ),
+        )
+        .groupBy(payments.month),
+    ])
+    if (!building) throw new Error(`No building ${buildingId}`)
+    if (!apartment) return null
+
+    const billing: ApartmentBilling = {
+      apartment: { id: apartment.id, billingStartMonth: apartment.billingStartMonth },
+      buildingBillingStartMonth: building.billingStartMonth,
+      rates,
+      payments: z.array(monthSumRow).parse(sums),
+      currentMonth: currentMonthIn(timeZone, now),
+    }
+    return {
+      number: apartment.number,
+      currentMonth: billing.currentMonth,
+      standing: apartmentStanding(apartmentSummary(billing)),
+      months: residentMonths(billing),
+    }
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load the monthly status', {
+      area: 'data/payments',
+      buildingId,
+      apartmentId,
+      err,
+    })
+    throw new Error('Failed to load the monthly status')
+  }
+}
+
+/**
+ * `/money` (R16): every payment of one of the person's own apartments, voided ones included,
+ * newest first: by the day it was paid, then its month, then the latest recorded, then its id,
+ * so the order never depends on chance. In full: about twelve a year. Never who recorded or
+ * voided a payment, nor the committee's note. Null for any apartment that is not theirs, in
+ * their building. Every member.
+ */
+export async function history(apartmentId: string): Promise<ResidentPayment[] | null> {
+  const { buildingId, apartmentIds } = await requireMember()
+  if (!apartmentIds.includes(apartmentId)) return null
+  try {
+    // The apartment is read too, so one outside the building is told from one never paid for.
+    const [[apartment], rows] = await Promise.all([
+      db
+        .select({ id: apartments.id })
+        .from(apartments)
+        .where(and(eq(apartments.id, apartmentId), eq(apartments.buildingId, buildingId))),
+      db
+        .select({
+          id: payments.id,
+          month: payments.month,
+          amountAgorot: payments.amountAgorot,
+          paidOn: payments.paidOn,
+          method: payments.method,
+          voidedAt: payments.voidedAt,
+          voidReason: payments.voidReason,
+        })
+        .from(payments)
+        .where(and(eq(payments.buildingId, buildingId), eq(payments.apartmentId, apartmentId)))
+        .orderBy(
+          desc(payments.paidOn),
+          desc(payments.month),
+          desc(payments.createdAt),
+          desc(payments.id),
+        ),
+    ])
+    if (!apartment) return null
+
+    return rows.map(({ voidedAt, voidReason, ...payment }) => ({
+      ...payment,
+      // The database keeps the void columns all set or all null.
+      voided: voidedAt && voidReason !== null ? { at: voidedAt, reason: voidReason } : null,
+    }))
+  } catch (err) {
+    unstable_rethrow(err)
+    logger.error('Failed to load the payment history', {
+      area: 'data/payments',
+      buildingId,
+      apartmentId,
+      err,
+    })
+    throw new Error('Failed to load the payment history')
   }
 }

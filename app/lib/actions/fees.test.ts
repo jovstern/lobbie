@@ -181,6 +181,9 @@ describe('setDefault', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/fees', 'page')
       // The payments grid owes each month the fee in force.
       expect(revalidatePath).toHaveBeenCalledWith('/[locale]/admin/payments', 'page')
+      // So do Home's status card and the residents' Money page.
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]', 'page')
+      expect(revalidatePath).toHaveBeenCalledWith('/[locale]/money', 'page')
     },
   )
 

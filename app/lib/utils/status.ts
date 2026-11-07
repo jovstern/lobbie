@@ -2,12 +2,14 @@ import type {
   ApartmentStanding,
   ApartmentSummary,
   FeeRate,
+  GridMonth,
   MonthPayment,
   MonthStatus,
   OpenMonth,
 } from '@/app/lib/definitions'
 import { addMonths } from './dates'
 import { feeFor } from './fees'
+import { yearMonths } from './payments'
 
 /** Everything needed to work out what one apartment owes. */
 export type ApartmentBilling = {
@@ -86,6 +88,30 @@ export function openMonths(billing: ApartmentBilling, lastMonth: string): OpenMo
     }
   }
   return open
+}
+
+/**
+ * The months `/money` lists for an apartment (R16): every month of the current year, January
+ * first, each with its status; before them any month of an earlier year still owed, and after
+ * them any month of a later year paid ahead, in full or in part, so neither what is owed nor
+ * what was paid is out of sight.
+ */
+export function residentMonths(billing: ApartmentBilling): GridMonth[] {
+  const year = Number(billing.currentMonth.slice(0, 4))
+  const january = `${year}-01`
+  const nextJanuary = `${year + 1}-01`
+  const owedBefore: GridMonth[] = []
+  for (let month = billingStart(billing); month < january; month = addMonths(month, 1)) {
+    const status = monthStatus(billing, month)
+    if (status.kind === 'overdue') owedBefore.push({ month, ...status })
+  }
+  const thisYear = yearMonths(year).map((month) => ({ month, ...monthStatus(billing, month) }))
+  // Payments may go a year ahead, so they are the only later months worth listing.
+  const paidAhead = [...new Set(billing.payments.map((payment) => payment.month))]
+    .filter((month) => month >= nextJanuary)
+    .toSorted()
+    .map((month) => ({ month, ...monthStatus(billing, month) }))
+  return [...owedBefore, ...thisYear, ...paidAhead]
 }
 
 /**

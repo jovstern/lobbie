@@ -133,6 +133,34 @@ export type ApartmentPayments = {
   historyLimited: boolean
 }
 
+/** One of the person's own apartments on `/money` (R16): how it stands, and its months. */
+export type ApartmentMonths = {
+  number: string
+  /** In the building's time zone. */
+  currentMonth: string
+  standing: ApartmentStanding
+  /**
+   * Months of earlier years still owed, then the current year's twelve, then months of a later
+   * year paid ahead (in full or in part); oldest first.
+   */
+  months: GridMonth[]
+}
+
+/**
+ * A payment as the apartment's residents see it on `/money`: what, when and how. Never who
+ * recorded or voided it, nor the committee's note.
+ */
+export type ResidentPayment = {
+  id: string
+  month: string
+  amountAgorot: number
+  /** The calendar date it was paid, `YYYY-MM-DD`. */
+  paidOn: string
+  method: PaymentMethod
+  /** Null while it counts; a voided payment stays listed, with when and why. */
+  voided: { at: Date; reason: string } | null
+}
+
 /** An apartment behind on its payments, as the committee's arrears list shows it (R17). */
 export type ArrearsEntry = {
   id: string
@@ -146,7 +174,7 @@ export type ArrearsEntry = {
 /** Who is behind, the largest debt first, and what they owe together. */
 export type Arrears = { apartments: ArrearsEntry[]; totalOwedAgorot: number }
 
-/** One cell of the payments grid: a month of one apartment and its status. */
+/** A month of one apartment and its status: a cell of the payments grid, a row on `/money`. */
 export type GridMonth = MonthStatus & { month: string }
 
 /** One apartment's row of the payments grid. */

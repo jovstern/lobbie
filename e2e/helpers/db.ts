@@ -264,3 +264,58 @@ export async function paymentCountOf(number: string, month: string): Promise<num
     return z.number().int().parse(row?.payments)
   })
 }
+
+/**
+ * Records a payment for a demo-building apartment straight in the test database, as the
+ * treasurer, voided with `voidReason` when one is given. Payments are read fresh by every page
+ * (never from a cache), so removing them with `deletePaymentsOf` leaves no stale copy behind.
+ */
+export async function addPayment(
+  number: string,
+  payment: {
+    month: string
+    amountAgorot: number
+    paidOn: string
+    method: 'cash' | 'transfer' | 'check' | 'bit' | 'other'
+    voidReason?: string
+  },
+): Promise<void> {
+  const voidReason = payment.voidReason ?? null
+  await withE2eSql(
+    (sql) => sql`
+      INSERT INTO payments
+        (building_id, apartment_id, month, amount_agorot, paid_on, method, recorded_by,
+         voided_at, voided_by, void_reason)
+      SELECT ${demoBuildingId}, a.id, ${payment.month}, ${payment.amountAgorot}, ${payment.paidOn},
+        ${payment.method}, u.id,
+        CASE WHEN ${voidReason}::text IS NULL THEN NULL ELSE now() END,
+        CASE WHEN ${voidReason}::text IS NULL THEN NULL ELSE u.id END,
+        ${voidReason}
+      FROM apartments a, "user" u
+      WHERE a.building_id = ${demoBuildingId} AND a.number = ${number}
+        AND u.email = 'committee2@example.com'`,
+  )
+}
+
+/** Makes someone also live in a demo-building apartment, by their email and its number. */
+export async function addResidence(email: string, number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      INSERT INTO apartment_residents (user_id, apartment_id)
+      SELECT u.id, a.id FROM "user" u, apartments a
+      WHERE u.email = ${email} AND a.building_id = ${demoBuildingId} AND a.number = ${number}
+      ON CONFLICT DO NOTHING`,
+  )
+}
+
+/** Takes someone out of a demo-building apartment, by their email and its number. */
+export async function removeResidence(email: string, number: string): Promise<void> {
+  await withE2eSql(
+    (sql) => sql`
+      DELETE FROM apartment_residents
+      WHERE user_id = (SELECT id FROM "user" WHERE email = ${email})
+        AND apartment_id = (
+          SELECT id FROM apartments WHERE building_id = ${demoBuildingId} AND number = ${number}
+        )`,
+  )
+}

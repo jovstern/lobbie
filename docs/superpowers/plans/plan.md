@@ -290,8 +290,10 @@ Requirements: R14–R19, and part of R25.
    - `/admin` opens on the arrears overview and quick links.
    - Tests: the grid query for a full year in one query (no N+1).
 4. **Resident Money page** (medium). `/money`: a status hero, a month list and the history,
-   with `?apartment=` when there are several (the Money tab appears). Tests: data tests for
-   history order.
+   with `?apartment=` when there are several (the Money tab appears, for every member). The
+   full history, no cap; residents see a voided payment's date and reason, never committee
+   names or notes (the void dialog's hint tells the committee so). Tests: data tests for history order (with a deterministic tie-break),
+   authz (own apartments only, another building's → none) and voided rows.
 5. **Storage and expenses** (large).
    - `app/lib/storage.ts`: the local driver; keys, not paths; magic-byte type check; 4 MB.
    - `/api/files/[id]`: members of that building only, with `nosniff`,

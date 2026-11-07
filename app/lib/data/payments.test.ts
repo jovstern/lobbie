@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { cacheTag } from 'next/cache'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { requireRole } from '@/app/lib/authz'
+import { requireMember, requireRole } from '@/app/lib/authz'
 import { db } from '@/app/lib/db'
 import type { Member } from '@/app/lib/definitions'
 import {
@@ -15,7 +15,7 @@ import {
 } from '@/app/lib/schema'
 import { demoBuildingId } from '@/scripts/demo-building'
 import { seed } from '@/scripts/seed'
-import { arrears, forApartment, grid, statusForUser } from './payments'
+import { arrears, forApartment, grid, history, monthlyStatus, statusForUser } from './payments'
 
 const testDb = await vi.hoisted(async () => {
   const { createTestDb } = await import('@/app/lib/test/db')
@@ -24,7 +24,7 @@ const testDb = await vi.hoisted(async () => {
 vi.mock('@/app/lib/db', () => ({ db: testDb.db }))
 // Outside Next, `'use cache'` is an inert string and the cache functions only record tags.
 vi.mock('next/cache', () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }))
-vi.mock('@/app/lib/authz', () => ({ requireRole: vi.fn() }))
+vi.mock('@/app/lib/authz', () => ({ requireMember: vi.fn(), requireRole: vi.fn() }))
 afterAll(() => testDb.close())
 
 // The seed is relative to "now": billing starts 12 months back, so 2025-11 through 2026-11.
@@ -578,5 +578,291 @@ describe('arrears', () => {
     expect(requireRole).toHaveBeenCalledWith('committee')
     expect(result).toEqual((await grid(undefined, now)).arrears)
     expect(result.apartments.map((apartment) => apartment.number)).toEqual(['9', '4'])
+  })
+})
+
+/** Signs in as a resident of the demo building (or `building`) living in these apartments. */
+function signInAsResidentOf(numbers: string[], building = () => buildingId) {
+  const member: Member = {
+    userId: 'not-read',
+    buildingId: building(),
+    role: 'resident',
+    apartmentIds: numbers.map(idOf),
+    isDemo: false,
+    timeZone: 'Asia/Jerusalem',
+    buildingName: 'not-read',
+  }
+  vi.mocked(requireMember).mockResolvedValue(member)
+}
+
+async function otherBuildingApartment() {
+  const [other] = await db
+    .insert(buildings)
+    .values({ name: 'Other 3', address: 'Elsewhere 3', billingStartMonth: '2026-01' })
+    .returning()
+  const [apartment] = await db
+    .insert(apartments)
+    .values({ buildingId: other.id, number: '1', floor: 1 })
+    .returning()
+  return { buildingId: other.id, apartmentId: apartment.id }
+}
+
+describe('monthlyStatus', () => {
+  const owing = (month: string, kind: 'overdue' | 'due' | 'upcoming') => ({
+    month,
+    kind,
+    dueAgorot: fee,
+    paidAgorot: 0,
+    remainingAgorot: fee,
+  })
+  const settled = (month: string) => ({ month, kind: 'paid', dueAgorot: fee, paidAgorot: fee })
+
+  it('checks the membership first', async () => {
+    signInAsResidentOf(['4'])
+    vi.mocked(requireMember).mockClear()
+    await monthlyStatus(idOf('4'), now)
+    expect(requireMember).toHaveBeenCalledOnce()
+  })
+
+  it("is how one of the person's apartments stands, and this year's months", async () => {
+    signInAsResidentOf(['4', '9'])
+
+    const result = await monthlyStatus(idOf('4'), now)
+
+    expect(result).toEqual({
+      number: '4',
+      currentMonth,
+      standing: { kind: 'overdue', monthsBehind: 1, totalOwedAgorot: 2 * fee },
+      months: [
+        ...Array.from({ length: 9 }, (_, i) => settled(`2026-0${i + 1}`)),
+        owing('2026-10', 'overdue'),
+        owing('2026-11', 'due'),
+        owing('2026-12', 'upcoming'),
+      ],
+    })
+  })
+
+  it('counts a part payment, never a voided one', async () => {
+    signInAsResidentOf(['e2e-3'])
+    const [treasurer] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, 'committee2@example.com'))
+    const row = {
+      buildingId,
+      apartmentId: idOf('e2e-3'),
+      month: currentMonth,
+      paidOn: '2026-11-01',
+      method: 'cash' as const,
+      recordedBy: treasurer.id,
+    }
+    await db.insert(payments).values([
+      { ...row, amountAgorot: 10_000 },
+      { ...row, amountAgorot: 25_000, voidedAt: now, voidedBy: treasurer.id, voidReason: 'test' },
+    ])
+
+    try {
+      const result = await monthlyStatus(idOf('e2e-3'), now)
+      expect(result?.standing).toEqual({ kind: 'due', remainingAgorot: 25_000, partial: true })
+      expect(result?.months[10]).toEqual({
+        month: currentMonth,
+        kind: 'due',
+        dueAgorot: fee,
+        paidAgorot: 10_000,
+        remainingAgorot: 25_000,
+      })
+    } finally {
+      await db.delete(payments).where(eq(payments.apartmentId, idOf('e2e-3')))
+    }
+  })
+
+  it('shows an apartment not billed yet as such', async () => {
+    signInAsResidentOf(['e2e-1'])
+
+    const result = await monthlyStatus(idOf('e2e-1'), new Date('2026-10-15T10:00:00Z'))
+
+    // Billed from November: nothing is owed in October.
+    expect(result?.standing).toEqual({ kind: 'not-billed' })
+    expect(result?.months[9]).toEqual({ month: '2026-10', kind: 'not-billed' })
+    expect(result?.months[10]).toEqual(owing('2026-11', 'upcoming'))
+  })
+
+  it("is null for an apartment that is not the person's own", async () => {
+    signInAsResidentOf(['4'])
+    expect(await monthlyStatus(idOf('9'), now)).toBeNull()
+    expect(await monthlyStatus('not-a-uuid', now)).toBeNull()
+  })
+
+  it("is null for another building's apartment, even one listed as the person's", async () => {
+    const other = await otherBuildingApartment()
+    // As if the membership listed it: the query still keeps to the person's building.
+    vi.mocked(requireMember).mockResolvedValue({
+      userId: 'not-read',
+      buildingId,
+      role: 'resident',
+      apartmentIds: [other.apartmentId],
+      isDemo: false,
+      timeZone: 'Asia/Jerusalem',
+      buildingName: 'not-read',
+    })
+    expect(await monthlyStatus(other.apartmentId, now)).toBeNull()
+
+    // And a member of that other building never sees this building's apartment.
+    signInAsResidentOf(['4'], () => other.buildingId)
+    expect(await monthlyStatus(idOf('4'), now)).toBeNull()
+  })
+
+  it('logs and throws a short message when the query fails', async () => {
+    signInAsResidentOf(['4'])
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const query = vi.spyOn(testDb.client, 'query').mockRejectedValue(new Error('down'))
+    try {
+      await expect(monthlyStatus(idOf('4'), now)).rejects.toThrow(
+        'Failed to load the monthly status',
+      )
+      expect(JSON.parse(String(consoleError.mock.calls[0][0]))).toMatchObject({
+        level: 'error',
+        area: 'data/payments',
+      })
+    } finally {
+      query.mockRestore()
+      consoleError.mockRestore()
+    }
+  })
+})
+
+describe('history', () => {
+  const treasurerId = async () => {
+    const [treasurer] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, 'committee2@example.com'))
+    return treasurer.id
+  }
+
+  it('checks the membership first', async () => {
+    signInAsResidentOf(['2'])
+    vi.mocked(requireMember).mockClear()
+    await history(idOf('2'))
+    expect(requireMember).toHaveBeenCalledOnce()
+  })
+
+  it('is every payment, newest first, a voided one with when and why but no names', async () => {
+    signInAsResidentOf(['2'])
+
+    const result = await history(idOf('2'))
+
+    // The seed's 13 paid months and one voided payment: all of them, not the latest 20 only.
+    expect(result).toHaveLength(14)
+    const paidOn = result?.map((payment) => payment.paidOn) ?? []
+    expect(paidOn).toEqual(paidOn.toSorted().reverse())
+    expect(result?.[0]).toEqual({
+      id: expect.any(String),
+      month: currentMonth,
+      amountAgorot: fee,
+      paidOn: expect.stringMatching(/^2026-11-\d{2}$/),
+      method: expect.any(String),
+      voided: null,
+    })
+    const voided = result?.find((payment) => payment.voided)
+    expect(voided?.voided).toEqual({ at: now, reason: 'נרשם פעמיים בטעות' })
+    // Neither who recorded or voided it, nor the committee's note.
+    expect(Object.keys(voided ?? {}).toSorted()).toEqual([
+      'amountAgorot',
+      'id',
+      'method',
+      'month',
+      'paidOn',
+      'voided',
+    ])
+  })
+
+  it('lists more than 20 payments in full', async () => {
+    signInAsResidentOf(['e2e-3'])
+    const recordedBy = await treasurerId()
+    await db.insert(payments).values(
+      Array.from({ length: 25 }, () => ({
+        buildingId,
+        apartmentId: idOf('e2e-3'),
+        month: currentMonth,
+        amountAgorot: 1,
+        paidOn: '2026-11-01',
+        method: 'cash' as const,
+        recordedBy,
+      })),
+    )
+    try {
+      expect(await history(idOf('e2e-3'))).toHaveLength(25)
+    } finally {
+      await db.delete(payments).where(eq(payments.apartmentId, idOf('e2e-3')))
+    }
+  })
+
+  it('orders the same day by month, newest first, then the latest recorded, then by id', async () => {
+    signInAsResidentOf(['e2e-3'])
+    const recordedBy = await treasurerId()
+    const row = {
+      buildingId,
+      apartmentId: idOf('e2e-3'),
+      amountAgorot: fee,
+      method: 'transfer' as const,
+      recordedBy,
+    }
+    const earlier = new Date('2026-11-01T08:00:00Z')
+    const later = new Date('2026-11-01T09:00:00Z')
+    const saved = await db
+      .insert(payments)
+      .values([
+        { ...row, month: '2026-09', paidOn: '2026-10-20', createdAt: earlier },
+        { ...row, month: '2026-10', paidOn: '2026-11-01', createdAt: earlier },
+        { ...row, month: '2026-11', paidOn: '2026-11-01', createdAt: earlier },
+        { ...row, month: '2026-10', paidOn: '2026-11-01', createdAt: later },
+        // Recorded at the same instant for the same month: the id decides, never chance.
+        { ...row, month: '2026-08', paidOn: '2026-10-20', createdAt: earlier },
+        { ...row, month: '2026-08', paidOn: '2026-10-20', createdAt: earlier },
+      ])
+      .returning({ id: payments.id })
+    const [nov, octLate] = [saved[2].id, saved[3].id]
+    const [sameA, sameB] = [saved[4].id, saved[5].id].toSorted().reverse()
+
+    try {
+      const result = await history(idOf('e2e-3'))
+      expect(result?.map((payment) => payment.id)).toEqual([
+        nov,
+        octLate,
+        saved[1].id,
+        saved[0].id,
+        sameA,
+        sameB,
+      ])
+    } finally {
+      await db.delete(payments).where(eq(payments.apartmentId, idOf('e2e-3')))
+    }
+  })
+
+  it("is null for an apartment that is not the person's own, or another building's", async () => {
+    signInAsResidentOf(['4'])
+    expect(await history(idOf('2'))).toBeNull()
+    expect(await history('not-a-uuid')).toBeNull()
+
+    const other = await otherBuildingApartment()
+    signInAsResidentOf(['2'], () => other.buildingId)
+    expect(await history(idOf('2'))).toBeNull()
+  })
+
+  it('logs and throws a short message when the query fails', async () => {
+    signInAsResidentOf(['2'])
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const query = vi.spyOn(testDb.client, 'query').mockRejectedValue(new Error('down'))
+    try {
+      await expect(history(idOf('2'))).rejects.toThrow('Failed to load the payment history')
+      expect(JSON.parse(String(consoleError.mock.calls[0][0]))).toMatchObject({
+        level: 'error',
+        area: 'data/payments',
+      })
+    } finally {
+      query.mockRestore()
+      consoleError.mockRestore()
+    }
   })
 })

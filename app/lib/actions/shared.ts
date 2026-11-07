@@ -12,10 +12,14 @@ export async function demoRefusal(locale: Locale): Promise<string> {
   return t('readOnly')
 }
 
-/** The admin pages that show apartments (with their residents and invites). */
+/**
+ * The admin pages that show apartments (with their residents and invites), and the payments
+ * grid, whose rows are the apartments and whose months owe from each one's billing start.
+ */
 export function refreshApartmentPages() {
   revalidatePath('/[locale]/admin/apartments', 'page')
   revalidatePath('/[locale]/admin/apartments/[id]', 'page')
+  revalidatePath('/[locale]/admin/payments', 'page')
 }
 
 /** The admin pages that show people: the people list and the apartment pages. */
@@ -32,20 +36,24 @@ function refreshPaymentOverviews() {
 
 /**
  * The pages that show fees: the fees page, the apartment pages with each one's fee, and the
- * payment pages, whose months owe the fee in force.
+ * pages whose months owe the fee in force: the committee's payment pages, Home's status card
+ * and the residents' Money page.
  */
 export function refreshFeePages() {
   revalidatePath('/[locale]/admin/fees', 'page')
   refreshApartmentPages()
   refreshPaymentOverviews()
+  revalidatePath('/[locale]', 'page')
+  revalidatePath('/[locale]/money', 'page')
 }
 
 /**
  * The pages that show an apartment's payments: its admin page, the arrears overview and the
- * grid, and Home, whose status card says whether it is paid up.
+ * grid, Home, whose status card says whether it is paid up, and the residents' Money page.
  */
 export function refreshPaymentPages() {
   revalidatePath('/[locale]/admin/apartments/[id]', 'page')
   refreshPaymentOverviews()
   revalidatePath('/[locale]', 'page')
+  revalidatePath('/[locale]/money', 'page')
 }

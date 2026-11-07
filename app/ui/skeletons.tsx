@@ -653,3 +653,54 @@ export function CommitteeSkeleton() {
     </div>
   )
 }
+
+/** `/money`'s apartment choice, one pill per apartment. */
+export function ApartmentSwitcherSkeleton({ count }: { count: number }) {
+  return (
+    <div aria-hidden className="flex flex-wrap gap-2">
+      {Array.from({ length: count }, (_, pill) => (
+        <div key={pill} className="rounded-chip bg-border h-11 w-28 animate-pulse" />
+      ))}
+    </div>
+  )
+}
+
+/**
+ * One apartment on `/money`: its standing beside its months, then its payment history, shaped
+ * like an apartment that is due this month.
+ */
+export function ApartmentMoneySkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4 lg:gap-6">
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+        <CardSkeleton minHeight="min-h-56">
+          <div className="rounded-chip bg-border h-8 w-24 animate-pulse" />
+          <div className={`${block} h-12 w-40`} />
+          <div className={`${block} h-6 w-48`} />
+        </CardSkeleton>
+        <CardSkeleton minHeight="min-h-56">
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-32`} />
+              <div className="flex flex-col items-end gap-1">
+                <div className={`${block} h-6 w-20`} />
+                <div className={`${block} h-5 w-24`} />
+              </div>
+            </div>
+          ))}
+        </CardSkeleton>
+      </div>
+      <CardSkeleton minHeight="min-h-40">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-4">
+              <div className={`${block} h-6 w-32`} />
+              <div className={`${block} h-6 w-16`} />
+            </div>
+            <div className={`${block} h-5 w-56 max-w-full`} />
+          </div>
+        ))}
+      </CardSkeleton>
+    </div>
+  )
+}

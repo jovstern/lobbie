@@ -97,3 +97,16 @@ export function arrearsOf(
     totalOwedAgorot: behind.reduce((sum, apartment) => sum + apartment.totalOwedAgorot, 0),
   }
 }
+
+/**
+ * Which of the person's own apartments `/money` shows for `?apartment=`: the first one when the
+ * URL names none, the one it names when it is theirs, and null for anything else (someone
+ * else's apartment, several at once, or when they have none), which the page answers with 404.
+ */
+export function chosenApartment(
+  param: string | readonly string[] | undefined,
+  apartmentIds: readonly string[],
+): string | null {
+  if (param === undefined) return apartmentIds[0] ?? null
+  return typeof param === 'string' && apartmentIds.includes(param) ? param : null
+}
